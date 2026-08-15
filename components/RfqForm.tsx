@@ -145,10 +145,11 @@ export function RfqForm({
           <FieldLabel htmlFor={fieldId("condition")}>Condition</FieldLabel>
           <select id={fieldId("condition")} name="condition" defaultValue="Any acceptable">
             <option>Any acceptable</option>
-            <option>New</option>
-            <option>Overhauled</option>
-            <option>Serviceable</option>
-            <option>As removed</option>
+            <option>New (NE)</option>
+            <option>New Surplus (NS)</option>
+            <option>Overhauled (OH)</option>
+            <option>Serviceable (SV)</option>
+            <option>As Removed (AR)</option>
           </select>
         </label>
       </div>
@@ -182,7 +183,7 @@ export function RfqForm({
             if (!event.target.checked) setErrors((current) => ({ ...current, callbackNumber: undefined, aircraftLocation: undefined }));
           }}
         />
-        <span><strong>Aircraft on ground (AOG)</strong><small>Mark for immediate handling.</small></span>
+        <span><strong>Aircraft on ground (AOG)</strong><small>Mark for the monitored urgent workflow.</small></span>
       </label>
 
       {isAog && (
@@ -200,11 +201,11 @@ export function RfqForm({
               aria-required={isAog}
               aria-invalid={Boolean(errors.callbackNumber)}
               aria-describedby={errors.callbackNumber ? fieldId("callback-number-error") : fieldId("callback-number-help")}
-              placeholder="+1 201 555 0123"
+              placeholder="+1 909 555 0123"
               onChange={(event) => setAogField("callbackNumber", event.target.value)}
               onInvalid={handleInvalid}
             />
-            <small className="field-help" id={fieldId("callback-number-help")}>Best number for immediate coordination.</small>
+            <small className="field-help" id={fieldId("callback-number-help")}>Best number for the monitored AOG desk to use.</small>
             {errors.callbackNumber && <small className="field-error" id={fieldId("callback-number-error")}>{errors.callbackNumber}</small>}
           </label>
           <label htmlFor={fieldId("aircraft-location")}>
@@ -242,14 +243,14 @@ export function RfqForm({
       {status === "success" && (
         <div className="submission-status submission-success" role="status">
           <strong>{isAog ? "Your urgent AOG request has been received." : "Your availability request has been received."}</strong>
-          <p>{isAog ? "For immediate handling, call or WhatsApp the AOG desk now." : "Our sourcing desk will review it and follow up directly."}</p>
+          <p>{isAog ? "Call or WhatsApp the monitored AOG desk now." : "Our sourcing desk will review it and follow up directly."}</p>
           {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
         </div>
       )}
       {status === "preview" && (
         <div className="submission-status submission-preview" role="status">
           <strong>This preview cannot confirm form delivery.</strong>
-          <p>{isAog ? "For immediate handling, call or WhatsApp the AOG desk now." : "Please use the published Netlify form when it is approved, or contact the sourcing desk directly."}</p>
+          <p>{isAog ? "Call or WhatsApp the monitored AOG desk now." : "Please use the published Netlify form when it is approved, or contact the sourcing desk directly."}</p>
           {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
         </div>
       )}

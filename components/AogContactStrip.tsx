@@ -8,7 +8,7 @@ export function AogContactStrip({ sourcePage = "homepage" }: { sourcePage?: stri
       <div className="shell aog-inner">
         <div className="aog-strip-copy">
           <span><i className="live-dot" /> 24/7 AOG DESK</span>
-          <h2>AOG? Reach us immediately.</h2>
+          <h2>AOG? Call or message the monitored desk.</h2>
         </div>
         <div className="aog-strip-actions">
           <CallAogAction className="aog-strip-call" source_page={sourcePage}>Call +1 909 344 4444</CallAogAction>

@@ -20,13 +20,13 @@ test("server-renders the Civilon production homepage", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Aircraft Parts Sourcing &amp; 24\/7 AOG Support \| Civilon Air<\/title>/i);
+  assert.match(html, /<title>Business Aircraft Parts Sourcing &amp; AOG Coordination \| Civilon<\/title>/i);
   assert.match(html, /Start a part search/);
   assert.match(html, /Request availability/);
   assert.match(html, /Call AOG desk/);
   assert.match(html, /https:\/\/wa\.me\/19093444444\?text=URGENT%20AOG%20REQUEST/);
   assert.match(html, /Urgent AOG contact options/);
-  assert.match(html, /AOG\? Reach us immediately\./);
+  assert.match(html, /AOG\? Call or message the monitored desk\./);
   assert.match(html, /tel:\+19093444444/);
   assert.match(html, /id="part-number"[^>]*required=""[^>]*aria-required="true"/i);
   assert.match(html, /id="email"[^>]*required=""[^>]*aria-required="true"/i);
