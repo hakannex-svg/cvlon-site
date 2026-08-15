@@ -23,7 +23,9 @@ test("server-renders the Civilon production homepage", async () => {
   assert.match(html, /<title>Aircraft Parts Sourcing &amp; 24\/7 AOG Support \| Civilon Air<\/title>/i);
   assert.match(html, /Start a part search/);
   assert.match(html, /Request availability/);
-  assert.match(html, /Call the AOG desk/);
+  assert.match(html, /Call AOG desk/);
+  assert.match(html, /https:\/\/wa\.me\/19093444444\?text=AOG%20request/);
+  assert.match(html, /Urgent AOG contact options/);
   assert.match(html, /id="part-number"[^>]*required=""[^>]*aria-required="true"/i);
   assert.match(html, /id="email"[^>]*required=""[^>]*aria-required="true"/i);
   assert.match(html, /class="required-mark" aria-hidden="true">\*<\/span>/i);
@@ -36,7 +38,7 @@ test("keeps responsive quality-image handling and replacement note", async () =>
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /TODO\(production\): Replace quality-inspection\.webp/);
+  assert.match(page, /TODO\(production\): TEMPORARY IMAGE/);
   assert.match(page, /quality-inspection\.avif/);
   assert.match(page, /quality-inspection\.webp/);
   assert.match(page, /quality-inspection\.jpg/);
@@ -44,4 +46,5 @@ test("keeps responsive quality-image handling and replacement note", async () =>
   assert.match(css, /object-fit:\s*cover/);
   assert.match(css, /\.field-label\s*\{[^}]*display:inline-flex/);
   assert.match(css, /\.aog-check:has\(input:checked\)/);
+  assert.match(css, /\.mobile-urgent/);
 });

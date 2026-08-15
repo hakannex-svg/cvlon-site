@@ -26,6 +26,8 @@ const platforms = [
   "Gulfstream & more",
 ];
 
+const whatsappAogUrl = "https://wa.me/19093444444?text=AOG%20request%3A%20I%20need%20urgent%20aircraft%20parts%20support.%20Please%20contact%20me%20as%20soon%20as%20possible.";
+
 function FieldLabel({ htmlFor, children, required = false }: { htmlFor: string; children: React.ReactNode; required?: boolean }) {
   return (
     <span className="field-label" id={`${htmlFor}-label`}>
@@ -75,7 +77,8 @@ export default function Home() {
             <p>Civilon Air sources fully traceable business-aircraft components and coordinates urgent AOG delivery worldwide—from one accountable desk.</p>
             <div className="hero-actions">
               <a className="button button-primary" href="#rfq">Start a part search <span>→</span></a>
-              <a className="button button-ghost" href="tel:+19093444444">Call the AOG desk</a>
+              <a className="button button-ghost" href="tel:+19093444444">Call AOG desk</a>
+              <a className="button button-whatsapp" href={whatsappAogUrl} target="_blank" rel="noreferrer">WhatsApp AOG</a>
             </div>
             <div className="hero-proof">
               <div><strong>&lt; 1 hr</strong><span>Typical quote response</span></div>
@@ -166,7 +169,7 @@ export default function Home() {
       <section className="section quality" id="quality">
         <div className="shell quality-layout">
           <div className="quality-visual">
-            {/* TODO(production): Replace quality-inspection.webp with an approved authentic 3:2 aviation MRO documentation photo. */}
+            {/* TODO(production): TEMPORARY IMAGE — replace quality-inspection.webp with an approved authentic 3:2 aviation MRO inspection/documentation photo before release. */}
             <picture>
               <source srcSet="/quality-inspection.avif" type="image/avif" />
               <source srcSet="/quality-inspection.webp" type="image/webp" />
@@ -210,10 +213,15 @@ export default function Home() {
         </div>
       </section>
 
+      <aside className="mobile-urgent" aria-label="Urgent AOG contact options">
+        <a href="tel:+19093444444"><span>Call</span><strong>AOG desk</strong></a>
+        <a className="mobile-whatsapp" href={whatsappAogUrl} target="_blank" rel="noreferrer"><span>WhatsApp</span><strong>Message AOG</strong></a>
+      </aside>
+
       <footer id="company">
         <div className="shell footer-grid">
           <div>
-            <a className="brand brand-footer" href="#top"><span className="footer-logo-wrap"><img src="/civilon-logo.svg" alt="Civilon Air" /></span></a>
+            <a className="brand brand-footer" href="#top"><img src="/civilon-logo-dark.svg" alt="Civilon Air" /></a>
             <p>Business-aircraft parts sourcing, repair management and 24/7 AOG coordination from the New York metro area.</p>
           </div>
           <div><strong>Contact</strong><a href="mailto:sales@cvlon.com">sales@cvlon.com</a><a href="tel:+12019036461">+1 201 903 6461</a><span>Englewood Cliffs, NJ</span></div>
