@@ -40,8 +40,7 @@ export default function Home() {
       <nav className="nav" aria-label="Main navigation">
         <div className="shell nav-inner">
           <a className="brand" href="#top" aria-label="Civilon Air home">
-            <span className="brand-word">CI<span>V</span>ILON</span>
-            <small>AIRCRAFT PARTS &amp; AOG</small>
+            <img src="/civilon-logo.svg" alt="Civilon Air" />
           </a>
           <div className="nav-links">
             <a href="#services">Services</a>
@@ -54,6 +53,8 @@ export default function Home() {
       </nav>
 
       <section className="hero" id="top">
+        <div className="hero-photo" aria-hidden="true" />
+        <div className="hero-shade" aria-hidden="true" />
         <div className="hero-grid" aria-hidden="true" />
         <div className="hero-orbit orbit-one" aria-hidden="true" />
         <div className="hero-orbit orbit-two" aria-hidden="true" />
@@ -123,6 +124,17 @@ export default function Home() {
             <div><span className="section-label">CAPABILITY / 01</span><h2>One desk. Every step<br />from search to delivery.</h2></div>
             <p>We are a sourcing partner, not a webshop. Send the part number and we work the channels, verify the paperwork and coordinate delivery.</p>
           </div>
+          <div className="service-feature">
+            <div className="service-photo">
+              <img src="/parts-sourcing.webp" alt="Aircraft component being reviewed in a modern aviation parts facility" />
+              <span>PARTS SOURCING / INSPECTION / DISPATCH</span>
+            </div>
+            <div className="service-note">
+              <span className="section-label">ACCOUNTABLE FROM RFQ TO RECEIVING</span>
+              <p>Every request stays with one sourcing desk through availability, condition review, documentation and delivery.</p>
+              <a href="#rfq">Send your requirement <b>→</b></a>
+            </div>
+          </div>
           <div className="service-grid">
             {services.map((service) => (
               <article className="service-card" key={service.number}>
@@ -140,7 +152,7 @@ export default function Home() {
       <section className="section quality" id="quality">
         <div className="shell quality-layout">
           <div className="quality-visual">
-            <div className="radar"><span>TRACE</span><i /><b /></div>
+            <img src="/quality-inspection.webp" alt="Aviation quality inspector measuring a metallic aircraft component" />
             <div className="quality-caption"><span>DOCUMENT CONTROL</span><strong>Every unit verified before release</strong></div>
           </div>
           <div className="quality-copy">
@@ -170,6 +182,8 @@ export default function Home() {
       </section>
 
       <section className="aog-band">
+        <div className="aog-photo" aria-hidden="true" />
+        <div className="aog-overlay" aria-hidden="true" />
         <div className="shell aog-inner">
           <div><span className="live-dot" /> AIRCRAFT ON GROUND?</div>
           <h2>One call starts the search.</h2>
@@ -180,7 +194,7 @@ export default function Home() {
       <footer id="company">
         <div className="shell footer-grid">
           <div>
-            <a className="brand brand-footer" href="#top"><span className="brand-word">CI<span>V</span>ILON</span><small>AIRCRAFT PARTS &amp; AOG</small></a>
+            <a className="brand brand-footer" href="#top"><span className="footer-logo-wrap"><img src="/civilon-logo.svg" alt="Civilon Air" /></span></a>
             <p>Business-aircraft parts sourcing, repair management and 24/7 AOG coordination from the New York metro area.</p>
           </div>
           <div><strong>Contact</strong><a href="mailto:sales@cvlon.com">sales@cvlon.com</a><a href="tel:+12019036461">+1 201 903 6461</a><span>Englewood Cliffs, NJ</span></div>
