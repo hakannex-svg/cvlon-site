@@ -1,10 +1,2 @@
-import { CallAogAction, WhatsAppAogAction } from "./AogActions";
-
-export function MobileAogBar({ sourcePage = "homepage" }: { sourcePage?: string }) {
-  return (
-    <aside className="mobile-urgent" aria-label="Urgent AOG contact options">
-      <CallAogAction source_page={sourcePage}><span>Call</span><strong>AOG desk</strong></CallAogAction>
-      <WhatsAppAogAction className="mobile-whatsapp" source_page={sourcePage}><span>WhatsApp</span><strong>Message AOG</strong></WhatsAppAogAction>
-    </aside>
-  );
-}
+"use client";import{useEffect,useState}from"react";import{CallAogAction,WhatsAppAogAction}from"./AogActions";
+export function MobileAogBar({sourcePage="homepage"}:{sourcePage?:string}){const[menu,setMenu]=useState(false),[obscured,setObscured]=useState(false);useEffect(()=>{const visible=new Set<Element>(),targets=document.querySelectorAll(".aog-band,footer,.prominent-aog-actions,.hero-aog .hero-context-panel");const observer=new IntersectionObserver(entries=>{entries.forEach(e=>e.isIntersecting?visible.add(e.target):visible.delete(e.target));setObscured(visible.size>0)},{threshold:.15});targets.forEach(x=>observer.observe(x));const onMenu=(e:Event)=>setMenu((e as CustomEvent).detail.open);window.addEventListener("civilon:mobile-menu",onMenu);return()=>{observer.disconnect();window.removeEventListener("civilon:mobile-menu",onMenu)}},[]);return <aside className={`mobile-urgent ${menu||obscured?"is-suppressed":""}`} aria-hidden={menu||obscured} aria-label="Urgent AOG contact options"><CallAogAction source_page={sourcePage}><span>Call</span><strong>AOG desk</strong></CallAogAction><WhatsAppAogAction className="mobile-whatsapp" source_page={sourcePage}><span>WhatsApp</span><strong>Message AOG</strong></WhatsAppAogAction></aside>}

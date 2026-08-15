@@ -4,7 +4,6 @@ export function AogContactStrip({ sourcePage = "homepage" }: { sourcePage?: stri
   return (
     <section className="aog-band" aria-label="Urgent AOG contact">
       {/* TODO(production): TEMPORARY IMAGE — replace aog-logistics.webp with approved authentic Civilon AOG logistics photography before release. */}
-      <div className="aog-photo" aria-hidden="true" />
       <div className="aog-overlay" aria-hidden="true" />
       <div className="shell aog-inner">
         <div className="aog-strip-copy">
