@@ -1,14 +1,14 @@
 const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
 const isProductionBuild = process.env.NODE_ENV === "production";
+export const productionOrigin = "https://cvlon.com";
 
 if (isProductionBuild && !configuredSiteUrl) {
   throw new Error("NEXT_PUBLIC_SITE_URL is required for production builds.");
 }
 
 if (isProductionBuild && configuredSiteUrl) {
-  const hostname = new URL(configuredSiteUrl).hostname;
-  if (hostname === "localhost" || hostname.endsWith(".netlify.app")) {
-    throw new Error("NEXT_PUBLIC_SITE_URL must be the approved production origin, not localhost or a Netlify preview host.");
+  if (configuredSiteUrl !== productionOrigin) {
+    throw new Error(`NEXT_PUBLIC_SITE_URL must be the approved production origin: ${productionOrigin}`);
   }
 }
 

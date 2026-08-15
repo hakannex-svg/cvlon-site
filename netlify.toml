@@ -1,0 +1,5 @@
+[[redirects]]
+  from = "https://www.cvlon.com/*"
+  to = "https://cvlon.com/:splat"
+  status = 301
+  force = true
