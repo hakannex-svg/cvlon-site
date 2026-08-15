@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type InvalidEvent } from "react";
 import { trackCivilonEvent } from "@/lib/analytics";
 import { validateRfq, type RfqValidationErrors } from "@/lib/rfq-logic";
+import { isApprovedSubmissionHost } from "@/lib/submission-host";
 import type { AogMessageData } from "@/lib/aog";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 import { FieldLabel } from "./FieldLabel";
@@ -94,7 +95,7 @@ export function RfqForm({
     setStatus("submitting");
     trackCivilonEvent(isAog ? "aog_rfq_submit" : "rfq_submit", analyticsContext);
 
-    const isConfirmedEndpoint = window.location.hostname.endsWith(".netlify.app");
+    const isConfirmedEndpoint = isApprovedSubmissionHost(window.location.hostname);
     if (!isConfirmedEndpoint) {
       setStatus("preview");
       return;

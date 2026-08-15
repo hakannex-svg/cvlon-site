@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import "../node_modules/tailwindcss/index.css";
 
 :root { --navy:#071a2e; --navy-2:#0b2743; --blue:#2374e1; --sky:#65b8ff; --ice:#f3f7fa; --ink:#102033; --muted:#647489; --line:#dbe5ed; --red:#e5484d; }
 * { box-sizing:border-box; }
