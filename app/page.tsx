@@ -1,4 +1,9 @@
 /* eslint-disable @next/next/no-img-element -- vinext site uses pre-optimized responsive assets and picture sources. */
+import { AogContactStrip } from "@/components/AogContactStrip";
+import { CallAogAction, WhatsAppAogAction } from "@/components/AogActions";
+import { MobileAogBar } from "@/components/MobileAogBar";
+import { RfqForm } from "@/components/RfqForm";
+
 const services = [
   {
     number: "01",
@@ -25,17 +30,6 @@ const platforms = [
   "Embraer",
   "Gulfstream & more",
 ];
-
-const whatsappAogUrl = "https://wa.me/19093444444?text=AOG%20request%3A%20I%20need%20urgent%20aircraft%20parts%20support.%20Please%20contact%20me%20as%20soon%20as%20possible.";
-
-function FieldLabel({ htmlFor, children, required = false }: { htmlFor: string; children: React.ReactNode; required?: boolean }) {
-  return (
-    <span className="field-label" id={`${htmlFor}-label`}>
-      <span>{children}</span>
-      {required && <span className="required-mark" aria-hidden="true">*</span>}
-    </span>
-  );
-}
 
 export default function Home() {
   return (
@@ -77,8 +71,8 @@ export default function Home() {
             <p>Civilon Air sources fully traceable business-aircraft components and coordinates urgent AOG delivery worldwide—from one accountable desk.</p>
             <div className="hero-actions">
               <a className="button button-primary" href="#rfq">Start a part search <span>→</span></a>
-              <a className="button button-ghost" href="tel:+19093444444">Call AOG desk</a>
-              <a className="button button-whatsapp" href={whatsappAogUrl} target="_blank" rel="noreferrer">WhatsApp AOG</a>
+              <CallAogAction className="button button-ghost" source_page="homepage">Call AOG desk</CallAogAction>
+              <WhatsAppAogAction className="button button-whatsapp" source_page="homepage">WhatsApp AOG</WhatsAppAogAction>
             </div>
             <div className="hero-proof">
               <div><strong>&lt; 1 hr</strong><span>Typical quote response</span></div>
@@ -87,42 +81,7 @@ export default function Home() {
             </div>
           </div>
 
-          <form className="quick-rfq" id="rfq" name="quick-rfq" method="POST" data-netlify="true">
-            <input type="hidden" name="form-name" value="quick-rfq" />
-            <div className="form-kicker"><span>RFQ</span> START A PART SEARCH</div>
-            <h2>What do you need?</h2>
-            <p>Send the basics. Our sourcing desk will follow up directly.</p>
-            <label htmlFor="part-number">
-              <FieldLabel htmlFor="part-number" required>Part number</FieldLabel>
-              <input id="part-number" required aria-required="true" name="part-number" placeholder="e.g. 101-384025-5" />
-            </label>
-            <div className="field-row">
-              <label htmlFor="quantity">
-                <FieldLabel htmlFor="quantity">Quantity</FieldLabel>
-                <input id="quantity" name="quantity" placeholder="1 EA" />
-              </label>
-              <label htmlFor="condition">
-                <FieldLabel htmlFor="condition">Condition</FieldLabel>
-                <select id="condition" name="condition" defaultValue="Any acceptable">
-                  <option>Any acceptable</option>
-                  <option>New</option>
-                  <option>Overhauled</option>
-                  <option>Serviceable</option>
-                  <option>As removed</option>
-                </select>
-              </label>
-            </div>
-            <label htmlFor="email">
-              <FieldLabel htmlFor="email" required>Email</FieldLabel>
-              <input id="email" required aria-required="true" type="email" name="email" placeholder="name@company.com" />
-            </label>
-            <label className="aog-check" htmlFor="aog" aria-label="Mark this request as AOG">
-              <input id="aog" type="checkbox" name="aog" />
-              <span><strong>Aircraft on ground (AOG)</strong><small>Mark for immediate handling.</small></span>
-            </label>
-            <button type="submit">Request availability <span>→</span></button>
-            <small className="privacy">Your request goes directly to the Civilon sourcing desk.</small>
-          </form>
+          <RfqForm sourcePage="homepage" />
         </div>
         <div className="hero-ticker">
           <div className="shell ticker-inner">
@@ -143,6 +102,7 @@ export default function Home() {
           </div>
           <div className="service-feature">
             <div className="service-photo">
+              {/* TODO(production): TEMPORARY IMAGE — replace parts-sourcing.webp with approved authentic Civilon sourcing/inspection photography before release. */}
               <img src="/parts-sourcing.webp" alt="Aircraft component being reviewed in a modern aviation parts facility" />
               <span>PARTS SOURCING / INSPECTION / DISPATCH</span>
             </div>
@@ -203,20 +163,9 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="aog-band">
-        <div className="aog-photo" aria-hidden="true" />
-        <div className="aog-overlay" aria-hidden="true" />
-        <div className="shell aog-inner">
-          <div><span className="live-dot" /> AIRCRAFT ON GROUND?</div>
-          <h2>One call starts the search.</h2>
-          <a href="tel:+19093444444">+1 909 344 4444 <span>→</span></a>
-        </div>
-      </section>
+      <AogContactStrip sourcePage="homepage" />
 
-      <aside className="mobile-urgent" aria-label="Urgent AOG contact options">
-        <a href="tel:+19093444444"><span>Call</span><strong>AOG desk</strong></a>
-        <a className="mobile-whatsapp" href={whatsappAogUrl} target="_blank" rel="noreferrer"><span>WhatsApp</span><strong>Message AOG</strong></a>
-      </aside>
+      <MobileAogBar sourcePage="homepage" />
 
       <footer id="company">
         <div className="shell footer-grid">

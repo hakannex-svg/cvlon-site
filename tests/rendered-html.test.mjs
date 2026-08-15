@@ -24,8 +24,10 @@ test("server-renders the Civilon production homepage", async () => {
   assert.match(html, /Start a part search/);
   assert.match(html, /Request availability/);
   assert.match(html, /Call AOG desk/);
-  assert.match(html, /https:\/\/wa\.me\/19093444444\?text=AOG%20request/);
+  assert.match(html, /https:\/\/wa\.me\/19093444444\?text=URGENT%20AOG%20REQUEST/);
   assert.match(html, /Urgent AOG contact options/);
+  assert.match(html, /AOG\? Reach us immediately\./);
+  assert.match(html, /tel:\+19093444444/);
   assert.match(html, /id="part-number"[^>]*required=""[^>]*aria-required="true"/i);
   assert.match(html, /id="email"[^>]*required=""[^>]*aria-required="true"/i);
   assert.match(html, /class="required-mark" aria-hidden="true">\*<\/span>/i);
@@ -38,7 +40,8 @@ test("keeps responsive quality-image handling and replacement note", async () =>
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /TODO\(production\): TEMPORARY IMAGE/);
+  assert.match(page, /TEMPORARY IMAGE.*parts-sourcing\.webp/);
+  assert.match(page, /TEMPORARY IMAGE.*quality-inspection\.webp/);
   assert.match(page, /quality-inspection\.avif/);
   assert.match(page, /quality-inspection\.webp/);
   assert.match(page, /quality-inspection\.jpg/);
