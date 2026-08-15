@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element -- vinext site uses pre-optimized responsive assets and picture sources. */
 const services = [
   {
     number: "01",
@@ -25,6 +26,15 @@ const platforms = [
   "Gulfstream & more",
 ];
 
+function FieldLabel({ htmlFor, children, required = false }: { htmlFor: string; children: React.ReactNode; required?: boolean }) {
+  return (
+    <span className="field-label" id={`${htmlFor}-label`}>
+      <span>{children}</span>
+      {required && <span className="required-mark" aria-hidden="true">*</span>}
+    </span>
+  );
+}
+
 export default function Home() {
   return (
     <main>
@@ -48,7 +58,7 @@ export default function Home() {
             <a href="#quality">Quality</a>
             <a href="#company">Company</a>
           </div>
-          <a className="nav-cta" href="#rfq">Request a quote <span>↗</span></a>
+          <a className="nav-cta" href="#rfq">Start a part search <span>↗</span></a>
         </div>
       </nav>
 
@@ -64,8 +74,8 @@ export default function Home() {
             <h1>The right aircraft part.<br /><em>Certified and moving.</em></h1>
             <p>Civilon Air sources fully traceable business-aircraft components and coordinates urgent AOG delivery worldwide—from one accountable desk.</p>
             <div className="hero-actions">
-              <a className="button button-primary" href="#rfq">Send a part number <span>→</span></a>
-              <a className="button button-ghost" href="tel:+19093444444">Call AOG desk</a>
+              <a className="button button-primary" href="#rfq">Start a part search <span>→</span></a>
+              <a className="button button-ghost" href="tel:+19093444444">Call the AOG desk</a>
             </div>
             <div className="hero-proof">
               <div><strong>&lt; 1 hr</strong><span>Typical quote response</span></div>
@@ -79,15 +89,18 @@ export default function Home() {
             <div className="form-kicker"><span>RFQ</span> START A PART SEARCH</div>
             <h2>What do you need?</h2>
             <p>Send the basics. Our sourcing desk will follow up directly.</p>
-            <label>Part number <b>*</b>
-              <input required name="part-number" placeholder="e.g. 101-384025-5" />
+            <label htmlFor="part-number">
+              <FieldLabel htmlFor="part-number" required>Part number</FieldLabel>
+              <input id="part-number" required aria-required="true" name="part-number" placeholder="e.g. 101-384025-5" />
             </label>
             <div className="field-row">
-              <label>Quantity
-                <input name="quantity" placeholder="1 EA" />
+              <label htmlFor="quantity">
+                <FieldLabel htmlFor="quantity">Quantity</FieldLabel>
+                <input id="quantity" name="quantity" placeholder="1 EA" />
               </label>
-              <label>Condition
-                <select name="condition" defaultValue="Any acceptable">
+              <label htmlFor="condition">
+                <FieldLabel htmlFor="condition">Condition</FieldLabel>
+                <select id="condition" name="condition" defaultValue="Any acceptable">
                   <option>Any acceptable</option>
                   <option>New</option>
                   <option>Overhauled</option>
@@ -96,12 +109,13 @@ export default function Home() {
                 </select>
               </label>
             </div>
-            <label>Email <b>*</b>
-              <input required type="email" name="email" placeholder="name@company.com" />
+            <label htmlFor="email">
+              <FieldLabel htmlFor="email" required>Email</FieldLabel>
+              <input id="email" required aria-required="true" type="email" name="email" placeholder="name@company.com" />
             </label>
-            <label className="aog-check">
-              <input type="checkbox" name="aog" />
-              <span><strong>This aircraft is AOG</strong><small>Mark for immediate handling</small></span>
+            <label className="aog-check" htmlFor="aog" aria-label="Mark this request as AOG">
+              <input id="aog" type="checkbox" name="aog" />
+              <span><strong>Aircraft on ground (AOG)</strong><small>Mark for immediate handling.</small></span>
             </label>
             <button type="submit">Request availability <span>→</span></button>
             <small className="privacy">Your request goes directly to the Civilon sourcing desk.</small>
@@ -132,7 +146,7 @@ export default function Home() {
             <div className="service-note">
               <span className="section-label">ACCOUNTABLE FROM RFQ TO RECEIVING</span>
               <p>Every request stays with one sourcing desk through availability, condition review, documentation and delivery.</p>
-              <a href="#rfq">Send your requirement <b>→</b></a>
+              <a href="#rfq">Start a part search <b>→</b></a>
             </div>
           </div>
           <div className="service-grid">
@@ -142,7 +156,7 @@ export default function Home() {
                 <div className="card-icon" aria-hidden="true">✦</div>
                 <h3>{service.title}</h3>
                 <p>{service.body}</p>
-                <a href="#rfq">Start a request <span>→</span></a>
+                <a href="#rfq">Start a part search <span>→</span></a>
               </article>
             ))}
           </div>
@@ -152,7 +166,12 @@ export default function Home() {
       <section className="section quality" id="quality">
         <div className="shell quality-layout">
           <div className="quality-visual">
-            <img src="/quality-inspection.webp" alt="Aviation quality inspector measuring a metallic aircraft component" />
+            {/* TODO(production): Replace quality-inspection.webp with an approved authentic 3:2 aviation MRO documentation photo. */}
+            <picture>
+              <source srcSet="/quality-inspection.avif" type="image/avif" />
+              <source srcSet="/quality-inspection.webp" type="image/webp" />
+              <img src="/quality-inspection.jpg" width="1536" height="1024" alt="Aviation quality inspector measuring a metallic aircraft component" />
+            </picture>
             <div className="quality-caption"><span>DOCUMENT CONTROL</span><strong>Every unit verified before release</strong></div>
           </div>
           <div className="quality-copy">
@@ -199,7 +218,7 @@ export default function Home() {
           </div>
           <div><strong>Contact</strong><a href="mailto:sales@cvlon.com">sales@cvlon.com</a><a href="tel:+12019036461">+1 201 903 6461</a><span>Englewood Cliffs, NJ</span></div>
           <div><strong>Services</strong><a href="#services">Parts sourcing</a><a href="#services">AOG support</a><a href="#quality">Quality assurance</a></div>
-          <div><strong>Response</strong><a className="footer-quote" href="#rfq">Send a part number →</a><span>Available 24/7 for AOG</span></div>
+          <div><strong>Response</strong><a className="footer-quote" href="#rfq">Start a part search →</a><span>Available 24/7 for AOG</span></div>
         </div>
         <div className="shell footer-bottom"><span>© 2026 Civilon Air. All rights reserved.</span><span>New Jersey · USA · Worldwide</span></div>
       </footer>
