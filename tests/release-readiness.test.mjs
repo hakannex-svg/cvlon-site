@@ -24,9 +24,11 @@ test("canonical host and optional www redirect are fixed to the approved apex or
 });
 
 test("Netlify form contract remains one shared non-sensitive implementation",()=>{
- const form=read("components","RfqForm.tsx"),analytics=read("lib","analytics.ts");
+ const form=read("components","RfqForm.tsx"),staticForm=read("public","netlify-form.html"),analytics=read("lib","analytics.ts");
  assert.match(form,/name="quick-rfq"/);assert.match(form,/data-netlify="true"/);assert.match(form,/name="form-name" value="quick-rfq"/);
  for(const name of ["partNumber","quantity","condition","email","aog","callbackNumber","aircraftLocation","requiredBy","aircraftTypeTail"])assert.match(form,new RegExp(`name="${name}"`));
+ for(const name of ["partNumber","quantity","condition","email","aog","callbackNumber","aircraftLocation","requiredBy","aircraftTypeTail","sourcePage","aircraftBrand","partCategory"])assert.match(staticForm,new RegExp(`name="${name}"`));
+ assert.match(staticForm,/name="quick-rfq"/);assert.match(staticForm,/data-netlify="true"/);
  assert.doesNotMatch(analytics,/partNumber|email|callbackNumber|aircraftLocation|requiredBy|aircraftTypeTail/);
 });
 
