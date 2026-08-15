@@ -13,9 +13,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
   title: "Business Aircraft Parts Sourcing & AOG Coordination | Civilon",
   description: "Source business-aircraft components with condition, documentation and delivery requirements coordinated through one Civilon contact.",
+  alternates: { canonical: "/" },
+  robots: { index: process.env.NEXT_PUBLIC_ALLOW_INDEXING === "true", follow: true },
   openGraph: {
     title: "Civilon | Business Aircraft Parts Sourcing",
     description: "Business-aircraft parts sourcing, AOG coordination and repair-management support.",
+    url: "/",
     images: [{ url: "/og.png", width: 1200, height: 630, alt: "Civilon aircraft parts sourcing and AOG coordination" }],
   },
   twitter: { card: "summary_large_image", images: ["/og.png"] },

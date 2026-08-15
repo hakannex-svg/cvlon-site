@@ -3,7 +3,6 @@ import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 export function AogContactStrip({ sourcePage = "homepage" }: { sourcePage?: string }) {
   return (
     <section className="aog-band" aria-label="Urgent AOG contact">
-      {/* TODO(production): TEMPORARY IMAGE — replace aog-logistics.webp with approved authentic Civilon AOG logistics photography before release. */}
       <div className="aog-overlay" aria-hidden="true" />
       <div className="shell aog-inner">
         <div className="aog-strip-copy">

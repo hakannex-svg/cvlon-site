@@ -1,7 +1,21 @@
+const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+const isProductionBuild = process.env.NODE_ENV === "production";
+
+if (isProductionBuild && !configuredSiteUrl) {
+  throw new Error("NEXT_PUBLIC_SITE_URL is required for production builds.");
+}
+
+if (isProductionBuild && configuredSiteUrl) {
+  const hostname = new URL(configuredSiteUrl).hostname;
+  if (hostname === "localhost" || hostname.endsWith(".netlify.app")) {
+    throw new Error("NEXT_PUBLIC_SITE_URL must be the approved production origin, not localhost or a Netlify preview host.");
+  }
+}
+
 export const siteConfig = {
   name: "Civilon",
   legalName: "Civilon LLC",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+  url: configuredSiteUrl || "http://localhost:3000",
   email: "sales@cvlon.com",
   officePhone: "+1 909 344 4444",
   officeTel: "+19093444444",
