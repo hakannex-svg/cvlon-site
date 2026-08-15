@@ -15,6 +15,7 @@ type RfqFormProps = {
   partCategory?: string;
   idPrefix?: string;
   actionLabel?: string;
+  compactAog?: boolean;
 };
 
 type AogValues = {
@@ -40,6 +41,7 @@ export function RfqForm({
   partCategory = "",
   idPrefix = "",
   actionLabel,
+  compactAog = false,
 }: RfqFormProps) {
   const [isAog, setIsAog] = useState(defaultAog);
   const [aogValues, setAogValues] = useState<AogValues>(emptyAogValues);
@@ -189,9 +191,19 @@ export function RfqForm({
         <span><strong>Aircraft on ground (AOG)</strong><small>Mark for the monitored urgent workflow.</small></span>
       </label>
 
-      {isAog && (
+      {isAog && compactAog && (
+        <div className="aog-compact-route" role="status">
+          <span>URGENT AOG WORKFLOW</span>
+          <strong>Continue with the aircraft and callback details.</strong>
+          <p>The dedicated AOG form keeps this homepage search compact while capturing the operational information our monitored desk needs.</p>
+          <a href="/aog-services#rfq">Continue to the AOG form <b aria-hidden="true">→</b></a>
+        </div>
+      )}
+
+      {isAog && !compactAog && (
         <fieldset className="aog-fields">
           <legend>Urgent AOG details</legend>
+          <div className="aog-field-grid">
           <label htmlFor={fieldId("callback-number")}>
             <FieldLabel htmlFor={fieldId("callback-number")} required>Callback / WhatsApp number</FieldLabel>
             <input
@@ -227,7 +239,6 @@ export function RfqForm({
             />
             {errors.aircraftLocation && <small className="field-error" id={fieldId("aircraft-location-error")}>{errors.aircraftLocation}</small>}
           </label>
-          <div className="field-row">
             <label htmlFor={fieldId("required-by")}>
               <FieldLabel htmlFor={fieldId("required-by")}>Required by</FieldLabel>
               <input id={fieldId("required-by")} type="datetime-local" name="requiredBy" value={aogValues.requiredBy} onChange={(event) => setAogField("requiredBy", event.target.value)} />

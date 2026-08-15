@@ -55,7 +55,7 @@ export default function Home() {
             </div>
           </div>
 
-          <RfqForm sourcePage="homepage" />
+          <RfqForm sourcePage="homepage" compactAog />
         </div>
         <div className="hero-ticker">
           <div className="shell ticker-inner">
