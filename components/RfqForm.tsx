@@ -13,6 +13,7 @@ type RfqFormProps = {
   aircraftBrand?: string;
   partCategory?: string;
   idPrefix?: string;
+  actionLabel?: string;
 };
 
 type AogValues = {
@@ -37,6 +38,7 @@ export function RfqForm({
   aircraftBrand = "",
   partCategory = "",
   idPrefix = "",
+  actionLabel,
 }: RfqFormProps) {
   const [isAog, setIsAog] = useState(defaultAog);
   const [aogValues, setAogValues] = useState<AogValues>(emptyAogValues);
@@ -116,7 +118,7 @@ export function RfqForm({
       <input type="hidden" name="sourcePage" value={sourcePage} />
       <input type="hidden" name="aircraftBrand" value={aircraftBrand} />
       <input type="hidden" name="partCategory" value={partCategory} />
-      <div className="form-kicker"><span>RFQ</span> START A PART SEARCH</div>
+      <div className="form-kicker"><span>RFQ</span> {actionLabel ?? (({"/aog-services":"Start an AOG request","/repair-management":"Start a repair request","/quality-assurance":"Start a documentation request","/contact-us":"Send an RFQ"} as Record<string,string>)[sourcePage] || "Start a part search")}</div>
       <h2>What do you need?</h2>
       <p>Send the basics. Our sourcing desk will follow up directly.</p>
 

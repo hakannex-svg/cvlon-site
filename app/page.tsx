@@ -32,7 +32,7 @@ const platforms = [
 export default function Home() {
   return (
     <main>
-      <section className="hero" id="top">
+      <section className="hero" id="top" data-mobile-aog-suppress>
         <div className="hero-photo" aria-hidden="true" />
         <div className="hero-shade" aria-hidden="true" />
         <div className="hero-grid" aria-hidden="true" />
@@ -59,8 +59,7 @@ export default function Home() {
         </div>
         <div className="hero-ticker">
           <div className="shell ticker-inner">
-            <span>FAA 8130-3</span><i />
-            <span>EASA FORM 1</span><i />
+            <span>FAA 8130-3 / EASA Form 1 where applicable</span><i />
             <span>TRACE-TO-SOURCE REVIEW</span><i />
             <span>CONDITIONAL AVAILABILITY</span><i />
             <span>APPROVED & VETTED SUPPLIERS</span>

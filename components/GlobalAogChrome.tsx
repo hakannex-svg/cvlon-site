@@ -1,3 +1,4 @@
 "use client";
-import { useState } from "react"; import { AogContactStrip } from "./AogContactStrip"; import { MobileAogBar } from "./MobileAogBar";
-export function GlobalAogChrome(){const [path]=useState(()=>typeof window === "undefined" ? "/" : window.location.pathname);return <><AogContactStrip sourcePage={path}/><MobileAogBar sourcePage={path}/></>}
+import { useSyncExternalStore } from "react"; import { AogContactStrip } from "./AogContactStrip"; import { MobileAogBar } from "./MobileAogBar";
+const subscribe=()=>()=>{};const getPath=()=>window.location.pathname;const getServerPath=()=>"/";
+export function GlobalAogChrome(){const path=useSyncExternalStore(subscribe,getPath,getServerPath),disableMobileBar=path==="/aog-services"||path==="/contact-us";return <><AogContactStrip sourcePage={path}/>{!disableMobileBar&&<MobileAogBar sourcePage={path}/>}</>}
