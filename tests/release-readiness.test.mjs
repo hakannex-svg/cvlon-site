@@ -29,6 +29,7 @@ test("Netlify form contract remains one shared non-sensitive implementation",()=
  for(const name of ["partNumber","quantity","condition","email","aog","callbackNumber","aircraftLocation","requiredBy","aircraftTypeTail"])assert.match(form,new RegExp(`name="${name}"`));
  for(const name of ["partNumber","quantity","condition","email","aog","callbackNumber","aircraftLocation","requiredBy","aircraftTypeTail","sourcePage","aircraftBrand","partCategory"])assert.match(staticForm,new RegExp(`name="${name}"`));
  assert.match(staticForm,/name="quick-rfq"/);assert.match(staticForm,/data-netlify="true"/);
+ assert.match(form,/fetch\("\/netlify-form\.html"/);assert.match(staticForm,/action="\/netlify-form\.html"/);
  assert.doesNotMatch(analytics,/partNumber|email|callbackNumber|aircraftLocation|requiredBy|aircraftTypeTail/);
 });
 
