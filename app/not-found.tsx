@@ -1,0 +1,3 @@
+/* eslint-disable @next/next/no-html-link-for-pages -- vinext navigation uses standard anchors. */
+import { pageMetadata } from "@/lib/metadata"; export const metadata=pageMetadata("Page not found","The requested Civilon Air page could not be found.","/404");
+export default function NotFound(){return <main><section className="interior-hero not-found"><div className="shell"><span className="section-label light">ERROR / 404</span><h1>That page is not on our flight plan.</h1><p>Return to the homepage, explore supported aircraft, or start a part search.</p><div className="hero-actions"><a className="button button-primary" href="/">Return home</a><a className="button button-ghost" href="/contact-us#rfq">Start a part search</a></div></div></section></main>}

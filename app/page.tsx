@@ -1,7 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- vinext site uses pre-optimized responsive assets and picture sources. */
-import { AogContactStrip } from "@/components/AogContactStrip";
 import { CallAogAction, WhatsAppAogAction } from "@/components/AogActions";
-import { MobileAogBar } from "@/components/MobileAogBar";
 import { RfqForm } from "@/components/RfqForm";
 
 const services = [
@@ -23,41 +21,17 @@ const services = [
 ];
 
 const platforms = [
-  "Beechcraft",
-  "Cessna Citation",
-  "Bombardier",
-  "Dassault Falcon",
-  "Embraer",
-  "Gulfstream & more",
+  ["Beechcraft", "/aircraft/beechcraft"],
+  ["Cessna Citation", "/aircraft/cessna-citation"],
+  ["Bombardier", "/aircraft/bombardier"],
+  ["Dassault Falcon", "/aircraft/dassault-falcon"],
+  ["Embraer", "/aircraft/embraer"],
+  ["Gulfstream & more", "/aircraft#other-platforms"],
 ];
 
 export default function Home() {
   return (
     <main>
-      <header className="topbar">
-        <div className="shell topbar-inner">
-          <span><i /> 24/7 AOG DESK</span>
-          <a href="tel:+19093444444">+1 909 344 4444</a>
-          <span className="topbar-place">Englewood Cliffs, New Jersey</span>
-          <a className="topbar-mail" href="mailto:sales@cvlon.com">sales@cvlon.com</a>
-        </div>
-      </header>
-
-      <nav className="nav" aria-label="Main navigation">
-        <div className="shell nav-inner">
-          <a className="brand" href="#top" aria-label="Civilon Air home">
-            <img src="/civilon-logo.svg" alt="Civilon Air" />
-          </a>
-          <div className="nav-links">
-            <a href="#services">Services</a>
-            <a href="#platforms">Aircraft</a>
-            <a href="#quality">Quality</a>
-            <a href="#company">Company</a>
-          </div>
-          <a className="nav-cta" href="#rfq">Start a part search <span>↗</span></a>
-        </div>
-      </nav>
-
       <section className="hero" id="top">
         <div className="hero-photo" aria-hidden="true" />
         <div className="hero-shade" aria-hidden="true" />
@@ -119,7 +93,7 @@ export default function Home() {
                 <div className="card-icon" aria-hidden="true">✦</div>
                 <h3>{service.title}</h3>
                 <p>{service.body}</p>
-                <a href="#rfq">Start a part search <span>→</span></a>
+                <a href={service.number === "01" ? "/parts" : service.number === "02" ? "/aog-services" : "/repair-management"}>Learn more <span>→</span></a>
               </article>
             ))}
           </div>
@@ -158,27 +132,11 @@ export default function Home() {
             <p>Deep sourcing coverage across the aircraft your operation depends on.</p>
           </div>
           <div className="platform-list">
-            {platforms.map((platform, index) => <a href="#rfq" key={platform}><span>0{index + 1}</span>{platform}<b>↗</b></a>)}
+            {platforms.map(([platform, href], index) => <a href={href} key={platform}><span>0{index + 1}</span>{platform}<b>↗</b></a>)}
           </div>
         </div>
       </section>
 
-      <AogContactStrip sourcePage="homepage" />
-
-      <MobileAogBar sourcePage="homepage" />
-
-      <footer id="company">
-        <div className="shell footer-grid">
-          <div>
-            <a className="brand brand-footer" href="#top"><img src="/civilon-logo-dark.svg" alt="Civilon Air" /></a>
-            <p>Business-aircraft parts sourcing, repair management and 24/7 AOG coordination from the New York metro area.</p>
-          </div>
-          <div><strong>Contact</strong><a href="mailto:sales@cvlon.com">sales@cvlon.com</a><a href="tel:+12019036461">+1 201 903 6461</a><span>Englewood Cliffs, NJ</span></div>
-          <div><strong>Services</strong><a href="#services">Parts sourcing</a><a href="#services">AOG support</a><a href="#quality">Quality assurance</a></div>
-          <div><strong>Response</strong><a className="footer-quote" href="#rfq">Start a part search →</a><span>Available 24/7 for AOG</span></div>
-        </div>
-        <div className="shell footer-bottom"><span>© 2026 Civilon Air. All rights reserved.</span><span>New Jersey · USA · Worldwide</span></div>
-      </footer>
     </main>
   );
 }
