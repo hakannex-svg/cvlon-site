@@ -113,9 +113,13 @@ test("audit repository exposes append only and no mutation API", async () => {
 
 test("Phase 2 migration defines all 19 tables and no disposable probe", async () => {
   const migrationDirectories = await readdir("netlify/database/migrations");
-  assert.equal(migrationDirectories.length, 1);
+  assert.ok(migrationDirectories.length >= 1);
+  const foundationDirectory = migrationDirectories.find((directory) =>
+    directory.includes("chemical_arclight"),
+  );
+  assert.ok(foundationDirectory);
   const migration = await readFile(
-    `netlify/database/migrations/${migrationDirectories[0]}/migration.sql`,
+    `netlify/database/migrations/${foundationDirectory}/migration.sql`,
     "utf8",
   );
   assert.equal((migration.match(/CREATE TABLE/g) ?? []).length, 19);

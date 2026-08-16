@@ -2,7 +2,11 @@ export type AnalyticsEventName =
   | "aog_call_click"
   | "aog_whatsapp_click"
   | "rfq_submit"
-  | "aog_rfq_submit";
+  | "aog_rfq_submit"
+  | "price_check_started"
+  | "price_check_transaction_completed"
+  | "price_check_contact_completed"
+  | "price_check_submitted";
 
 export type AnalyticsContext = {
   source_page?: string;
