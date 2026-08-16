@@ -13,7 +13,7 @@ Phase 8 lets an authorized staff member request structured fact extraction from 
 - API: Responses API
 - Request persistence flag: `store: false`
 - Schema version: `phase8-v1`
-- Prompt version: `phase8-v1`
+- Prompt version: `phase8-v2`
 - Data-minimization policy version: `phase8-minimum-document-only-v1`
 - Configuration is server-only and branch-scoped to `codex/civilon-price-check-phase-8`.
 - Production has no Phase 8 OpenAI configuration, Price Check remains disabled there, and the production Price Check public schema remains empty.
@@ -36,7 +36,7 @@ The model snapshot was selected because it supports Responses API document/image
 
 The strict, versioned schema supports at most 25 line items. Every material field records a presence state (`PRESENT`, `NOT_FOUND`, `AMBIGUOUS`, or `CONFLICTING`), a normalized proposal when supported, raw wording, and bounded evidence metadata. Evidence has an optional page number, a short span, a source type (`text`, `visual`, `both`, or `unknown`), and an ambiguity flag.
 
-The schema preserves part-number punctuation and dash numbers, represents money as decimal strings, separates exchange price/core/exchange fee/freight, and restricts condition, transaction, and documentation proposals to approved enums. Unknown fields and malformed numeric values fail validation. Missing or ambiguous evidence is not forced into a value.
+The schema preserves part-number punctuation and dash numbers, represents money as decimal strings, separates exchange price/core/exchange fee/freight, and restricts condition, transaction, and documentation proposals to approved enums. Unknown fields and malformed numeric values fail validation. Missing or ambiguous evidence is not forced into a value. Prompt version `phase8-v2` additionally requires line-item freight to be supported by an explicit numeric amount tied to that line; document-level “not included” or “quoted separately” terms are not converted to zero.
 
 ## Prompt-injection boundary
 

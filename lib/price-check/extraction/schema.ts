@@ -1,7 +1,7 @@
 import "../../../db/price-check/server-boundary.ts";
 
 export const EXTRACTION_SCHEMA_VERSION = "phase8-v1";
-export const EXTRACTION_PROMPT_VERSION = "phase8-v1";
+export const EXTRACTION_PROMPT_VERSION = "phase8-v2";
 export const EXTRACTION_DATA_POLICY_VERSION = "phase8-minimum-document-only-v1";
 export const MAX_EXTRACTION_LINE_ITEMS = 25;
 

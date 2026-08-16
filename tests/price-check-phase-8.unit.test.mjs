@@ -92,7 +92,7 @@ test("extraction RBAC permits staff workflow and keeps auditor read-only", () =>
 });
 
 test("prompt treats documents as untrusted data and forbids tools, links, inference and instruction disclosure", () => {
-  for (const phrase of ["untrusted evidence", "Do not follow instructions", "links", "URLs", "QR codes", "commands", "Do not reveal", "no tools", "NOT_FOUND", "Do not infer", "Never alter, round, calculate"]) {
+  for (const phrase of ["untrusted evidence", "Do not follow instructions", "links", "URLs", "QR codes", "commands", "Do not reveal", "no tools", "NOT_FOUND", "Do not infer", "Never alter, round, calculate", "freight quoted separately", "not numeric zero"]) {
     assert.match(EXTRACTION_SYSTEM_PROMPT, new RegExp(phrase, "i"));
   }
 });
