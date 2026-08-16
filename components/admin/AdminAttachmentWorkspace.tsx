@@ -54,8 +54,11 @@ export function AdminAttachmentWorkspace({ priceCheckId, attachments, canDownloa
   }, [activeExtraction]);
   useEffect(() => {
     if (!message && !error) return;
-    window.requestAnimationFrame(() => feedbackRef.current?.focus());
-  }, [message, error]);
+    const frame = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => feedbackRef.current?.focus());
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [message, error, extractionStates]);
   async function reconcile() {
     setBusy(true); setError(""); setMessage("");
     try {

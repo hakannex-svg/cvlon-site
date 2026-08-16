@@ -115,6 +115,7 @@ test("admin attachment workflow exposes accessible queued and processing feedbac
   assert.match(source, /aria-live="polite"/);
   assert.match(source, /extractionStatusRefs\.current\[activeExtraction\.attachmentId\]\?\.focus\(\)/);
   assert.match(source, /feedbackRef\.current\?\.focus\(\)/);
+  assert.match(source, /\[message, error, extractionStates\]/);
   assert.match(review, /feedbackRef\.current\?\.focus\(\)/);
   assert.match(`${source}\n${review}`, /tabIndex=\{-1\}/);
 });
