@@ -17,11 +17,14 @@ export type AdminCapability =
   | "exceptional_transition"
   | "manage_staff"
   | "download_attachment"
-  | "reconcile_attachment";
+  | "reconcile_attachment"
+  | "extract_attachment"
+  | "retry_extraction"
+  | "apply_extraction";
 
 const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
-  ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "download_attachment"],
-  REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "approve_result", "send_result", "download_attachment"],
+  ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "download_attachment", "extract_attachment", "apply_extraction"],
+  REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "approve_result", "send_result", "download_attachment", "extract_attachment", "apply_extraction"],
   ADMIN: [
     "view",
     "self_assign",
@@ -39,6 +42,9 @@ const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
     "manage_staff",
     "download_attachment",
     "reconcile_attachment",
+    "extract_attachment",
+    "retry_extraction",
+    "apply_extraction",
   ],
   AUDITOR: ["view"],
 };

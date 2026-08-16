@@ -6,6 +6,7 @@ import { AdminDetailActions } from "@/components/admin/AdminDetailActions";
 import { AdminComparableWorkspace } from "@/components/admin/AdminComparableWorkspace";
 import { AdminResultWorkspace } from "@/components/admin/AdminResultWorkspace";
 import { AdminAttachmentWorkspace } from "@/components/admin/AdminAttachmentWorkspace";
+import { AdminExtractionReview } from "@/components/admin/AdminExtractionReview";
 import { getPriceCheckAdminAccess } from "@/lib/price-check/admin/auth";
 import { formatAge, formatDateTime, formatMoney, staffDisplayName, statusLabels } from "@/lib/price-check/admin/display";
 import { allowedOperationalStatuses, roleCan } from "@/lib/price-check/admin/policy";
@@ -42,7 +43,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
   }
   if (!detail) notFound();
 
-  const { priceCheck, requester, assignee, documentation, revisions, audit, jobs, admins, attachments } = detail;
+  const { priceCheck, requester, assignee, documentation, revisions, audit, jobs, admins, attachments, extractions } = detail;
   const latestRevision = revisions[0];
   const reviewedSnapshot = latestRevision?.version > 1 ? latestRevision.normalizedSnapshot as Record<string, unknown> : null;
   const revisionDefaults: Record<string, string | boolean | string[] | null> = {
@@ -185,6 +186,32 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             attachments={attachments.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
             canDownload={roleCan(access.user.role, "download_attachment")}
             canReconcile={roleCan(access.user.role, "reconcile_attachment")}
+            canExtract={roleCan(access.user.role, "extract_attachment")}
+            canRetry={roleCan(access.user.role, "retry_extraction")}
+            extractionStates={attachments.map((attachment) => ({
+              attachmentId: attachment.id,
+              jobState: jobs.find((job) => job.jobType === "EXTRACTION" && job.aggregateId === attachment.id)?.state ?? null,
+              extractionStatus: extractions.find((item) => item.attachmentId === attachment.id)?.extraction.processingStatus ?? null,
+            }))}
+          />
+
+          <AdminExtractionReview
+            priceCheckId={priceCheck.id}
+            extractions={extractions.map((item) => ({
+              id: item.extraction.id,
+              attachmentId: item.attachmentId,
+              filename: item.filename,
+              version: item.extraction.version,
+              processingStatus: item.extraction.processingStatus,
+              acceptanceState: item.extraction.acceptanceState,
+              configuredModelId: item.extraction.configuredModelId,
+              schemaVersion: item.extraction.schemaVersion,
+              promptVersion: item.extraction.promptVersion,
+              structuredProposal: item.extraction.structuredProposal,
+              createdAt: item.extraction.createdAt.toISOString(),
+            }))}
+            transaction={revisionDefaults}
+            canApply={roleCan(access.user.role, "apply_extraction")}
           />
 
           <AdminComparableWorkspace
