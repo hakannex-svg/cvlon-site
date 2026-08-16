@@ -3,6 +3,7 @@ import { isBootstrapAdmin } from "@/lib/price-check/admin/identity";
 import {
   exchangeGoogleAuthorizationCode,
   getGoogleOidcConfig,
+  GoogleTokenExchangeError,
   GOOGLE_OIDC_TRANSACTION_COOKIE,
   oidcRedirectOrigin,
   verifyGoogleAuthorizationTransaction,
@@ -95,8 +96,11 @@ export async function GET(request: Request) {
       clearSecureCookie(GOOGLE_OIDC_TRANSACTION_COOKIE),
       secureCookie(ADMIN_SESSION_COOKIE, session.token, ADMIN_SESSION_TTL_SECONDS),
     ]);
-  } catch {
-    console.error("admin_oidc_callback_failed", stage);
+  } catch (error) {
+    const safeCode = error instanceof GoogleTokenExchangeError
+      ? error.safeCode
+      : "unexpected";
+    console.error("admin_oidc_callback_failed", stage, safeCode);
     return failed();
   }
 }

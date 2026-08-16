@@ -12,6 +12,13 @@ const GOOGLE_ISSUERS = ["https://accounts.google.com", "accounts.google.com"];
 const TRANSACTION_ISSUER = "civilon-price-check";
 const TRANSACTION_AUDIENCE = "civilon-google-oidc-callback";
 const TRANSACTION_TTL_SECONDS = 10 * 60;
+const SAFE_TOKEN_EXCHANGE_ERRORS = new Set([
+  "invalid_client",
+  "invalid_grant",
+  "invalid_request",
+  "redirect_uri_mismatch",
+  "unauthorized_client",
+]);
 
 export const GOOGLE_OIDC_TRANSACTION_COOKIE = "__Host-cvlon_oidc_transaction";
 
@@ -21,6 +28,20 @@ export type GoogleOidcConfig = {
   redirectUri: string;
   sessionSecret: string;
 };
+
+export class GoogleTokenExchangeError extends Error {
+  readonly safeCode: string;
+
+  constructor(code: unknown) {
+    const safeCode =
+      typeof code === "string" && SAFE_TOKEN_EXCHANGE_ERRORS.has(code)
+        ? code
+        : "provider_error";
+    super("Google token exchange failed.");
+    this.name = "GoogleTokenExchangeError";
+    this.safeCode = safeCode;
+  }
+}
 
 function requiredEnvironment(name: string) {
   const value = process.env[name]?.trim();
@@ -128,8 +149,8 @@ export async function exchangeGoogleAuthorizationCode(
     cache: "no-store",
     signal: AbortSignal.timeout(10_000),
   });
-  if (!tokenResponse.ok) throw new Error("Google token exchange failed.");
-  const tokenBody = await tokenResponse.json() as { id_token?: unknown };
+  const tokenBody = await tokenResponse.json() as { error?: unknown; id_token?: unknown };
+  if (!tokenResponse.ok) throw new GoogleTokenExchangeError(tokenBody.error);
   if (typeof tokenBody.id_token !== "string") throw new Error("Google ID token missing.");
 
   const { payload } = await jwtVerify(tokenBody.id_token, GOOGLE_JWKS, {

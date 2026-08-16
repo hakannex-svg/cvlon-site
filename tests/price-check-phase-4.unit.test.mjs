@@ -9,6 +9,7 @@ import {
 } from "../lib/price-check/admin/identity.ts";
 import {
   createGoogleAuthorizationRequest,
+  GoogleTokenExchangeError,
   verifyGoogleAuthorizationTransaction,
 } from "../lib/price-check/admin/oidc.ts";
 import {
@@ -41,6 +42,12 @@ const oidcConfig = {
   redirectUri: "https://deploy-preview-4--cvlon.netlify.app/api/admin/auth/google/callback",
   sessionSecret: "synthetic-session-secret-that-is-long-enough-for-testing-only",
 };
+
+test("Google token exchange diagnostics expose only allowlisted error codes", () => {
+  assert.equal(new GoogleTokenExchangeError("invalid_client").safeCode, "invalid_client");
+  assert.equal(new GoogleTokenExchangeError("provider response details").safeCode, "provider_error");
+  assert.equal(new GoogleTokenExchangeError("invalid_client").message, "Google token exchange failed.");
+});
 
 const validRevision = (overrides = {}) => ({
   originalPartNumber: "ABC-123-1",
