@@ -13,11 +13,10 @@ function unavailable(request: Request) {
 }
 
 function cleanResultUrl(request: Request) {
-  const resultUrl = new URL("/price-check/result", request.url);
-  // An explicit empty query prevents hosting-layer redirect handling from
-  // carrying the redemption credential onto the customer result URL.
-  resultUrl.search = "?";
-  return resultUrl;
+  // Netlify preserves the inbound query when a redirect target has no query.
+  // A non-sensitive marker replaces the bearer credential; the result page
+  // removes the marker from browser history immediately after hydration.
+  return new URL("/price-check/result?redeemed=1", request.url);
 }
 
 export async function GET(request: Request) {
