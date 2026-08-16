@@ -209,12 +209,13 @@ test("API and analytics boundaries exclude secrets and transaction data", async 
 });
 
 test("metadata, sitemap, and navigation keep Price Check feature-gated", async () => {
-  const [page, sitemap, siteConfig, header, home] = await Promise.all([
+  const [page, sitemap, siteConfig, header, home, css] = await Promise.all([
     readFile("app/price-check/page.tsx", "utf8"),
     readFile("app/sitemap.ts", "utf8"),
     readFile("lib/site-config.ts", "utf8"),
     readFile("components/SiteHeader.tsx", "utf8"),
     readFile("app/page.tsx", "utf8"),
+    readFile("app/globals.css", "utf8"),
   ]);
   assert.match(page, /isPriceCheckEnabled\(\).*notFound/);
   assert.match(page, /"Aircraft Part Price Check"/);
@@ -224,4 +225,5 @@ test("metadata, sitemap, and navigation keep Price Check feature-gated", async (
   assert.doesNotMatch(siteConfig, /price-check/);
   assert.doesNotMatch(header, /price-check/i);
   assert.doesNotMatch(home, /price-check/i);
+  assert.match(css, /\.price-check-progress li\{color:#52687a\}/);
 });
