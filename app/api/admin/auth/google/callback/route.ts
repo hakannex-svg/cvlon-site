@@ -40,9 +40,14 @@ export async function GET(request: Request) {
     return new Response(null, { status: 503 });
   }
 
-  const failed = () => callbackRedirect(config, "/admin/login?auth=failed", [
+  const failed = (failureStage?: string) => {
+    const previewStage = process.env.PRICE_CHECK_PHASE6_PREVIEW_SEED_ENABLED === "true" && failureStage
+      ? `&stage=${encodeURIComponent(failureStage)}`
+      : "";
+    return callbackRedirect(config, `/admin/login?auth=failed${previewStage}`, [
     clearSecureCookie(GOOGLE_OIDC_TRANSACTION_COOKIE),
-  ]);
+    ]);
+  };
 
   try {
     const url = new URL(request.url);
@@ -97,6 +102,6 @@ export async function GET(request: Request) {
     ]);
   } catch {
     console.error("admin_oidc_callback_failed", stage);
-    return failed();
+    return failed(stage);
   }
 }
