@@ -12,8 +12,18 @@ function enforceApprovedGoogleIdentity(event: IdentityLoginEvent) {
   }
 }
 
+function enforceAtStage(stage: "validate" | "signup" | "login", event: IdentityLoginEvent) {
+  const email = normalizeBootstrapEmail(event.user.email ?? "");
+  console.info("Civilon Identity gate", {
+    stage,
+    provider: event.user.provider ?? "missing",
+    exactEmailAllowed: Boolean(email && isBootstrapAdmin(email)),
+  });
+  return enforceApprovedGoogleIdentity(event);
+}
+
 export default {
-  userValidate: enforceApprovedGoogleIdentity,
-  userSignup: enforceApprovedGoogleIdentity,
-  userLogin: enforceApprovedGoogleIdentity,
+  userValidate(event: IdentityLoginEvent) { return enforceAtStage("validate", event); },
+  userSignup(event: IdentityLoginEvent) { return enforceAtStage("signup", event); },
+  userLogin(event: IdentityLoginEvent) { return enforceAtStage("login", event); },
 };

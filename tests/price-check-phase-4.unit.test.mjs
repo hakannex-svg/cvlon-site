@@ -70,6 +70,8 @@ test("verified staff identity requires confirmed server claims and a stable site
 
 test("the signed Netlify login event gate denies every non-Google, wrong, missing, and domain-only identity", async () => {
   const { default: identityEvents } = await import("../netlify/functions/identity.mts");
+  const originalInfo = console.info;
+  console.info = () => {};
   const run = (provider, email) => {
     let denied = false;
     const event = { user: { provider, email }, deny() { denied = true; } };
@@ -89,6 +91,7 @@ test("the signed Netlify login event gate denies every non-Google, wrong, missin
     assert.equal(run("google", "other@cvlon.com"), true);
     assert.equal(run("google", undefined), true);
   } finally {
+    console.info = originalInfo;
     if (previous === undefined) delete process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS;
     else process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS = previous;
   }
