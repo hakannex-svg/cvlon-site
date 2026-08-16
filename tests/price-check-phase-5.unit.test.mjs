@@ -150,6 +150,6 @@ test("synthetic seed controls are unreachable outside the exact Phase 5 Deploy P
   ]);
   for (const source of [route, queue]) {
     assert.match(source, /CONTEXT\s*===\s*"deploy-preview"/);
-    assert.match(source, /BRANCH\s*===\s*"codex\/civilon-price-check-phase-5"/);
+    assert.match(source, /PRICE_CHECK_PHASE5_PREVIEW_SEED_ENABLED\s*===\s*"true"/);
   }
 });
