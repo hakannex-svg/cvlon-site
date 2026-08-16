@@ -21,6 +21,7 @@ const id = (name = "id") => varchar(name, { length: 26 });
 const utcTimestamp = (name: string) =>
   timestamp(name, { withTimezone: true, mode: "date" });
 const money = (name: string) => numeric(name, { precision: 18, scale: 2 });
+const analysisMoney = (name: string) => numeric(name, { precision: 18, scale: 4 });
 
 export const adminRoleEnum = pgEnum("admin_role", [
   "ANALYST",
@@ -663,9 +664,9 @@ export const priceCheckAnalyses = pgTable(
     normalizedTransactionComponents: jsonb("normalized_transaction_components")
       .$type<Record<string, unknown>>()
       .notNull(),
-    marketLow: money("market_low"),
-    marketMedian: money("market_median"),
-    marketHigh: money("market_high"),
+    marketLow: analysisMoney("market_low"),
+    marketMedian: analysisMoney("market_median"),
+    marketHigh: analysisMoney("market_high"),
     currencyCode: varchar("currency_code", { length: 3 }),
     evidenceCount: integer("evidence_count").notNull().default(0),
     confidence: analysisConfidenceEnum("confidence").notNull(),

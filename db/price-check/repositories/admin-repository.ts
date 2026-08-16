@@ -335,9 +335,10 @@ export async function changePriceCheckStatus(
   input: { priceCheckId: string; to: PriceCheckStatus; actor: AdminActor; action?: string; metadata?: Record<string, unknown> },
 ) {
   return db.transaction(async (tx) => {
-    const [current] = await tx.select({ status: priceChecks.status }).from(priceChecks).where(eq(priceChecks.id, input.priceCheckId)).limit(1);
+    const [current] = await tx.select({ status: priceChecks.status, currentAnalysisId: priceChecks.currentAnalysisId }).from(priceChecks).where(eq(priceChecks.id, input.priceCheckId)).limit(1);
     if (!current) throw new Error("Price Check was not found.");
     assertPriceCheckTransition(current.status, input.to);
+    if (input.to === "analysis_ready" && !current.currentAnalysisId) throw new Error("A persisted analysis version is required before analysis ready.");
     const [updated] = await tx.update(priceChecks)
       .set({ status: input.to, updatedAt: new Date(), closedAt: input.to === "closed" ? new Date() : null })
       .where(and(eq(priceChecks.id, input.priceCheckId), eq(priceChecks.status, current.status)))
@@ -360,6 +361,16 @@ export async function changePriceCheckStatus(
         action: "PRICE_CHECK_STATUS_CHANGED",
         beforeVersionReference: `status:${current.status}`,
         afterVersionReference: `status:${input.to}`,
+      });
+    }
+    if (input.to === "analysis_ready") {
+      await appendAudit(tx, {
+        aggregateType: "price_check",
+        aggregateId: input.priceCheckId,
+        actorId: input.actor.id,
+        action: "ANALYSIS_MARKED_READY",
+        beforeVersionReference: `status:${current.status}`,
+        afterVersionReference: `analysis:${current.currentAnalysisId}`,
       });
     }
     return updated;

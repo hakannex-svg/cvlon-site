@@ -1,0 +1,3 @@
+ALTER TABLE "price_check_analyses" ALTER COLUMN "market_low" SET DATA TYPE numeric(18,4) USING "market_low"::numeric(18,4);--> statement-breakpoint
+ALTER TABLE "price_check_analyses" ALTER COLUMN "market_median" SET DATA TYPE numeric(18,4) USING "market_median"::numeric(18,4);--> statement-breakpoint
+ALTER TABLE "price_check_analyses" ALTER COLUMN "market_high" SET DATA TYPE numeric(18,4) USING "market_high"::numeric(18,4);

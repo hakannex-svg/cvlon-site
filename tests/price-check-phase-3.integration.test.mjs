@@ -75,7 +75,7 @@ test("Phase 3 submission atomically creates the accepted aggregate and retries i
     const { eq, sql } = await import("drizzle-orm");
     const { validatePriceCheckSubmission } = await import("../lib/price-check/validation.ts");
     const { submitPriceCheck } = await import("../lib/price-check/submission-service.ts");
-    assert.equal(applied.length, 4);
+    assert.equal(applied.length, 5);
 
     const validation = validatePriceCheckSubmission(rawSubmission());
     assert.equal(validation.success, true);

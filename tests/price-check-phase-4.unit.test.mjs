@@ -130,11 +130,11 @@ test("RBAC matrix is deny-by-default and preserves auditor read-only access", ()
   assert.ok(allowedOperationalStatuses("ADMIN").includes("spam"));
 });
 
-test("Phase 4 enables the approved submitted-to-needs-information transition without faking analysis", () => {
+test("Phase 5 exposes analysis_ready only through the server-enforced persisted-analysis transition", () => {
   assert.equal(canTransitionPriceCheck("submitted", "needs_information"), true);
   assert.equal(canTransitionPriceCheck("submitted", "ready_for_analysis"), true);
   assert.equal(canTransitionPriceCheck("ready_for_analysis", "analysis_ready"), true);
-  assert.equal(allowedOperationalStatuses("ADMIN").includes("analysis_ready"), false);
+  assert.equal(allowedOperationalStatuses("ADMIN").includes("analysis_ready"), true);
 });
 
 test("reviewed transaction validation is strict, bounded, normalized, and rejects arbitrary fields", () => {
