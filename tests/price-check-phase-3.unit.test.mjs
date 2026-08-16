@@ -226,4 +226,5 @@ test("metadata, sitemap, and navigation keep Price Check feature-gated", async (
   assert.doesNotMatch(header, /price-check/i);
   assert.doesNotMatch(home, /price-check/i);
   assert.match(css, /\.price-check-progress li\{color:#52687a\}/);
+  assert.match(css, /\.pc-aog-notice \.button-primary\{background:#0e56a9;color:#fff\}/);
 });
