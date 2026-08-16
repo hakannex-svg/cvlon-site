@@ -178,7 +178,7 @@ export function AdminComparableWorkspace({
     {canManageRelationships && candidates.length === 0 && history.length === 0 && <section className="admin-preview-seed" aria-label="Synthetic preview evidence"><div><strong>Phase 5 preview evidence</strong><p>Create the approved fictional requests, observations, restrictions, and governed relationship scenarios in this isolated Deploy Preview only.</p></div><button type="button" disabled={busy} onClick={() => run(() => post("/api/admin/phase-5/seed", {}), "Synthetic Phase 5 preview evidence is ready.")}>Seed synthetic preview</button></section>}
 
     <div className="admin-analysis-layout">
-      <section className="admin-panel admin-reviewed-transaction" aria-labelledby="analysis-transaction-title">
+      <section className="admin-panel admin-reviewed-transaction" aria-label="Reviewed transaction analysis input">
         <div className="admin-panel-heading"><div><p className="admin-eyebrow">Analysis input</p><h3 id="analysis-transaction-title">Reviewed transaction</h3></div></div>
         <dl className="admin-definition-grid compact">
           <div><dt>Part number</dt><dd><code>{transaction.originalPartNumber}</code></dd></div><div><dt>Condition</dt><dd>{transaction.conditionCode}</dd></div>
@@ -191,12 +191,12 @@ export function AdminComparableWorkspace({
         </dl>
       </section>
 
-      <aside className="admin-panel admin-analysis-summary" aria-labelledby="analysis-summary-title">
+      <section className="admin-panel admin-analysis-summary" aria-labelledby="analysis-summary-title">
         <div className="admin-panel-heading"><div><p className="admin-eyebrow">Selected evidence</p><h3 id="analysis-summary-title">Analysis summary</h3></div></div>
         <dl><div><dt>Selected</dt><dd>{selected.length || latest?.evidenceCount || 0}</dd></div><div><dt>Currency</dt><dd>{latest?.currencyCode ?? transaction.currencyCode}</dd></div><div><dt>Observed low</dt><dd>{latest?.marketLow ? money(latest.marketLow, latest.currencyCode!) : "—"}</dd></div><div><dt>Observed median</dt><dd>{latest?.marketMedian ? money(latest.marketMedian, latest.currencyCode!) : "—"}</dd></div><div><dt>Observed high</dt><dd>{latest?.marketHigh ? money(latest.marketHigh, latest.currencyCode!) : "—"}</dd></div><div><dt>Submitted</dt><dd>{money(transaction.unitPrice, transaction.currencyCode)}</dd></div><div><dt>Position</dt><dd>{String(persistedPosition ?? "Not calculated").replaceAll("_", " ")}</dd></div><div><dt>Confidence</dt><dd>{latest?.confidence ?? "Not selected"}</dd></div></dl>
         {latest?.marketLow && latest.marketMedian && latest.marketHigh && <div className={`admin-position-indicator ${positionClass}`} aria-label={`Observed range ${latest.marketLow} to ${latest.marketHigh}; median ${latest.marketMedian}; submitted ${transaction.unitPrice} ${transaction.currencyCode}; position ${String(persistedPosition).replaceAll("_", " ")}`}><span>LOW</span><span>MEDIAN</span><span>HIGH</span><i aria-hidden="true" /><small>Submitted price position is also stated textually above.</small></div>}
         <div className="admin-warning-summary"><strong>Warnings</strong>{latest?.factorCodes.length ? <ul>{latest.factorCodes.map((warning) => <li key={warning}>{warning.replaceAll("_", " ")}</li>)}</ul> : <p>No persisted warning set yet.</p>}</div>
-      </aside>
+      </section>
     </div>
 
     <section className="admin-panel admin-candidate-panel" aria-labelledby="candidate-title">
