@@ -1,6 +1,6 @@
 import "../../../db/price-check/server-boundary.ts";
 
-import { GetObjectAttributesCommand } from "@aws-sdk/client-s3";
+import { GetObjectTaggingCommand } from "@aws-sdk/client-s3";
 import type { PriceCheckDb } from "../../../db/price-check/index.ts";
 import { generateOrderedId } from "../../../db/price-check/domain/identifiers.ts";
 import { findClaimablePendingUploads } from "../../../db/price-check/repositories/upload-repository.ts";
@@ -32,14 +32,15 @@ export async function prepareVerifiedAttachments(
   const verified = [];
   for (const handle of unique) {
     const item = byId.get(handle)!;
-    const attributes = await client.send(new GetObjectAttributesCommand({
+    // This exact-key call proves that S3 accepted an object without granting
+    // any pre-scan content-read permission. Actual bytes and size are verified
+    // after GuardDuty applies a clean tag, before staff access is possible.
+    await client.send(new GetObjectTaggingCommand({
       Bucket: config.bucket,
       Key: item.objectKey,
-      ObjectAttributes: ["ObjectSize"],
     }));
-    const byteSize = Number(attributes.ObjectSize ?? -1);
-    if (!Number.isSafeInteger(byteSize)
-      || byteSize !== Number(item.expectedByteSize)) {
+    const byteSize = Number(item.expectedByteSize);
+    if (!Number.isSafeInteger(byteSize) || byteSize < 1) {
       throw new Error("An uploaded document could not be verified. Remove it and upload it again.");
     }
     verified.push({

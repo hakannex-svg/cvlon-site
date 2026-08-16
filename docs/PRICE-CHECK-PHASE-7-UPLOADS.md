@@ -68,10 +68,10 @@ At final submission the server:
 1. verifies the handle count and syntax;
 2. resolves every handle through the same unexpired upload-session hash;
 3. rejects duplicate, forged, cross-session, expired, or previously claimed handles;
-4. performs an exact-key `GetObjectAttributes` existence/size check that cannot return object bytes before a clean tag; the presigned POST policy has already bound the exact key, declared content type, and upload-handle metadata;
+4. performs an exact-key `GetObjectTagging` existence check that cannot return object bytes before a clean tag; the presigned POST policy has already bound the exact key, declared content type, upload-handle metadata, and 10 MB ceiling;
 5. atomically creates the Price Check, claims all handles, and inserts attachment metadata.
 
-The existing non-null attachment-to-Price-Check foreign key is preserved. A failed transaction rolls back requester, Price Check, claim, attachment, revision, and audit writes together.
+The existing non-null attachment-to-Price-Check foreign key is preserved. A failed transaction rolls back requester, Price Check, claim, attachment, revision, and audit writes together. Because S3 authorizes both `HEAD` and `GetObjectAttributes` through object-read permissions, neither is granted before the clean tag. After GuardDuty reports clean, reconciliation reads the object once and verifies the actual byte size, signature/detected MIME, PDF/image safety limits, and digest before any staff download can be issued. A mismatch is rejected and never becomes downloadable.
 
 ## Quarantine, scan and validation
 

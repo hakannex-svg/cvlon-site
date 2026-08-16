@@ -158,8 +158,8 @@ test("infrastructure and application enforce private quarantine without OpenAI",
   const authorizeRoute = fs.readFileSync(new URL("../app/api/price-check/uploads/authorize/route.ts", import.meta.url), "utf8");
   assert.match(authorizeRoute, /document type\|PDF\|JPG\|PNG\|WebP/);
   const binding = fs.readFileSync(new URL("../lib/price-check/uploads/binding.ts", import.meta.url), "utf8");
-  assert.match(binding, /GetObjectAttributesCommand/);
-  assert.doesNotMatch(binding, /HeadObjectCommand|GetObjectCommand/);
+  assert.match(binding, /GetObjectTaggingCommand/);
+  assert.doesNotMatch(binding, /HeadObjectCommand|GetObjectCommand|GetObjectAttributesCommand/);
   const submitRoute = fs.readFileSync(new URL("../app/api/price-check/submit/route.ts", import.meta.url), "utf8");
   assert.match(submitRoute, /PRICE_CHECK_SUBMISSION_FAILED/);
   assert.doesNotMatch(submitRoute, /failure\.message|error\.message/);
