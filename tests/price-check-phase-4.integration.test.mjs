@@ -35,12 +35,12 @@ async function seedRequest(db) {
   });
 }
 
-test("first verified Google login binds an ADMIN, subsequent subject authorization is durable, and rebinding is denied", async () => {
+test("first verified Netlify Identity login binds an ADMIN, subsequent subject authorization is durable, and rebinding is denied", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
     const { sql } = await import("drizzle-orm");
     const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
     assert.equal(applied.length, 3);
-    const identity = { issuer: "netlify-identity:synthetic-site", subject: "google-subject-hakan", email: "hakannex@gmail.com", provider: "google" };
+    const identity = { issuer: "netlify-identity:synthetic-site", subject: "identity-subject-hakan", email: "hakannex@gmail.com", provider: "netlify-identity" };
     const first = await bindOrAuthorizeAdmin(db, identity, true);
     assert.equal(first.status, "bound");
     assert.equal(first.user.role, "ADMIN");
@@ -62,7 +62,7 @@ test("inactive staff is rejected and local role remains authoritative", async ()
   await withDatabase(async ({ db, schema }) => {
     const { eq } = await import("drizzle-orm");
     const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
-    const identity = { issuer: "netlify-identity:synthetic-site", subject: "google-subject-david", email: "david@cvlon.com", provider: "google" };
+    const identity = { issuer: "netlify-identity:synthetic-site", subject: "identity-subject-david", email: "david@cvlon.com", provider: "netlify-identity" };
     const bound = await bindOrAuthorizeAdmin(db, identity, true);
     await db.update(schema.adminUsers).set({ active: false, role: "AUDITOR" }).where(eq(schema.adminUsers.id, bound.user.id));
     const inactive = await bindOrAuthorizeAdmin(db, identity, true);
@@ -74,7 +74,7 @@ test("assignment, revision, normalization, status, and audit are transactional w
   await withDatabase(async ({ db, schema }) => {
     const { eq } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/admin-repository.ts");
-    const identity = { issuer: "netlify-identity:synthetic-site", subject: "google-subject-hakan", email: "hakannex@gmail.com", provider: "google" };
+    const identity = { issuer: "netlify-identity:synthetic-site", subject: "identity-subject-hakan", email: "hakannex@gmail.com", provider: "netlify-identity" };
     const admin = (await repository.bindOrAuthorizeAdmin(db, identity, true)).user;
     const created = await seedRequest(db);
     await repository.assignPriceCheck(db, { priceCheckId: created.priceCheckId, assigneeId: admin.id, actor: admin });
@@ -102,7 +102,7 @@ test("failed assignment and revision attempts leave the aggregate unchanged", as
   await withDatabase(async ({ db, schema }) => {
     const { eq, sql } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/admin-repository.ts");
-    const admin = (await repository.bindOrAuthorizeAdmin(db, { issuer: "netlify-identity:synthetic-site", subject: "subject", email: "david@cvlon.com", provider: "google" }, true)).user;
+    const admin = (await repository.bindOrAuthorizeAdmin(db, { issuer: "netlify-identity:synthetic-site", subject: "subject", email: "david@cvlon.com", provider: "netlify-identity" }, true)).user;
     const created = await seedRequest(db);
     await assert.rejects(repository.assignPriceCheck(db, { priceCheckId: created.priceCheckId, assigneeId: "01AAAAAAAAAAAAAAAAAAAAAAAA", actor: admin }));
     await assert.rejects(repository.createAdminRevision(db, { priceCheckId: "01BBBBBBBBBBBBBBBBBBBBBBBB", actor: admin, transaction: {} }));

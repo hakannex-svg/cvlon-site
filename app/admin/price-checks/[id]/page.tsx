@@ -84,7 +84,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
         </dl>
       </header>
 
-      {priceCheck.aog && <aside className="admin-aog-panel"><div><strong>Active AOG context</strong><p>Price Check administration supports review only; operational dispatch remains with Civilon’s monitored AOG desk.</p><p className="admin-aog-callback">Callback: <a href={requester.phone ? `tel:${requester.normalizedPhone ?? requester.phone}` : AOG_TEL_URL}>{requester.phone ?? "Not provided"}</a></p></div><div><a href={AOG_TEL_URL}>Call AOG desk</a><a href={whatsapp} target="_blank" rel="noreferrer">WhatsApp AOG</a></div></aside>}
+      {priceCheck.aog && <section className="admin-aog-panel" aria-label="AOG contact actions"><div><strong>Active AOG context</strong><p>Price Check administration supports review only; operational dispatch remains with Civilon’s monitored AOG desk.</p><p className="admin-aog-callback">Callback: <a href={requester.phone ? `tel:${requester.normalizedPhone ?? requester.phone}` : AOG_TEL_URL}>{requester.phone ?? "Not provided"}</a></p></div><div><a href={AOG_TEL_URL}>Call AOG desk</a><a href={whatsapp} target="_blank" rel="noreferrer">WhatsApp AOG</a></div></section>}
 
       <div className="admin-detail-grid">
         <div className="admin-detail-main">
@@ -105,10 +105,10 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
 
           <section className="admin-panel" aria-labelledby="audit-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Append-only record</p><h2 id="audit-heading">Audit timeline</h2></div></div><ol className="admin-timeline">{audit.map(event => <li key={event.id}><time>{formatDateTime(event.createdAt)}</time><strong>{event.action.replaceAll("_", " ").replaceAll(".", " ")}</strong><span>{event.afterVersionReference ?? event.beforeVersionReference ?? "Recorded"}</span></li>)}</ol></section>
         </div>
-        <aside className="admin-detail-aside">
+        <section className="admin-detail-aside" aria-label="Administration actions">
           <AdminDetailActions priceCheckId={priceCheck.id} assigneeId={priceCheck.assignedAdminUserId} currentUserId={access.user.id} canAssignAny={roleCan(access.user.role, "assign_any")} canMutate={roleCan(access.user.role, "transition")} admins={admins.map(admin => ({ id: admin.id, label: `${staffDisplayName(admin.displayEmail)} · ${admin.role}` }))} nextStatuses={validStatuses} canRequestInformation={canTransitionPriceCheck(priceCheck.status, "needs_information")} revision={revisionDefaults} />
           <section className="admin-panel admin-processing"><p className="admin-eyebrow">Processing</p><h2>Job visibility</h2>{jobs.length ? <ul>{jobs.map(job => <li key={job.id}><b>{job.jobType}</b><span>{job.state}</span>{job.sanitizedErrorCode && <small>{job.sanitizedErrorCode}</small>}</li>)}</ul> : <p className="admin-muted">No processing jobs are associated with this request.</p>}</section>
-        </aside>
+        </section>
       </div>
     </section>
   </AdminChrome>;

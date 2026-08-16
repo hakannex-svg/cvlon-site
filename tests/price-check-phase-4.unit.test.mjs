@@ -143,7 +143,7 @@ test("information request requires controlled state data and does not claim deli
 });
 
 test("admin source boundary uses server Identity, origin checks, no public analytics, and no public bootstrap variable", async () => {
-  const [auth, login, callback, identityHook, netlify, sitemap, analytics, routes] = await Promise.all([
+  const [auth, login, callback, identityHook, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
     readFile("lib/price-check/admin/auth.ts", "utf8"),
     readFile("components/admin/AdminLogin.tsx", "utf8"),
     readFile("components/admin/AdminAuthCallback.tsx", "utf8"),
@@ -151,6 +151,7 @@ test("admin source boundary uses server Identity, origin checks, no public analy
     readFile("netlify.toml", "utf8"),
     readFile("app/sitemap.ts", "utf8"),
     readFile("lib/analytics.ts", "utf8"),
+    readFile("app/admin/price-checks/[id]/page.tsx", "utf8"),
     Promise.all([
       "assignment", "revision", "information-request", "status",
     ].map(name => readFile(`app/api/admin/price-checks/[id]/${name}/route.ts`, "utf8"))),
@@ -172,6 +173,8 @@ test("admin source boundary uses server Identity, origin checks, no public analy
   assert.match(netlify, /private, no-store/);
   assert.doesNotMatch(sitemap, /admin/);
   assert.doesNotMatch(analytics, /price_check_admin|requester|assignee/);
+  assert.match(detailPage, /<section className="admin-detail-aside" aria-label="Administration actions">/);
+  assert.doesNotMatch(detailPage, /<aside className="admin-detail-aside">/);
   for (const route of routes) {
     assert.match(route, /requireAdminApi/);
     assert.match(route, /verifyAdminMutationOrigin/);

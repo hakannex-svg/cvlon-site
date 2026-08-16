@@ -88,7 +88,11 @@ All remote Phase 4 writes must use the database branch created for the Phase 4 d
 
 ## Security validation
 
-The automated suite covers the signed Google-only login event, exact-email bootstrapping, confirmed server session claims, immutable subject binding, binding conflict, inactive local users, RBAC, unknown-field rejection, revision immutability, deterministic normalization, transactional assignment/revision/status behavior, audit creation, CSRF/origin integration, no public analytics, no public bootstrap variable, feature gating, and production isolation.
+The automated suite covers the signed Netlify Identity lifecycle gate, exact-email bootstrapping, signed subject/email session claims, immutable subject binding, binding conflict, inactive local users, RBAC, unknown-field rejection, revision immutability, deterministic normalization, transactional assignment/revision/status behavior, audit creation, CSRF/origin integration, no public analytics, no public bootstrap variable, feature gating, and production isolation.
+
+Authenticated preview validation bound `hakannex@gmail.com` as an active local `ADMIN`, then exercised queue filtering, protected detail reads, self-assignment, an immutable reviewed revision, valid status transitions, the request-information workflow, and append-only audit history. `david@cvlon.com` remains invited and intentionally unbound until David completes the first authorized login. No placeholder identity was created for David.
+
+Netlify Identity's signed invited-user claims do not expose the current Google OAuth method: the preview returned `provider=email` and omitted `confirmedAt` after the visible Google flow. The application therefore does not claim cryptographic Google-provider enforcement at the server boundary. Google is the only configured external provider and the only Civilon login action, while the enforceable authorization boundary is signed Netlify Identity membership, the exact two-address lifecycle gate, and immutable local issuer/subject binding. This platform limitation must be reconsidered before production administration is enabled if provider-level Google proof is mandatory.
 
 Remote testing uses synthetic Price Check data only. Direct unauthenticated API calls must return 401, unauthorized identities must receive a generic denied state, and authenticated ADMIN users may review all Price Checks.
 
