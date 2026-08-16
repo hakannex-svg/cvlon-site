@@ -1,6 +1,6 @@
 # Civilon Price Check Phase 8 — governed document extraction
 
-Status: preview-only implementation. Phase 8 is not approved for production customer documents. Public privacy language remains pending final legal review.
+Status: preview-only implementation. Phase 8 is not approved for production customer documents. The full privacy policy is **PENDING COUNSEL REVIEW BEFORE PUBLIC PRODUCTION LAUNCH**.
 
 ## Purpose and authority boundary
 
@@ -73,6 +73,8 @@ Phase 8 follows the current official API documentation:
 - [Data controls](https://developers.openai.com/api/docs/guides/your-data)
 
 The implementation uses `store: false` and standard API data controls. It does not claim that the provider retains nothing, and it does not claim Zero Data Retention, Modified Abuse Monitoring, or organization-level enhanced controls because none was separately verified for this project. API data is treated under the current documented default training and abuse-monitoring rules. Production customer-document processing remains blocked on final privacy/legal disclosure and approval.
+
+The planned full privacy notice must state that uploads are optional; uploaded documents may be processed by third-party automated-processing service providers to identify transaction details; automated extraction does not determine Civilon's pricing analysis; and Civilon staff review extracted information before applying it. Requester identity is not separately added to the model request unless needed. Standard provider retention and data-control rules may apply, Civilon does not claim Zero Data Retention, and document deletion and retention periods remain governed by Civilon policy. These statements must not overstate privacy guarantees.
 
 ## Synthetic evaluation
 

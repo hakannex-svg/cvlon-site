@@ -113,3 +113,15 @@ test("admin attachment workflow exposes accessible queued and processing feedbac
   assert.match(source, /state:\s*"running"/);
   assert.match(source, /aria-live="polite"/);
 });
+
+test("public upload disclosure uses the owner-approved privacy wording", () => {
+  const form = fs.readFileSync(new URL("../components/PriceCheckForm.tsx", import.meta.url), "utf8");
+  const documentation = fs.readFileSync(new URL("../docs/PRICE-CHECK-PHASE-8-AI-EXTRACTION.md", import.meta.url), "utf8");
+  assert.match(form, /Uploaded documents may be processed using automated tools to help Civilon identify transaction details\./);
+  assert.match(form, /Extracted information is reviewed by Civilon before it is used in your Price Check\./);
+  assert.match(form, /please upload only information necessary for the review\./);
+  assert.doesNotMatch(form, /Zero Data Retention|fully redacted|completely anonymous|AI determines/i);
+  assert.match(documentation, /PENDING COUNSEL REVIEW BEFORE PUBLIC PRODUCTION LAUNCH/);
+  assert.match(documentation, /third-party automated-processing service providers/);
+  assert.match(documentation, /does not determine Civilon's pricing analysis/);
+});
