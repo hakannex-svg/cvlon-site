@@ -99,16 +99,29 @@ The success state tells the requester to retain the public reference and makes c
 
 ## Preview database and production isolation proof
 
-To be completed from the Draft PR Deploy Preview validation:
+- Draft PR: `#3`, targeting only `codex/civilon-price-check`
+- Validated implementation SHA: `6b57e868065a2b3582561656e7b9dc5754aa8e69`
+- Deploy Preview: `https://deploy-preview-3--cvlon.netlify.app`
+- Validation deploy ID: `6a812b63ccdba01499439a75`
+- Isolated database branch: `codex/civilon-price-check-phase-3`
+- Migration result: two migrations applied; 19 public tables; zero initial rows
+- Production database before remote writes: zero public tables (`No items in database`)
 
-- Phase 3 PR and SHA: pending
-- Deploy Preview URL and deploy ID: pending
-- Isolated preview database branch: pending
-- Preview migration result/table count: pending
-- Synthetic cases and accepted references: pending
-- Synthetic row cleanup decision/result: pending
+Five accepted synthetic cases proved the remote transaction path:
 
-The production database must remain at zero public tables before and after remote tests. The Phase 3 branch must never be merged or deployed to production during owner review.
+| Case | Transaction | Accepted reference |
+| --- | --- | --- |
+| A | routine outright / SV / USD | `PC-9T8FGSMCNS` |
+| B | exchange / OH / refundable core | `PC-AY022BEXBR` |
+| C | active AOG with required phone | `PC-1TJPG8SDS1` |
+| D | already purchased / NS / EUR | `PC-3W8ECAE0SX` |
+| E | transaction and condition not sure / CAD | `PC-2S18W4TW5A` |
+
+The preview database showed exactly five price checks, requesters, revisions, and audit events, plus the four selected document requirements. A read-only verification query confirmed the expected transaction type, condition, currency, separated refundable core, and AOG state for all five cases. The sixth attempt returned `429` with `Retry-After`, proving the configured rolling limit on the live preview instance.
+
+The synthetic rows remain in the isolated PR database for owner review. The dashboard SQL console correctly refused a modification statement in read-only mode; no cleanup mutation occurred. They should be removed by deleting the isolated Phase 3 preview database branch and its deploys after the PR review lifecycle ends. They must never be copied or promoted to production.
+
+The production database must remain at zero public tables after remote tests. The Phase 3 branch must never be merged or deployed to production during owner review.
 
 ## Deferred capabilities
 
