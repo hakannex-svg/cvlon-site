@@ -4,6 +4,7 @@ import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { PriceCheckDb } from "../index.ts";
 import {
   adminUsers,
+  attachmentExtractions,
   attachments,
   auditEvents,
   priceCheckDocumentRequirements,
@@ -235,15 +236,21 @@ export async function getAdminPriceCheckDetail(db: PriceCheckDb, priceCheckId: s
     .limit(1);
   if (!record) return null;
 
-  const [documentation, revisions, audit, jobs, admins, uploadedDocuments] = await Promise.all([
+  const [documentation, revisions, audit, jobs, admins, uploadedDocuments, extractions] = await Promise.all([
     db.select().from(priceCheckDocumentRequirements).where(eq(priceCheckDocumentRequirements.priceCheckId, priceCheckId)).orderBy(asc(priceCheckDocumentRequirements.requirementCode)),
     db.select().from(priceCheckRevisions).where(eq(priceCheckRevisions.priceCheckId, priceCheckId)).orderBy(desc(priceCheckRevisions.version)),
     db.select().from(auditEvents).where(and(eq(auditEvents.aggregateType, "price_check"), eq(auditEvents.aggregateId, priceCheckId))).orderBy(asc(auditEvents.createdAt)),
-    db.select().from(processingJobs).where(eq(processingJobs.aggregateId, priceCheckId)).orderBy(desc(processingJobs.createdAt)),
+    db.select().from(processingJobs).where(or(
+      eq(processingJobs.aggregateId, priceCheckId),
+      sql`${processingJobs.aggregateId} in (select id from attachments where price_check_id = ${priceCheckId})`,
+    )).orderBy(desc(processingJobs.createdAt)),
     listActiveAdmins(db),
     db.select().from(attachments).where(and(eq(attachments.priceCheckId, priceCheckId), sql`${attachments.deletedAt} is null`)).orderBy(asc(attachments.createdAt)),
+    db.select({ extraction: attachmentExtractions, attachmentId: attachments.id, filename: attachments.displayFilename })
+      .from(attachmentExtractions).innerJoin(attachments, eq(attachmentExtractions.attachmentId, attachments.id))
+      .where(eq(attachments.priceCheckId, priceCheckId)).orderBy(desc(attachmentExtractions.createdAt)),
   ]);
-  return { ...record, documentation, revisions, audit, jobs, admins, attachments: uploadedDocuments };
+  return { ...record, documentation, revisions, audit, jobs, admins, attachments: uploadedDocuments, extractions };
 }
 
 export async function assignPriceCheck(

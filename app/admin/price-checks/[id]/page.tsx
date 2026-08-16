@@ -6,6 +6,7 @@ import { AdminDetailActions } from "@/components/admin/AdminDetailActions";
 import { AdminComparableWorkspace } from "@/components/admin/AdminComparableWorkspace";
 import { AdminResultWorkspace } from "@/components/admin/AdminResultWorkspace";
 import { AdminAttachmentWorkspace } from "@/components/admin/AdminAttachmentWorkspace";
+import { AdminExtractionReview } from "@/components/admin/AdminExtractionReview";
 import { getPriceCheckAdminAccess } from "@/lib/price-check/admin/auth";
 import { formatAge, formatDateTime, formatMoney, staffDisplayName, statusLabels } from "@/lib/price-check/admin/display";
 import { allowedOperationalStatuses, roleCan } from "@/lib/price-check/admin/policy";
@@ -42,7 +43,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
   }
   if (!detail) notFound();
 
-  const { priceCheck, requester, assignee, documentation, revisions, audit, jobs, admins, attachments } = detail;
+  const { priceCheck, requester, assignee, documentation, revisions, audit, jobs, admins, attachments, extractions } = detail;
   const latestRevision = revisions[0];
   const reviewedSnapshot = latestRevision?.version > 1 ? latestRevision.normalizedSnapshot as Record<string, unknown> : null;
   const revisionDefaults: Record<string, string | boolean | string[] | null> = {
@@ -176,7 +177,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             <div><dt>Part number</dt><dd><code>{priceCheck.originalPartNumber}</code></dd></div><div><dt>Normalized part</dt><dd><code>{priceCheck.normalizedPartNumber}</code></dd></div><div><dt>Description</dt><dd>{value(priceCheck.description)}</dd></div><div><dt>Quantity</dt><dd>{priceCheck.quantity}</dd></div><div><dt>Quote status</dt><dd>{value(priceCheck.quoteOrPurchased)}</dd></div><div><dt>Transaction</dt><dd>{value(priceCheck.transactionType)}</dd></div><div><dt>Condition</dt><dd>{priceCheck.conditionCode}</dd></div><div><dt>Unit price</dt><dd>{formatMoney(priceCheck.unitPrice, priceCheck.currencyCode)}</dd></div><div><dt>Core charge</dt><dd>{priceCheck.coreCharge ? formatMoney(priceCheck.coreCharge, priceCheck.currencyCode) : "—"}</dd></div><div><dt>Core disposition</dt><dd>{value(priceCheck.coreDisposition)}</dd></div><div><dt>Exchange fee</dt><dd>{priceCheck.exchangeFee ? formatMoney(priceCheck.exchangeFee, priceCheck.currencyCode) : "—"}</dd></div><div><dt>Freight</dt><dd>{priceCheck.freight ? formatMoney(priceCheck.freight, priceCheck.currencyCode) : "—"}</dd></div><div><dt>Transaction date</dt><dd>{value(priceCheck.transactionDate)}</dd></div><div><dt>Aircraft / model</dt><dd>{value(priceCheck.aircraftModel)}</dd></div><div><dt>AOG</dt><dd>{value(priceCheck.aog)}</dd></div><div><dt>Warranty</dt><dd>{priceCheck.warrantyValue ? `${priceCheck.warrantyValue} ${value(priceCheck.warrantyUnit)}` : value(priceCheck.warrantyText)}</dd></div><div className="wide"><dt>Notes</dt><dd>{value(priceCheck.notes)}</dd></div>
           </dl></section>
 
-          <section className="admin-panel" aria-labelledby="reviewed-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Versioned review</p><h2 id="reviewed-heading">Reviewed transaction</h2></div>{reviewedSnapshot && <span>Revision {latestRevision.version}</span>}</div>{reviewedSnapshot ? <><dl className="admin-definition-grid">{Object.entries(reviewedSnapshot).filter(([key]) => key !== "documentationCodes").map(([key, item]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value(item)}</dd></div>)}</dl><p className="admin-revision-reason"><b>Change reason:</b> {latestRevision.changeReason}</p></> : <div className="admin-empty-state"><strong>No staff correction has been created.</strong><p>Analysis will use the original submitted transaction until an authorized revision is saved.</p></div>}</section>
+          <section className="admin-panel" aria-labelledby="reviewed-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Versioned review</p><h2 id="reviewed-heading" tabIndex={-1}>Reviewed transaction</h2></div>{reviewedSnapshot && <span>Revision {latestRevision.version}</span>}</div>{reviewedSnapshot ? <><dl className="admin-definition-grid">{Object.entries(reviewedSnapshot).filter(([key]) => key !== "documentationCodes").map(([key, item]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value(item)}</dd></div>)}</dl><p className="admin-revision-reason"><b>Change reason:</b> {latestRevision.changeReason}</p></> : <div className="admin-empty-state"><strong>No staff correction has been created.</strong><p>Analysis will use the original submitted transaction until an authorized revision is saved.</p></div>}</section>
 
           <section className="admin-panel" aria-labelledby="docs-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Requirements</p><h2 id="docs-heading">Documentation requirements</h2></div></div>{documentation.length ? <ul className="admin-chip-list">{documentation.map(item => <li key={item.requirementCode}>{item.requirementCode.replaceAll("_", " ")}{item.otherText ? ` — ${item.otherText}` : ""}</li>)}</ul> : <p className="admin-muted">No documentation requirements were selected.</p>}</section>
 
@@ -185,6 +186,32 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             attachments={attachments.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
             canDownload={roleCan(access.user.role, "download_attachment")}
             canReconcile={roleCan(access.user.role, "reconcile_attachment")}
+            canExtract={roleCan(access.user.role, "extract_attachment")}
+            canRetry={roleCan(access.user.role, "retry_extraction")}
+            extractionStates={attachments.map((attachment) => ({
+              attachmentId: attachment.id,
+              jobState: jobs.find((job) => job.jobType === "EXTRACTION" && job.aggregateId === attachment.id)?.state ?? null,
+              extractionStatus: extractions.find((item) => item.attachmentId === attachment.id)?.extraction.processingStatus ?? null,
+            }))}
+          />
+
+          <AdminExtractionReview
+            priceCheckId={priceCheck.id}
+            extractions={extractions.map((item) => ({
+              id: item.extraction.id,
+              attachmentId: item.attachmentId,
+              filename: item.filename,
+              version: item.extraction.version,
+              processingStatus: item.extraction.processingStatus,
+              acceptanceState: item.extraction.acceptanceState,
+              configuredModelId: item.extraction.configuredModelId,
+              schemaVersion: item.extraction.schemaVersion,
+              promptVersion: item.extraction.promptVersion,
+              structuredProposal: item.extraction.structuredProposal,
+              createdAt: item.extraction.createdAt.toISOString(),
+            }))}
+            transaction={revisionDefaults}
+            canApply={roleCan(access.user.role, "apply_extraction")}
           />
 
           <AdminComparableWorkspace
