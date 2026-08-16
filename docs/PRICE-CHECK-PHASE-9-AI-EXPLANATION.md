@@ -92,7 +92,15 @@ The A-O synthetic set covers within, above, below, limited evidence, single obse
 
 Required release results are zero classification contradictions, invented monetary claims, supplier-cost/margin claims, unsupported factor claims, and prohibited appraisal/fair-value claims. Model candidates must be assessed with the same prompt/schema and scored for schema validity, classification agreement, factor fidelity, limitation fidelity, unsupported claims, prohibited language, invented numbers, concision, human usefulness, latency, and token use. Accuracy and control outrank small cost differences.
 
-The selected model ID, live preview evaluation summary, and measured latency/token envelope must be recorded after the isolated Deploy Preview evaluation. No unverified dollar-cost claim is made.
+The isolated live evaluation on 2026-08-16 used the same A-O set, prompt, strict schema, low reasoning effort, and server validator for every candidate:
+
+| Model | Passed | Classification contradictions | Factor failures | Limitation failures | Invented-number failures | Prohibited-language failures | Mean latency | P95 latency | Total tokens |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `gpt-5.6-terra` | 15/15 | 0 | 0 | 0 | 0 | 0 | 2,262 ms | 3,207 ms | 13,274 |
+| `gpt-5.6-luna` | 15/15 | 0 | 0 | 0 | 0 | 0 | 2,634 ms | 3,462 ms | 13,752 |
+| `gpt-5.4-mini-2026-03-17` | 15/15 | 0 | 0 | 0 | 0 | 0 | 2,087 ms | 2,856 ms | 14,038 |
+
+All policy gates were equal, so the documented tie-break selected the pinned `gpt-5.4-mini-2026-03-17` snapshot on measured latency. `OPENAI_EXTRACTION_MODEL` remains unchanged and independently configured. No unverified dollar-cost claim is made.
 
 ## Privacy disclosure direction
 

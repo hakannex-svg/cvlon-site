@@ -115,7 +115,7 @@ test("human editor remains the primary fallback and AI output is never automatic
 });
 
 test("prompt and source enforce the no-authority, no-document, no-tool boundary", () => {
-  for (const phrase of ["final deterministic facts", "Never invent", "Do not state or infer any price", "no tools", "INSUFFICIENT_DATA", "review_required must be true"]) assert.match(EXPLANATION_SYSTEM_PROMPT, new RegExp(phrase, "i"));
+  for (const phrase of ["final deterministic facts", "within the observed comparable range", "every supplied factor_code exactly once", "Use no digits", "Never invent", "Do not state or infer any price", "no tools", "INSUFFICIENT_DATA", "review_required must be true"]) assert.match(EXPLANATION_SYSTEM_PROMPT, new RegExp(phrase, "i"));
   const files = ["../lib/price-check/explanation/openai.ts", "../lib/price-check/explanation/context.ts", "../lib/price-check/explanation/service.ts"].map((path) => fs.readFileSync(new URL(path, import.meta.url), "utf8")).join("\n");
   assert.doesNotMatch(files, /input_file|input_image|vector[_ -]?store|file[_ -]?search|web[_ -]?search|code[_ -]?interpreter|NEXT_PUBLIC_OPENAI/);
   assert.match(files, /store:\s*false/);
