@@ -226,10 +226,10 @@ export const requesters = pgTable(
     companyName: varchar("company_name", { length: 200 }).notNull(),
     businessEmail: varchar("business_email", { length: 320 }).notNull(),
     normalizedEmail: varchar("normalized_email", { length: 320 }).notNull(),
-    phone: varchar("phone", { length: 80 }).notNull(),
-    normalizedPhone: varchar("normalized_phone", { length: 32 }).notNull(),
+    phone: varchar("phone", { length: 80 }),
+    normalizedPhone: varchar("normalized_phone", { length: 32 }),
     role: varchar("role", { length: 120 }),
-    country: varchar("country", { length: 2 }).notNull(),
+    country: varchar("country", { length: 2 }),
     serviceProcessingAcknowledgedAt: utcTimestamp(
       "service_processing_acknowledged_at",
     ).notNull(),

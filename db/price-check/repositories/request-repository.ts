@@ -43,9 +43,9 @@ export type CreatePriceCheckRequestInput = {
     lastName: string;
     companyName: string;
     businessEmail: string;
-    phone: string;
+    phone?: string | null;
     role?: string | null;
-    country: string;
+    country?: string | null;
     serviceProcessingAcknowledgedAt: Date;
     marketingConsentAt?: Date | null;
   };
@@ -89,6 +89,7 @@ export type CreatePriceCheckRequestInput = {
   };
   idempotencyHash: string;
   correlationId: string;
+  publicReference?: string;
   submittedAt?: Date;
 };
 
@@ -103,7 +104,7 @@ export async function createPriceCheckRequest(
   const requesterId = generateOrderedId();
   const priceCheckId = generateOrderedId();
   const revisionId = generateOrderedId();
-  const publicReference = generatePublicReference();
+  const publicReference = input.publicReference ?? generatePublicReference();
   const submittedAt = input.submittedAt ?? new Date();
   const attribution = sanitizeAttribution(input.attribution);
   const normalizedPartNumber = normalizePartNumber(
@@ -118,10 +119,12 @@ export async function createPriceCheckRequest(
       companyName: input.requester.companyName.trim(),
       businessEmail: input.requester.businessEmail.trim(),
       normalizedEmail: normalizeEmail(input.requester.businessEmail),
-      phone: input.requester.phone.trim(),
-      normalizedPhone: normalizePhone(input.requester.phone),
+      phone: input.requester.phone?.trim() || null,
+      normalizedPhone: input.requester.phone
+        ? normalizePhone(input.requester.phone)
+        : null,
       role: input.requester.role?.trim() || null,
-      country: input.requester.country.trim().toUpperCase(),
+      country: input.requester.country?.trim().toUpperCase() || null,
       serviceProcessingAcknowledgedAt:
         input.requester.serviceProcessingAcknowledgedAt,
       marketingConsentAt: input.requester.marketingConsentAt ?? null,
@@ -205,6 +208,18 @@ export async function createPriceCheckRequest(
 
     return { priceCheckId, requesterId, revisionId, publicReference };
   });
+}
+
+export async function findPriceCheckByIdempotencyHash(
+  db: PriceCheckDb,
+  idempotencyHash: string,
+) {
+  const [existing] = await db
+    .select({ publicReference: priceChecks.publicReference })
+    .from(priceChecks)
+    .where(eq(priceChecks.idempotencyHash, idempotencyHash))
+    .limit(1);
+  return existing ?? null;
 }
 
 export async function transitionPriceCheckStatus(
