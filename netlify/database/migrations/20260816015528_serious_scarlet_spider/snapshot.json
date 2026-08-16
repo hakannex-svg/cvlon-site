@@ -1,0 +1,90 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "b1a9f63a-d5fd-474d-9df1-99f6d4efecab",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "civilon_db_probe",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "civilon_db_probe"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "probe_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "civilon_db_probe"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "probe_value",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "civilon_db_probe"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "civilon_db_probe"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "civilon_db_probe_pkey",
+      "schema": "public",
+      "table": "civilon_db_probe",
+      "entityType": "pks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "probe_key"
+      ],
+      "nullsNotDistinct": false,
+      "name": "civilon_db_probe_probe_key_key",
+      "schema": "public",
+      "table": "civilon_db_probe",
+      "entityType": "uniques"
+    }
+  ],
+  "renames": []
+}
