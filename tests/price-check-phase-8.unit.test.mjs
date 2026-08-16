@@ -106,3 +106,10 @@ test("implementation has no Files API, customer extraction UI or browser secret"
   assert.doesNotMatch(files, /NEXT_PUBLIC_OPENAI_API_KEY/);
   assert.match(files, /store:\s*false/);
 });
+
+test("admin attachment workflow exposes accessible queued and processing feedback", () => {
+  const source = fs.readFileSync(new URL("../components/admin/AdminAttachmentWorkspace.tsx", import.meta.url), "utf8");
+  assert.match(source, /state:\s*"pending"/);
+  assert.match(source, /state:\s*"running"/);
+  assert.match(source, /aria-live="polite"/);
+});
