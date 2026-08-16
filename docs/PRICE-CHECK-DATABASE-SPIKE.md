@@ -93,9 +93,9 @@ Using Netlify's supported `@netlify/database-dev` Postgres-compatible emulator a
 - unavailable database simulation: safe failure
 - malformed probe request: rejected
 - unauthorized probe request: rejected
-- production-context probe request: 404
+- production-host probe request: 404
 
-The Netlify CLI also loaded and bundled the TypeScript Function successfully. The endpoint is `/api/__spike/price-check-db`, accepts only one fixed synthetic operation, requires a secret bearer token, and returns 404 unless `CONTEXT=deploy-preview`.
+The Netlify CLI also loaded and bundled the TypeScript Function successfully. The endpoint is `/api/__spike/price-check-db`, accepts only one fixed synthetic operation, requires a secret bearer token, and returns 404 outside the `deploy-preview-N--cvlon.netlify.app` host pattern. Netlify documents `CONTEXT` as build-only metadata, so the deployed Function uses the runtime-available `SITE_NAME` plus the request hostname instead.
 
 ## Job/outbox proof
 
@@ -141,11 +141,26 @@ After pinning the compatible fixed `ws@8.21.0` transitive patch:
 
 ## Deploy Preview isolation result
 
-Draft GitHub PR #1 targets `codex/civilon-price-check` from `codex/civilon-price-check-db-spike` and must not be merged.
+Draft GitHub [PR #1](https://github.com/hakannex-svg/cvlon-site/pull/1) targets `codex/civilon-price-check` from `codex/civilon-price-check-db-spike` and must not be merged.
 
 The project initially allowed Deploy Previews only for PRs targeting `main` or the configured `codex/civilon-release-readiness` branch. The approved planning branch was added to the existing individual branch-deploy allowlist so PR #1 can create a genuine Deploy Preview; the release-readiness entry remains unchanged.
 
-Remote preview migration, branch identity, synthetic runtime write, authenticated database verification, and production-isolation findings will be recorded after Netlify completes the PR Deploy Preview.
+Remote proof:
+
+- Deploy Preview URL: `https://deploy-preview-1--cvlon.netlify.app`
+- verified deploy ID: `6a811c2498a037000805d571`
+- verified Git SHA: `ed6611b3bb06867e56e156316039db308dbaad31`
+- build context: Deploy Preview for GitHub PR #1
+- database branch: `codex/civilon-price-check-db-spike`, explicitly shown by Netlify as shared between all deploys for PR #1
+- automatic migration: one migration applied on the first PR preview; the corrected follow-up preview reused the migrated PR branch successfully
+- remote native-adapter probe: HTTP 200; insert, read, update, duplicate-constraint rejection, rollback, and idempotent job checks all passed
+- authenticated preview data view: exactly two synthetic rows, `civilon-price-check-spike=updated` and `civilon-price-check-spike-job=completed`
+- authenticated production data view: `0 tables in public schema`; no probe table or synthetic row
+- production site probe path: HTTP 404
+
+The first authenticated remote request returned 404 before touching the database because the initial guard expected the build-only `CONTEXT` variable at Function runtime. The spike guard was corrected to use the runtime-supported `SITE_NAME` plus the PR preview hostname, and the regression test now proves that the production hostname remains 404. No production or application code was involved.
+
+The frozen release branch deploy remains at `4bfd837894d86d093ac07938c9749ae2a82db9e1`. Its `robots.txt` and the PR preview both remain `Disallow: /`. The existing two Forms (`quick-rfq` and legacy `rfq`), the single `quick-rfq` notification to `sales@cvlon.com`, and the `cvlon.com`/`www.cvlon.com` domain entries are unchanged.
 
 ## Operational caveats and cleanup
 
@@ -157,6 +172,8 @@ Remote preview migration, branch identity, synthetic runtime write, authenticate
 - Remove the temporary Deploy Preview probe secret and, if no further Price Check previews are planned, remove `codex/civilon-price-check` from the branch-deploy allowlist.
 - Do not copy probe rows or migrations into production.
 
-## Preliminary implementation recommendation
+## Implementation recommendation
 
-The local evidence supports Netlify Database + the native Drizzle adapter as the leading implementation architecture. Final approval depends on the PR Deploy Preview proving automatic migration, isolated writes, production separation, and Vinext/Nitro runtime access.
+The local and PR Deploy Preview evidence approves Netlify Database plus the native Drizzle adapter for the real Price Check implementation. It proved automatic migration, isolated writes, production separation, and Vinext/Nitro Function bundling/runtime access. Re-evaluate the supported Drizzle release line before production implementation and retain explicitly named Postgres modules, server-only imports, native migrations, contextual secrets, idempotent outbox leasing, and failure isolation.
+
+Nothing observed justifies switching database architecture. Reconsider only if future production requirements exceed the Free-plan limits, the supported Drizzle/Netlify adapter line becomes incompatible with Vinext/Nitro, required transactional or concurrency behavior cannot be proven against the real schema, or a regulatory/data-residency requirement cannot be met.
