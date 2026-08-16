@@ -201,7 +201,7 @@ export function PriceCheckForm() {
       <h2 id="price-check-received">Price Check received</h2>
       <p className="price-check-reference"><span>Reference</span><strong>{reference}</strong></p>
       <p>Civilon will review the transaction context. Some requests require additional information, and the current service uses human review before any result is prepared.</p>
-      <p>Keep this reference for your records. Transactional email and private result links are not active in this phase.</p>
+      <p>Keep this reference for your records. If Civilon completes and approves a reviewed result, access instructions will be sent separately to the business email provided.</p>
       <button type="button" className="button button-primary" onClick={() => {
         setReference(""); setStep(1); setValues(initialValues); setErrors({});
         idempotencyKey.current = ""; started.current = false;

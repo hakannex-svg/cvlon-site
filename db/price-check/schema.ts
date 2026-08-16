@@ -205,6 +205,12 @@ export const outboxStateEnum = pgEnum("notification_outbox_state", [
   "failed",
   "dead_letter",
 ]);
+export const resultStateEnum = pgEnum("price_check_result_state", [
+  "DRAFT",
+  "APPROVED",
+  "SENT",
+  "SUPERSEDED",
+]);
 export const sourcingOpportunityStatusEnum = pgEnum(
   "sourcing_opportunity_status",
   [
@@ -757,6 +763,7 @@ export const priceCheckResults = pgTable(
     analysisId: id("analysis_id")
       .notNull()
       .references(() => priceCheckAnalyses.id, { onDelete: "restrict" }),
+    state: resultStateEnum("state").notNull().default("DRAFT"),
     version: integer("version").notNull(),
     approvedClassification: varchar("approved_classification", {
       length: 120,
@@ -767,11 +774,13 @@ export const priceCheckResults = pgTable(
       .default(false),
     approvedFactorList: jsonb("approved_factor_list").$type<string[]>().notNull(),
     approvedExplanation: text("approved_explanation").notNull(),
+    limitedEvidenceStatement: text("limited_evidence_statement"),
     disclaimerVersion: varchar("disclaimer_version", { length: 80 }).notNull(),
-    approvedBy: id("approved_by")
-      .notNull()
+    draftedBy: id("drafted_by")
       .references(() => adminUsers.id, { onDelete: "restrict" }),
-    approvedAt: utcTimestamp("approved_at").notNull(),
+    approvedBy: id("approved_by")
+      .references(() => adminUsers.id, { onDelete: "restrict" }),
+    approvedAt: utcTimestamp("approved_at"),
     sentAt: utcTimestamp("sent_at"),
     supersededAt: utcTimestamp("superseded_at"),
     renderedContentDigest: varchar("rendered_content_digest", {
@@ -797,9 +806,11 @@ export const resultAccessTokens = pgTable(
       .notNull()
       .references(() => priceCheckResults.id, { onDelete: "restrict" }),
     keyedTokenHash: varchar("keyed_token_hash", { length: 128 }).notNull(),
+    tokenDerivationNonce: varchar("token_derivation_nonce", { length: 64 }),
     issuedAt: utcTimestamp("issued_at").notNull(),
     expiresAt: utcTimestamp("expires_at").notNull(),
     revokedAt: utcTimestamp("revoked_at"),
+    firstViewedAt: utcTimestamp("first_viewed_at"),
     lastViewedAt: utcTimestamp("last_viewed_at"),
     viewCount: integer("view_count").notNull().default(0),
     maxUseCount: integer("max_use_count"),

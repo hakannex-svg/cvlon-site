@@ -3,6 +3,7 @@ import { isBootstrapAdmin } from "@/lib/price-check/admin/identity";
 import {
   exchangeGoogleAuthorizationCode,
   getGoogleOidcConfig,
+  GoogleTokenExchangeError,
   GOOGLE_OIDC_TRANSACTION_COOKIE,
   oidcRedirectOrigin,
   verifyGoogleAuthorizationTransaction,
@@ -33,6 +34,7 @@ export async function GET(request: Request) {
   if (!isPriceCheckEnabled()) return new Response(null, { status: 404 });
 
   let config: GoogleOidcConfig;
+  let stage = "request_validation";
   try {
     config = getGoogleOidcConfig();
   } catch {
@@ -56,14 +58,18 @@ export async function GET(request: Request) {
       return failed();
     }
 
+    stage = "transaction_verification";
     const transaction = await verifyGoogleAuthorizationTransaction(
       transactionCookie,
       state,
       config,
     );
+    stage = "google_token_exchange";
     const identity = await exchangeGoogleAuthorizationCode(code, transaction, config);
+    stage = "bootstrap_authorization";
     if (!isBootstrapAdmin(identity.email)) return failed();
 
+    stage = "database_binding";
     const [database, adminRepository, sessionRepository] = await Promise.all([
       import("@/db/price-check"),
       import("@/db/price-check/repositories/admin-repository"),
@@ -80,6 +86,7 @@ export async function GET(request: Request) {
       authorization.status !== "rebound"
     ) return failed();
 
+    stage = "session_creation";
     const session = await sessionRepository.createAdminSession(
       database.priceCheckDb,
       authorization.user.id,
@@ -89,7 +96,11 @@ export async function GET(request: Request) {
       clearSecureCookie(GOOGLE_OIDC_TRANSACTION_COOKIE),
       secureCookie(ADMIN_SESSION_COOKIE, session.token, ADMIN_SESSION_TTL_SECONDS),
     ]);
-  } catch {
+  } catch (error) {
+    const safeCode = error instanceof GoogleTokenExchangeError
+      ? error.safeCode
+      : "unexpected";
+    console.error("admin_oidc_callback_failed", stage, safeCode);
     return failed();
   }
 }

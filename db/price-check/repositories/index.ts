@@ -23,4 +23,16 @@ export {
 } from "./outbox-repository.ts";
 export { appendAuditEvent } from "./audit-repository.ts";
 export { createSourcingOpportunity } from "./sourcing-repository.ts";
+export {
+  approveCustomerResult,
+  createCustomerResultDraft,
+  createResultSourcingOpportunity,
+  getAdminResultWorkspace,
+  getCustomerResult,
+  loadResultDelivery,
+  markResultDeliverySucceeded,
+  queueCustomerResultDelivery,
+  recordResultDeliveryFailure,
+  redeemResultToken,
+} from "./result-delivery-repository.ts";
 export * from "./admin-repository.ts";
