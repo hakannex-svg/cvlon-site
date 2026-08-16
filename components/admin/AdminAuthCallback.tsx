@@ -19,12 +19,26 @@ export function AdminAuthCallback() {
     handleAuthCallback()
       .then(async (result) => {
         history.replaceState(null, "", window.location.pathname + window.location.search);
-        if (result?.type !== "oauth" || provider !== "google" || !providerToken) throw new Error("Google proof is missing.");
+        if (result?.type !== "oauth") {
+          window.location.replace("/admin/login?auth=callback");
+          return;
+        }
+        if (provider !== "google" || !providerToken) {
+          window.location.replace("/admin/login?auth=provider");
+          return;
+        }
         const response = await fetch("/api/admin/auth/google-session", {
           method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ providerToken }),
         });
-        if (!response.ok) throw new Error("Google proof was rejected.");
+        if (response.status === 403) {
+          window.location.replace("/admin/access-denied");
+          return;
+        }
+        if (!response.ok) {
+          window.location.replace(`/admin/login?auth=session-${response.status}`);
+          return;
+        }
         window.location.replace("/admin/price-checks");
       })
       .catch(() => window.location.replace("/admin/login?auth=failed"));
