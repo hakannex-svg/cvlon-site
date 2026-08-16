@@ -16,3 +16,4 @@ export {
 } from "./outbox-repository.ts";
 export { appendAuditEvent } from "./audit-repository.ts";
 export { createSourcingOpportunity } from "./sourcing-repository.ts";
+export * from "./admin-repository.ts";

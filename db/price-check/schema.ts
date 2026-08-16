@@ -265,6 +265,7 @@ export const adminUsers = pgTable(
       table.identityProviderIssuer,
       table.identityProviderSubject,
     ),
+    uniqueIndex("admin_users_display_email_uidx").on(table.displayEmail),
     index("admin_users_active_idx").on(table.active),
   ],
 );

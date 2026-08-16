@@ -21,7 +21,13 @@ export const priceCheckStatuses = [
 export type PriceCheckStatus = (typeof priceCheckStatuses)[number];
 
 const transitionPolicy: Readonly<Record<PriceCheckStatus, readonly PriceCheckStatus[]>> = {
-  submitted: ["upload_processing", "ready_for_analysis", "spam", "withdrawn"],
+  submitted: [
+    "upload_processing",
+    "needs_information",
+    "ready_for_analysis",
+    "spam",
+    "withdrawn",
+  ],
   upload_processing: ["extraction_review", "processing_failed", "withdrawn"],
   extraction_review: ["ready_for_analysis", "needs_information", "withdrawn"],
   processing_failed: ["ready_for_analysis", "needs_information", "withdrawn"],
