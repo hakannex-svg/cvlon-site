@@ -120,45 +120,50 @@ test("native adapter fails without a database connection", async () => {
 });
 
 test("runtime probe rejects production, unauthorized, and malformed requests", async () => {
-  const originalContext = process.env.CONTEXT;
+  const originalSiteName = process.env.SITE_NAME;
   const originalToken = process.env.PRICE_CHECK_DB_PROBE_TOKEN;
 
   try {
+    process.env.SITE_NAME = "cvlon";
     process.env.PRICE_CHECK_DB_PROBE_TOKEN = "synthetic-local-test-token";
     const { default: handler } = await import(
       "../netlify/functions/price-check-db-spike.ts"
     );
 
-    process.env.CONTEXT = "production";
     const productionResponse = await handler(
-      new Request("http://localhost/api/__spike/price-check-db", {
+      new Request("https://cvlon.netlify.app/api/__spike/price-check-db", {
         method: "POST",
       }),
     );
     assert.equal(productionResponse.status, 404);
 
-    process.env.CONTEXT = "deploy-preview";
     const unauthorizedResponse = await handler(
-      new Request("http://localhost/api/__spike/price-check-db", {
-        method: "POST",
-      }),
+      new Request(
+        "https://deploy-preview-1--cvlon.netlify.app/api/__spike/price-check-db",
+        {
+          method: "POST",
+        },
+      ),
     );
     assert.equal(unauthorizedResponse.status, 401);
 
     const malformedResponse = await handler(
-      new Request("http://localhost/api/__spike/price-check-db", {
-        method: "POST",
-        body: "not-json",
-        headers: {
-          authorization: "Bearer synthetic-local-test-token",
-          "content-type": "application/json",
+      new Request(
+        "https://deploy-preview-1--cvlon.netlify.app/api/__spike/price-check-db",
+        {
+          method: "POST",
+          body: "not-json",
+          headers: {
+            authorization: "Bearer synthetic-local-test-token",
+            "content-type": "application/json",
+          },
         },
-      }),
+      ),
     );
     assert.equal(malformedResponse.status, 400);
   } finally {
-    if (originalContext === undefined) delete process.env.CONTEXT;
-    else process.env.CONTEXT = originalContext;
+    if (originalSiteName === undefined) delete process.env.SITE_NAME;
+    else process.env.SITE_NAME = originalSiteName;
 
     if (originalToken === undefined) delete process.env.PRICE_CHECK_DB_PROBE_TOKEN;
     else process.env.PRICE_CHECK_DB_PROBE_TOKEN = originalToken;

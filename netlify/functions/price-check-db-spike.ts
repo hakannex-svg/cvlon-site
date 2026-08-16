@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import { runCompatibilityExercise } from "../../spikes/price-check-db/exercise.ts";
 
 const PROBE_KEY = "civilon-price-check-spike";
+const DEPLOY_PREVIEW_HOST = /^deploy-preview-\d+--cvlon\.netlify\.app$/;
 
 function json(body: unknown, status = 200) {
   return Response.json(body, {
@@ -30,8 +31,18 @@ function authorized(request: Request) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
+function isDeployPreviewRequest(request: Request) {
+  const hostname = new URL(request.url).hostname.toLowerCase();
+
+  return (
+    process.env.SITE_NAME === "cvlon" && DEPLOY_PREVIEW_HOST.test(hostname)
+  );
+}
+
 export default async function handler(request: Request) {
-  if (process.env.CONTEXT !== "deploy-preview") {
+  // Netlify exposes CONTEXT during builds, not in the Functions runtime.
+  // Restrict this disposable endpoint to cvlon PR preview hostnames instead.
+  if (!isDeployPreviewRequest(request)) {
     return json({ error: "Not found" }, 404);
   }
 
