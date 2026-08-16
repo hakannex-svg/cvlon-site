@@ -265,7 +265,29 @@ export const adminUsers = pgTable(
       table.identityProviderIssuer,
       table.identityProviderSubject,
     ),
+    uniqueIndex("admin_users_display_email_uidx").on(table.displayEmail),
     index("admin_users_active_idx").on(table.active),
+  ],
+);
+
+export const adminSessions = pgTable(
+  "admin_sessions",
+  {
+    id: id().primaryKey(),
+    adminUserId: id("admin_user_id")
+      .notNull()
+      .references(() => adminUsers.id, { onDelete: "cascade" }),
+    tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+    createdAt: utcTimestamp("created_at").notNull().defaultNow(),
+    expiresAt: utcTimestamp("expires_at").notNull(),
+    lastSeenAt: utcTimestamp("last_seen_at").notNull().defaultNow(),
+    revokedAt: utcTimestamp("revoked_at"),
+  },
+  (table) => [
+    uniqueIndex("admin_sessions_token_hash_uidx").on(table.tokenHash),
+    index("admin_sessions_admin_user_idx").on(table.adminUserId),
+    index("admin_sessions_expiry_idx").on(table.expiresAt),
+    check("admin_sessions_expiry_chk", sql`${table.expiresAt} > ${table.createdAt}`),
   ],
 );
 
