@@ -7,16 +7,22 @@ const services = [
     number: "01",
     title: "Parts sourcing",
     body: "Selected items may be in stock; other requirements are sourced on demand through approved and vetted channels. Availability is subject to confirmation.",
+    href: "/parts",
+    cta: "View categories",
   },
   {
     number: "02",
     title: "24/7 AOG coordination",
     body: "Our AOG phone and WhatsApp are monitored by a live person 24/7/365 for urgent search, documentation and transportation coordination.",
+    href: "/aog-services",
+    cta: "Review AOG support",
   },
   {
     number: "03",
     title: "Repair management",
     body: "Evaluation, workscope, quotation, monitoring and return logistics coordinated with appropriately approved third-party repair facilities.",
+    href: "/repair-management",
+    cta: "Review service",
   },
 ];
 
@@ -87,13 +93,13 @@ export default function Home() {
           </div>
           <div className="service-grid">
             {services.map((service) => (
-              <article className="service-card" key={service.number}>
+              <a className="service-card" href={service.href} key={service.number}>
                 <span className="card-number">{service.number}</span>
                 <div className="card-icon" aria-hidden="true">✦</div>
                 <h3>{service.title}</h3>
                 <p>{service.body}</p>
-                <a href={service.number === "01" ? "/parts" : service.number === "02" ? "/aog-services" : "/repair-management"}>Learn more <span>→</span></a>
-              </article>
+                <strong className="service-card-action">{service.cta} <span aria-hidden="true">→</span></strong>
+              </a>
             ))}
           </div>
         </div>

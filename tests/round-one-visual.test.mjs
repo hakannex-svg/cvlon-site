@@ -29,4 +29,5 @@ test("round-one styles cover field hierarchy, cards and precise process rails", 
   assert.match(css, /\.service-card:focus-within/);
   assert.match(css, /\.link-cards>a:focus-visible/);
   assert.match(css, /\.process-rail li:not\(:last-child\):after[^}]*left:calc\(50% \+ 18px\)/);
+  assert.match(css, /grid-template-columns:repeat\(var\(--process-count\),minmax\(0,1fr\)\)/);
 });
