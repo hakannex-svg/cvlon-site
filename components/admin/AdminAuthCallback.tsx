@@ -14,33 +14,11 @@ export function AdminAuthCallback() {
       return;
     }
     if (!params.get("access_token")) return;
-    const providerToken = params.get("provider_token");
-    const provider = params.get("provider");
     handleAuthCallback()
       .then(async (result) => {
         history.replaceState(null, "", window.location.pathname + window.location.search);
         if (result?.type !== "oauth") {
           window.location.replace("/admin/login?auth=callback");
-          return;
-        }
-        if (provider !== "google") {
-          window.location.replace("/admin/login?auth=provider-name");
-          return;
-        }
-        if (!providerToken) {
-          window.location.replace("/admin/login?auth=provider-token");
-          return;
-        }
-        const response = await fetch("/api/admin/auth/google-session", {
-          method: "POST", credentials: "same-origin", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ providerToken }),
-        });
-        if (response.status === 403) {
-          window.location.replace("/admin/access-denied");
-          return;
-        }
-        if (!response.ok) {
-          window.location.replace(`/admin/login?auth=session-${response.status}`);
           return;
         }
         window.location.replace("/admin/price-checks");
