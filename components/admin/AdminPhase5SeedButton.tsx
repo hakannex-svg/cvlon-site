@@ -27,9 +27,9 @@ export function AdminPhase5SeedButton() {
     }
   }
 
-  return <section className="admin-preview-seed" aria-label="Synthetic Phase 5 preview evidence">
+  return <section className="admin-preview-seed" aria-label="Synthetic comparable preview evidence">
     <div>
-      <strong>Phase 5 synthetic review set</strong>
+      <strong>Synthetic Price Check review set</strong>
       <p>Create the approved fictional requests, observations, restrictions, and governed relationship cases in this isolated Deploy Preview database.</p>
       {error && <p className="admin-error" role="alert">{error}</p>}
     </div>

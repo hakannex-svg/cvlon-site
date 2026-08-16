@@ -28,3 +28,18 @@
   [headers.values]
     Cache-Control = "private, no-store, max-age=0"
     X-Robots-Tag = "noindex, nofollow, noarchive"
+
+[[headers]]
+  for = "/price-check/result*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Referrer-Policy = "no-referrer"
+    Pragma = "no-cache"
+
+[[headers]]
+  for = "/api/price-check/result/*"
+  [headers.values]
+    Cache-Control = "private, no-store, max-age=0"
+    X-Robots-Tag = "noindex, nofollow, noarchive"
+    Referrer-Policy = "no-referrer"

@@ -1,6 +1,6 @@
 import "../server-boundary.ts";
 
-import { and, asc, desc, eq, inArray, or } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull, or } from "drizzle-orm";
 
 import type { PriceCheckDb } from "../index.ts";
 import {
@@ -12,8 +12,10 @@ import {
   priceCheckComparables,
   priceCheckDocumentRequirements,
   priceCheckRevisions,
+  priceCheckResults,
   priceChecks,
   priceObservations,
+  resultAccessTokens,
 } from "../schema.ts";
 import { generateOrderedId } from "../domain/identifiers.ts";
 import { normalizePartNumber } from "../domain/normalization.ts";
@@ -253,7 +255,7 @@ export async function runGovernedAnalysis(db: PriceCheckDb, input: {
   return db.transaction(async (tx) => {
     const [priceCheck] = await tx.select().from(priceChecks).where(eq(priceChecks.id, input.priceCheckId)).limit(1);
     if (!priceCheck) throw new Error("Price Check was not found.");
-    if (!(["ready_for_analysis", "analysis_ready"] as string[]).includes(priceCheck.status)) throw new Error("Price Check must be ready for analysis.");
+    if (!(["ready_for_analysis", "analysis_ready", "human_review", "approved", "sent"] as string[]).includes(priceCheck.status)) throw new Error("Price Check must be ready for analysis.");
     const [latestRevision] = await tx.select().from(priceCheckRevisions).where(eq(priceCheckRevisions.priceCheckId, input.priceCheckId)).orderBy(desc(priceCheckRevisions.version)).limit(1);
     if (!latestRevision) throw new Error("A reviewed transaction revision is required.");
     const documentation = await tx.select().from(priceCheckDocumentRequirements).where(eq(priceCheckDocumentRequirements.priceCheckId, input.priceCheckId));
@@ -380,7 +382,19 @@ export async function runGovernedAnalysis(db: PriceCheckDb, input: {
     }
     await appendAudit(tx, { aggregateType: "price_check", aggregateId: input.priceCheckId, actorId: input.actor.id, action: "CONFIDENCE_SELECTED", afterVersionReference: `analysis:${version}`, metadata: { confidence: input.confidence } });
     await appendAudit(tx, { aggregateType: "price_check", aggregateId: input.priceCheckId, actorId: input.actor.id, action: "ANALYSIS_CREATED", afterVersionReference: `analysis:${version}`, metadata: { evidenceCount: selected.length, engineVersion: ANALYSIS_ENGINE_VERSION, digest: result.digest } });
-    await tx.update(priceChecks).set({ currentAnalysisId: analysisId, updatedAt: new Date() }).where(and(eq(priceChecks.id, input.priceCheckId), eq(priceChecks.id, priceCheck.id)));
+    const now = new Date();
+    if (priceCheck.currentResultId) {
+      const [currentResult] = await tx.select().from(priceCheckResults).where(eq(priceCheckResults.id, priceCheck.currentResultId)).limit(1);
+      if (currentResult) {
+        await tx.update(priceCheckResults).set({ state: "SUPERSEDED", supersededAt: now }).where(eq(priceCheckResults.id, currentResult.id));
+        await tx.update(resultAccessTokens).set({ revokedAt: now }).where(and(eq(resultAccessTokens.resultId, currentResult.id), isNull(resultAccessTokens.revokedAt)));
+        await appendAudit(tx, { aggregateType: "price_check", aggregateId: input.priceCheckId, actorId: input.actor.id, action: "RESULT_APPROVAL_INVALIDATED", beforeVersionReference: `result:${currentResult.version}`, afterVersionReference: `analysis:${version}`, metadata: { reason: "analysis_changed" } });
+      }
+    }
+    await tx.update(priceChecks).set(priceCheck.currentResultId
+      ? { currentAnalysisId: analysisId, currentResultId: null, status: "analysis_ready", updatedAt: now }
+      : { currentAnalysisId: analysisId, updatedAt: now })
+      .where(and(eq(priceChecks.id, input.priceCheckId), eq(priceChecks.id, priceCheck.id)));
     return { analysis, payload };
   });
 }

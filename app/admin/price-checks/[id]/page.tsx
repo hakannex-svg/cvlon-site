@@ -4,11 +4,13 @@ import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
 import { AdminDetailActions } from "@/components/admin/AdminDetailActions";
 import { AdminComparableWorkspace } from "@/components/admin/AdminComparableWorkspace";
+import { AdminResultWorkspace } from "@/components/admin/AdminResultWorkspace";
 import { getPriceCheckAdminAccess } from "@/lib/price-check/admin/auth";
 import { formatAge, formatDateTime, formatMoney, staffDisplayName, statusLabels } from "@/lib/price-check/admin/display";
 import { allowedOperationalStatuses, roleCan } from "@/lib/price-check/admin/policy";
 import { canTransitionPriceCheck } from "@/db/price-check/domain/status-policy";
 import { AOG_TEL_URL, buildAogWhatsAppUrl } from "@/lib/aog";
+import { factorLabels } from "@/lib/price-check/result-copy";
 
 function value(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
@@ -117,6 +119,36 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
   } catch {
     return <AdminAccessDenied unavailable />;
   }
+  let resultData;
+  try {
+    const [{ priceCheckDb }, resultRepository] = await Promise.all([
+      import("@/db/price-check"),
+      import("@/db/price-check/repositories/result-delivery-repository"),
+    ]);
+    resultData = await resultRepository.getAdminResultWorkspace(priceCheckDb, priceCheck.id);
+  } catch {
+    return <AdminAccessDenied unavailable />;
+  }
+  const resultAnalysis = resultData.analysis;
+  const currentResult = resultData.currentResult;
+  const resultFactors = resultAnalysis ? [...new Set([...(resultAnalysis.factorCodes ?? []), ...(resultAnalysis.insufficiencyReasons ?? [])])].filter((code) => code in factorLabels).map((code) => ({ code, label: factorLabels[code] })) : [];
+  const resultCurrency = resultAnalysis?.currencyCode ?? priceCheck.currencyCode;
+  const previewModel = resultAnalysis && currentResult ? {
+    reference: priceCheck.publicReference,
+    reviewed: formatDateTime(currentResult.approvedAt ?? currentResult.createdAt),
+    classification: currentResult.approvedClassification,
+    submittedPrice: formatMoney(priceCheck.unitPrice, priceCheck.currencyCode),
+    confidence: resultAnalysis.confidence,
+    displayRange: currentResult.displayRange,
+    displayEvidenceCount: currentResult.displayEvidenceCount,
+    evidenceCount: resultAnalysis.evidenceCount,
+    low: resultAnalysis.marketLow ? formatMoney(resultAnalysis.marketLow, resultCurrency) : null,
+    median: resultAnalysis.marketMedian ? formatMoney(resultAnalysis.marketMedian, resultCurrency) : null,
+    high: resultAnalysis.marketHigh ? formatMoney(resultAnalysis.marketHigh, resultCurrency) : null,
+    factorCodes: currentResult.approvedFactorList,
+    explanation: currentResult.approvedExplanation,
+    limitation: currentResult.limitedEvidenceStatement,
+  } : null;
 
   return <AdminChrome user={access.user}>
     <section className="admin-page admin-detail-page">
@@ -176,7 +208,21 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             canCreateObservation={roleCan(access.user.role, "create_observation")}
             canManageRelationships={roleCan(access.user.role, "manage_relationships")}
           />
-          <section className="admin-panel admin-placeholder"><p className="admin-eyebrow">Customer result</p><h2>No customer result has been generated.</h2><p>Phase 5 keeps analysis private to authorized Civilon staff and does not create result tokens, public pages, or transactional email.</p></section>
+          {resultAnalysis ? <AdminResultWorkspace
+            priceCheckId={priceCheck.id}
+            analysisId={resultAnalysis.id}
+            evidenceCount={resultAnalysis.evidenceCount}
+            confidence={resultAnalysis.confidence}
+            rangeAvailable={Boolean(resultAnalysis.marketLow && resultAnalysis.marketMedian && resultAnalysis.marketHigh && resultAnalysis.currencyCode)}
+            availableFactors={resultFactors}
+            currentResult={currentResult ? { id: currentResult.id, version: currentResult.version, state: currentResult.state, explanation: currentResult.approvedExplanation, factorCodes: currentResult.approvedFactorList, displayRange: currentResult.displayRange, displayEvidenceCount: currentResult.displayEvidenceCount, limitation: currentResult.limitedEvidenceStatement } : null}
+            previewModel={previewModel}
+            canDraft={roleCan(access.user.role, "draft_result") && ["analysis_ready", "human_review", "approved"].includes(priceCheck.status)}
+            canApprove={roleCan(access.user.role, "approve_result")}
+            canSend={roleCan(access.user.role, "send_result")}
+            previewWorkerEnabled={process.env.CONTEXT === "deploy-preview" && process.env.BRANCH === "codex/civilon-price-check-phase-6" && process.env.PRICE_CHECK_PHASE6_PREVIEW_WORKER_ENABLED === "true"}
+            delivery={resultData.delivery.map((item) => ({ state: item.state, attemptCount: item.attemptCount, failureCode: item.sanitizedFailureCode, sentAt: item.sentAt?.toISOString() ?? null }))}
+          /> : <section className="admin-panel admin-placeholder"><p className="admin-eyebrow">Customer result</p><h2>No customer result can be drafted yet.</h2><p>A persisted deterministic analysis must be marked analysis ready before customer-result preparation begins.</p></section>}
 
           <section className="admin-panel" aria-labelledby="audit-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Append-only record</p><h2 id="audit-heading">Audit timeline</h2></div></div><ol className="admin-timeline">{audit.map(event => <li key={event.id}><time>{formatDateTime(event.createdAt)}</time><strong>{event.action.replaceAll("_", " ").replaceAll(".", " ")}</strong><span>{event.afterVersionReference ?? event.beforeVersionReference ?? "Recorded"}</span></li>)}</ol></section>
         </div>
