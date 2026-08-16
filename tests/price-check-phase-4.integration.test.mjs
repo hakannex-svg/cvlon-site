@@ -48,7 +48,7 @@ test("first verified Google OIDC login binds an ADMIN, subsequent subject author
   await withDatabase(async ({ db, schema, applied }) => {
     const { sql } = await import("drizzle-orm");
     const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
-    assert.equal(applied.length, 4);
+    assert.equal(applied.length, 5);
     const identity = googleIdentity("hakannex@gmail.com", "google-subject-hakan");
     const first = await bindOrAuthorizeAdmin(db, identity, true);
     assert.equal(first.status, "bound");

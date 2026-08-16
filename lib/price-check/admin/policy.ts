@@ -8,12 +8,15 @@ export type AdminCapability =
   | "revise"
   | "request_information"
   | "transition"
+  | "analyze"
+  | "create_observation"
+  | "manage_relationships"
   | "exceptional_transition"
   | "manage_staff";
 
 const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
-  ANALYST: ["view", "self_assign", "revise", "request_information", "transition"],
-  REVIEWER: ["view", "self_assign", "revise", "request_information", "transition"],
+  ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation"],
+  REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation"],
   ADMIN: [
     "view",
     "self_assign",
@@ -21,6 +24,9 @@ const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
     "revise",
     "request_information",
     "transition",
+    "analyze",
+    "create_observation",
+    "manage_relationships",
     "exceptional_transition",
     "manage_staff",
   ],
@@ -38,7 +44,7 @@ export function isAdminRole(value: unknown): value is AdminRole {
 export function allowedOperationalStatuses(role: AdminRole) {
   if (role === "AUDITOR") return [];
   if (role === "ADMIN") {
-    return ["needs_information", "ready_for_analysis", "processing_failed", "spam", "withdrawn", "closed"] as const;
+    return ["needs_information", "ready_for_analysis", "analysis_ready", "processing_failed", "spam", "withdrawn", "closed"] as const;
   }
-  return ["needs_information", "ready_for_analysis", "withdrawn"] as const;
+  return ["needs_information", "ready_for_analysis", "analysis_ready", "withdrawn"] as const;
 }

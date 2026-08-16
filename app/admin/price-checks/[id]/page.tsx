@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
 import { AdminDetailActions } from "@/components/admin/AdminDetailActions";
+import { AdminComparableWorkspace } from "@/components/admin/AdminComparableWorkspace";
 import { getPriceCheckAdminAccess } from "@/lib/price-check/admin/auth";
 import { formatAge, formatDateTime, formatMoney, staffDisplayName, statusLabels } from "@/lib/price-check/admin/display";
 import { allowedOperationalStatuses, roleCan } from "@/lib/price-check/admin/policy";
@@ -70,6 +71,52 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
     aircraftTypeTail: priceCheck.aircraftModel ?? "",
     nameCompany: `${requester.firstName} ${requester.lastName} / ${requester.companyName}`,
   });
+  let comparableData;
+  try {
+    const [{ priceCheckDb }, comparableRepository] = await Promise.all([
+      import("@/db/price-check"),
+      import("@/db/price-check/repositories/comparable-repository"),
+    ]);
+    const candidateResult = await comparableRepository.listCandidateObservations(
+      priceCheckDb,
+      String(revisionDefaults.originalPartNumber ?? priceCheck.originalPartNumber),
+      { scope: "related" },
+    );
+    const history = await comparableRepository.listAnalysisHistory(priceCheckDb, priceCheck.id);
+    comparableData = {
+      candidates: candidateResult.candidates.map((candidate) => ({
+        id: candidate.id,
+        originalPartNumber: candidate.originalPartNumber,
+        normalizedPartNumber: candidate.normalizedPartNumber,
+        relationshipType: candidate.relationshipType,
+        conditionCode: candidate.conditionCode,
+        transactionType: candidate.transactionType,
+        quantity: candidate.quantity,
+        unitPrice: candidate.unitPrice,
+        currencyCode: candidate.currencyCode,
+        coreCharge: candidate.coreCharge,
+        coreDisposition: candidate.coreDisposition,
+        exchangeFee: candidate.exchangeFee,
+        freight: candidate.freight,
+        observationDate: candidate.observationDate,
+        warrantyValue: candidate.warrantyValue,
+        warrantyUnit: candidate.warrantyUnit,
+        warrantyText: candidate.warrantyText,
+        documentationCodes: candidate.documentationCodes,
+        aog: candidate.aog,
+        aircraftApplication: candidate.aircraftApplication,
+        sourceReliability: candidate.sourceReliability,
+        verificationState: candidate.verificationState,
+        permittedUseState: candidate.permittedUseState,
+        provenanceType: candidate.provenanceType,
+        eligible: candidate.eligible,
+      })),
+      relationships: candidateResult.relationships.map((relationship) => ({ ...relationship })),
+      history: history.map((analysis) => ({ ...analysis, createdAt: analysis.createdAt.toISOString() })),
+    };
+  } catch {
+    return <AdminAccessDenied unavailable />;
+  }
 
   return <AdminChrome user={access.user}>
     <section className="admin-page admin-detail-page">
@@ -100,8 +147,36 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
 
           <section className="admin-panel" aria-labelledby="docs-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Requirements</p><h2 id="docs-heading">Documentation</h2></div></div>{documentation.length ? <ul className="admin-chip-list">{documentation.map(item => <li key={item.requirementCode}>{item.requirementCode.replaceAll("_", " ")}{item.otherText ? ` — ${item.otherText}` : ""}</li>)}</ul> : <p className="admin-muted">No documentation requirements were selected.</p>}<p className="admin-muted">Secure document upload remains unavailable in Phase 4.</p></section>
 
-          <section className="admin-panel admin-placeholder"><p className="admin-eyebrow">Analysis</p><h2>No pricing analysis has been prepared yet.</h2><p>Deterministic comparable selection and pricing calculations are deferred to the next approved phase.</p></section>
-          <section className="admin-panel admin-placeholder"><p className="admin-eyebrow">Customer result</p><h2>No customer result has been approved.</h2><p>Phase 4 does not send results or transactional email.</p></section>
+          <AdminComparableWorkspace
+            priceCheckId={priceCheck.id}
+            transaction={{
+              originalPartNumber: String(revisionDefaults.originalPartNumber ?? priceCheck.originalPartNumber),
+              normalizedPartNumber: String((reviewedSnapshot?.normalizedPartNumber) ?? priceCheck.normalizedPartNumber),
+              conditionCode: String(revisionDefaults.conditionCode ?? priceCheck.conditionCode),
+              transactionType: String(revisionDefaults.transactionType ?? priceCheck.transactionType),
+              quantity: String(revisionDefaults.quantity ?? priceCheck.quantity),
+              unitPrice: String(revisionDefaults.unitPrice ?? priceCheck.unitPrice),
+              currencyCode: String(revisionDefaults.currencyCode ?? priceCheck.currencyCode),
+              coreCharge: revisionDefaults.coreCharge ? String(revisionDefaults.coreCharge) : null,
+              coreDisposition: revisionDefaults.coreDisposition ? String(revisionDefaults.coreDisposition) : null,
+              exchangeFee: revisionDefaults.exchangeFee ? String(revisionDefaults.exchangeFee) : null,
+              freight: revisionDefaults.freight ? String(revisionDefaults.freight) : null,
+              warrantyValue: revisionDefaults.warrantyValue ? String(revisionDefaults.warrantyValue) : null,
+              warrantyUnit: revisionDefaults.warrantyUnit ? String(revisionDefaults.warrantyUnit) : null,
+              warrantyText: revisionDefaults.warrantyText ? String(revisionDefaults.warrantyText) : null,
+              documentationCodes: Array.isArray(revisionDefaults.documentationCodes) ? revisionDefaults.documentationCodes : [],
+              aog: Boolean(revisionDefaults.aog),
+              transactionDate: revisionDefaults.transactionDate ? String(revisionDefaults.transactionDate) : null,
+              aircraftModel: revisionDefaults.aircraftModel ? String(revisionDefaults.aircraftModel) : null,
+            }}
+            candidates={comparableData.candidates}
+            relationships={comparableData.relationships}
+            history={comparableData.history}
+            canAnalyze={roleCan(access.user.role, "analyze") && ["ready_for_analysis", "analysis_ready"].includes(priceCheck.status)}
+            canCreateObservation={roleCan(access.user.role, "create_observation")}
+            canManageRelationships={roleCan(access.user.role, "manage_relationships")}
+          />
+          <section className="admin-panel admin-placeholder"><p className="admin-eyebrow">Customer result</p><h2>No customer result has been generated.</h2><p>Phase 5 keeps analysis private to authorized Civilon staff and does not create result tokens, public pages, or transactional email.</p></section>
 
           <section className="admin-panel" aria-labelledby="audit-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Append-only record</p><h2 id="audit-heading">Audit timeline</h2></div></div><ol className="admin-timeline">{audit.map(event => <li key={event.id}><time>{formatDateTime(event.createdAt)}</time><strong>{event.action.replaceAll("_", " ").replaceAll(".", " ")}</strong><span>{event.afterVersionReference ?? event.beforeVersionReference ?? "Recorded"}</span></li>)}</ol></section>
         </div>

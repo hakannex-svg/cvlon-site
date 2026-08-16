@@ -5,6 +5,13 @@ export {
   findEligibleObservations,
 } from "./observation-repository.ts";
 export { createAnalysisVersion } from "./analysis-repository.ts";
+export {
+  createGovernedObservation,
+  createGovernedPartRelationship,
+  listAnalysisHistory,
+  listCandidateObservations,
+  runGovernedAnalysis,
+} from "./comparable-repository.ts";
 export { createApprovedResultVersion } from "./result-repository.ts";
 export { createResultAccessTokenMetadata } from "./token-repository.ts";
 export { enqueueJob, leaseNextJob, completeJob, failJob } from "./job-repository.ts";
