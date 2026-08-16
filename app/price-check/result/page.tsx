@@ -18,7 +18,7 @@ export default async function CustomerResultPage() {
       customer = await getCustomerResult(priceCheckDb, session);
     }
   } catch { customer = null; }
-  if (!customer) return <main className="private-result-page"><CleanResultUrl /><section className="result-unavailable"><p>Civilon Price Check</p><h1>This Price Check result link is no longer available.</h1><p>For privacy, Civilon cannot provide additional information about this link.</p><Link href="/contact-us">Contact Civilon</Link></section></main>;
+  if (!customer) return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><section className="result-unavailable" data-result-region="unavailable-state"><p>Civilon Price Check</p><h1>This Price Check result link is no longer available.</h1><p>For privacy, Civilon cannot provide additional information about this link.</p><Link href="/contact-us">Contact Civilon</Link></section></main>;
   const { result, analysis, priceCheck } = customer;
   const currency = analysis.currencyCode ?? priceCheck.currencyCode;
   const model = {
@@ -37,5 +37,5 @@ export default async function CustomerResultPage() {
     explanation: result.approvedExplanation,
     limitation: result.limitedEvidenceStatement,
   };
-  return <main className="private-result-page"><CleanResultUrl /><CustomerResultView model={model} action={<ResultSourcingAction alreadyRequested={customer.sourcingRequested} />} /></main>;
+  return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><CustomerResultView model={model} action={<ResultSourcingAction alreadyRequested={customer.sourcingRequested} />} /></main>;
 }
