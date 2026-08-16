@@ -1,6 +1,6 @@
 import type { User } from "@netlify/identity";
 
-export const NETLIFY_IDENTITY_GOOGLE_PROVIDER = "google";
+export const GOOGLE_IDENTITY_ISSUER = "https://accounts.google.com";
 
 export function normalizeBootstrapEmail(value: string) {
   return value.trim().toLowerCase();
@@ -23,18 +23,23 @@ export type VerifiedStaffIdentity = {
 };
 
 export function verifiedStaffIdentity(
-  user: Pick<User, "id" | "email" | "provider" | "confirmedAt">,
-  siteId = process.env.SITE_ID,
+  user: Pick<User, "id" | "email" | "confirmedAt">,
+  googleSession: { netlifySubject: string; googleSubject: string; email: string } | null,
 ): VerifiedStaffIdentity | null {
   const email = normalizeBootstrapEmail(user.email ?? "");
-  if (!siteId || !user.id || !email || user.provider !== NETLIFY_IDENTITY_GOOGLE_PROVIDER || !user.confirmedAt) {
+  if (
+    !user.id || !email || !user.confirmedAt || !googleSession ||
+    googleSession.netlifySubject !== user.id ||
+    normalizeBootstrapEmail(googleSession.email) !== email ||
+    !googleSession.googleSubject
+  ) {
     return null;
   }
   return {
-    issuer: `netlify-identity:${siteId}`,
-    subject: user.id,
+    issuer: GOOGLE_IDENTITY_ISSUER,
+    subject: googleSession.googleSubject,
     email,
-    provider: NETLIFY_IDENTITY_GOOGLE_PROVIDER,
+    provider: "google",
   };
 }
 

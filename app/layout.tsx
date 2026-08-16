@@ -5,6 +5,7 @@ import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { GlobalAogChrome } from "@/components/GlobalAogChrome";
 import { siteConfig } from "@/lib/site-config";
+import { AdminAuthCallback } from "@/components/admin/AdminAuthCallback";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -26,5 +27,5 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const schema = { "@context":"https://schema.org", "@type":["Organization","LocalBusiness"], name:siteConfig.name, legalName:siteConfig.legalName, url:siteConfig.url, telephone:siteConfig.officePhone, email:siteConfig.email, address:{"@type":"PostalAddress",streetAddress:"375 Sylvan Ave, Suite 23",addressLocality:"Englewood Cliffs",addressRegion:"NJ",postalCode:"07632",addressCountry:"US"}, openingHoursSpecification:{"@type":"OpeningHoursSpecification",dayOfWeek:["Monday","Tuesday","Wednesday","Thursday","Friday"],opens:"08:00",closes:"17:00"}, contactPoint:[{"@type":"ContactPoint",telephone:siteConfig.officePhone,contactType:"sales and office"},{"@type":"ContactPoint",telephone:siteConfig.aogPhone,contactType:"AOG support",hoursAvailable:{"@type":"OpeningHoursSpecification",dayOfWeek:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],opens:"00:00",closes:"23:59"}}] };
-  return <html lang="en"><body className={`${geistSans.variable} ${geistMono.variable}`}><SiteHeader />{children}<GlobalAogChrome /><SiteFooter /><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}} /></body></html>;
+  return <html lang="en"><body className={`${geistSans.variable} ${geistMono.variable}`}><AdminAuthCallback /><SiteHeader />{children}<GlobalAogChrome /><SiteFooter /><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}} /></body></html>;
 }

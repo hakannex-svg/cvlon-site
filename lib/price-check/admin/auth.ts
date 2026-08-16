@@ -5,6 +5,7 @@ import { getUser, verifyRequestOrigin } from "@netlify/identity";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { isBootstrapAdmin, verifiedStaffIdentity } from "./identity";
 import { isAdminRole, roleCan, type AdminCapability, type AdminRole } from "./policy";
+import { readGoogleAdminSession } from "./session";
 
 export type PriceCheckAdmin = {
   id: string;
@@ -24,7 +25,7 @@ export async function getPriceCheckAdminAccess(): Promise<AdminAccess> {
   if (!isPriceCheckEnabled()) return { status: "disabled" };
   const identityUser = await getUser();
   if (!identityUser) return { status: "unauthenticated" };
-  const identity = verifiedStaffIdentity(identityUser);
+  const identity = verifiedStaffIdentity(identityUser, await readGoogleAdminSession());
   if (!identity) return { status: "forbidden" };
 
   try {

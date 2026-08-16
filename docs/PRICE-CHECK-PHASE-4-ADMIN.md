@@ -28,21 +28,22 @@ It is scoped to the Phase 4 preview branch and is never exposed through a `NEXT_
 
 ## Issuer and subject binding
 
-The server calls `getUser()` from `@netlify/identity`, which verifies the signed Netlify Identity session. The application requires:
+The server calls `getUser()` from `@netlify/identity`, which verifies the signed Netlify Identity session. An invited Netlify user retains `app_metadata.provider=email` as account-creation metadata even when the current login used Google, so that field is not treated as login-method proof. The callback sends the short-lived Google provider token directly to a same-origin server endpoint, which validates it against Google's OpenID Connect UserInfo endpoint and requires:
 
-- provider exactly `google`;
-- a confirmed identity email;
-- immutable Netlify Identity user ID;
-- the Netlify project site ID used as the stable issuer namespace;
+- a successful Google UserInfo response;
+- `email_verified=true`;
+- exact agreement between the Google email and confirmed Netlify Identity email;
+- Google issuer `https://accounts.google.com`;
+- Google's immutable `sub`;
 - an exact bootstrap email for the first binding.
 
 First authorized login creates an `admin_users` row with issuer, immutable subject, normalized display email, `ADMIN`, and `active=true`. It records `ADMIN_LOGIN_BOUND` and `ADMIN_LOGIN`. Later authorization uses issuer + subject + active flag + local role. A matching email with a different subject produces a binding conflict and is never rebound automatically.
 
 ## Session and CSRF architecture
 
-Google OAuth begins in the browser with `oauthLogin("google")`. Netlify Identity processes the provider callback and stores the short-lived session in its `nf_jwt`/refresh cookies. Protected server pages and every administration API independently call `getUser()`.
+Google OAuth begins in the browser with `oauthLogin("google")`. Netlify Identity processes the provider callback and stores its signed session. Civilon then verifies the Google provider token server-side and issues a separate eight-hour, HMAC-signed, `Secure`, `HttpOnly`, `SameSite=Strict` administration cookie bound to both the Netlify user ID and Google `sub`. Protected server pages and every administration API independently require the Netlify session, the matching Civilon administration cookie, and the local `admin_users` authorization record.
 
-No bearer token is stored by Civilon in `localStorage` or application code. Mutation endpoints require same-origin cookies and call Netlify Identity's `verifyRequestOrigin()`; a missing `Origin` is also rejected. Responses use `private, no-store`, vary on cookies, and carry `X-Robots-Tag: noindex, nofollow, noarchive`.
+No bearer token is stored by Civilon in `localStorage`. The Google provider token is used once for server verification, is never persisted or logged, and the URL fragment is removed before navigation. Mutation endpoints require same-origin cookies and call Netlify Identity's `verifyRequestOrigin()`; a missing `Origin` is also rejected. Responses use `private, no-store`, vary on cookies, and carry `X-Robots-Tag: noindex, nofollow, noarchive`.
 
 ## Roles
 
@@ -85,11 +86,11 @@ Material actions are append-only and include `ADMIN_LOGIN_BOUND`, `ADMIN_LOGIN`,
 
 All remote Phase 4 writes must use the database branch created for the Phase 4 draft PR. The new migration adds only a unique local display-email index; the established 19-table model remains unchanged. Production has no Price Check schema and must remain at zero public tables.
 
-`NEXT_PUBLIC_PRICE_CHECK_ENABLED=true` and the server-only bootstrap list are scoped only to `codex/civilon-price-check-phase-4`. Production and the frozen release remain false/unset. The public site does not depend on Identity or the Price Check database.
+`NEXT_PUBLIC_PRICE_CHECK_ENABLED=true`, the server-only bootstrap list, and the high-entropy administration-session secret are scoped only to `codex/civilon-price-check-phase-4`. Production and the frozen release remain false/unset. The public site does not depend on Identity or the Price Check database.
 
 ## Security validation
 
-The automated suite covers exact-email bootstrapping, Google/confirmation/site-issuer claims, immutable subject binding, binding conflict, inactive local users, RBAC, unknown-field rejection, revision immutability, deterministic normalization, transactional assignment/revision/status behavior, audit creation, CSRF/origin integration, no public analytics, no public bootstrap variable, feature gating, and production isolation.
+The automated suite covers exact-email bootstrapping, server-verified Google identity proof, signed/expired/tampered administration sessions, immutable Google subject binding, binding conflict, inactive local users, RBAC, unknown-field rejection, revision immutability, deterministic normalization, transactional assignment/revision/status behavior, audit creation, CSRF/origin integration, no public analytics, no public bootstrap variable, feature gating, and production isolation.
 
 Remote testing uses synthetic Price Check data only. Direct unauthenticated API calls must return 401, unauthorized identities must receive a generic denied state, and authenticated ADMIN users may review all Price Checks.
 
