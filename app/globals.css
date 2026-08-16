@@ -93,9 +93,9 @@ button,input,select { font:inherit; }
 .needed-by-specific { display:grid; width:100%; grid-template-columns:minmax(160px,42%) minmax(0,1fr); gap:0 12px; margin-top:10px; }
 .needed-by-specific>label { margin-bottom:5px; }
 .needed-by-specific>.field-help { grid-column:1/-1; margin-top:0; }
-.needed-by-specific input[type="date"].date-is-empty { color:#66798b; font-weight:400; }
+.needed-by-specific input[type="date"].date-is-empty { color:#65798b; font-weight:400; }
 .needed-by-specific input[type="date"].date-has-value { color:#10283e; font-weight:550; }
-.needed-by-specific input[type="date"].date-is-empty::-webkit-datetime-edit { color:#66798b; font-weight:400; }
+.needed-by-specific input[type="date"].date-is-empty::-webkit-datetime-edit { color:#65798b; font-weight:400; }
 .needed-by-specific input[type="date"].date-has-value::-webkit-datetime-edit { color:#10283e; font-weight:550; }
 .needed-by-specific input[type="date"]::-webkit-calendar-picker-indicator { opacity:.72; cursor:pointer; }
 .time-select-group { min-width:0; margin:0 0 5px; padding:0; border:0; }

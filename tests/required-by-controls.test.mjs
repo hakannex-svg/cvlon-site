@@ -34,3 +34,9 @@ test("homepage keeps the compact AOG route without full time controls", () => {
   assert.match(home, /<RfqForm sourcePage="homepage" compactAog/);
   assert.doesNotMatch(home, /requiredByHour|requiredByMinute|requiredByPeriod/);
 });
+
+test("the empty native Date state clears WCAG AA without changing shared placeholders", () => {
+  const css = read("app", "globals.css");
+  assert.match(css, /input\[type="date"\]\.date-is-empty \{ color:#65798b; font-weight:400; \}/);
+  assert.match(css, /input::placeholder,.quick-rfq textarea::placeholder\{color:#66798b;font-weight:400/);
+});
