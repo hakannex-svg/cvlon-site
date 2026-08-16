@@ -21,11 +21,11 @@ function enforceApprovedInvite(event: IdentityLoginEvent) {
 
 function recordStage(stage: "validate" | "signup" | "login", event: IdentityLoginEvent) {
   const email = normalizeBootstrapEmail(event.user.email ?? "");
-  console.info("Civilon Identity gate", {
+  console.info(`Civilon Identity gate ${JSON.stringify({
     stage,
     provider: event.user.provider ?? "missing",
     exactEmailAllowed: Boolean(email && isBootstrapAdmin(email)),
-  });
+  })}`);
 }
 
 export default {
