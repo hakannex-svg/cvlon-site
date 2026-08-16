@@ -80,13 +80,53 @@ export async function bindOrAuthorizeAdmin(
         aggregateId: byIdentity.id,
         actorId: byIdentity.id,
         action: "ADMIN_LOGIN",
-        metadata: { provider: identity.provider },
+        metadata: {
+          provider: identity.provider,
+          authenticationMethods: identity.authenticationMethods,
+        },
       });
       return { status: "authorized" as const, user: { ...byIdentity, lastLoginAt: now } };
     }
 
     const [emailBinding] = await tx.select().from(adminUsers).where(eq(adminUsers.displayEmail, identity.email)).limit(1);
-    if (emailBinding) return { status: "binding_conflict" as const };
+    if (emailBinding) {
+      if (!emailBinding.active) return { status: "inactive" as const };
+      const isApprovedIdentityMigration = bootstrapAllowed &&
+        identity.provider === "google-oidc" &&
+        identity.issuer === "https://accounts.google.com" &&
+        emailBinding.identityProviderIssuer.startsWith("netlify-identity:");
+      if (!isApprovedIdentityMigration) return { status: "binding_conflict" as const };
+
+      const now = new Date();
+      const [rebound] = await tx.update(adminUsers).set({
+        identityProviderIssuer: identity.issuer,
+        identityProviderSubject: identity.subject,
+        lastLoginAt: now,
+        updatedAt: now,
+      }).where(eq(adminUsers.id, emailBinding.id)).returning();
+      await appendAudit(tx, {
+        aggregateType: "admin_user",
+        aggregateId: rebound.id,
+        actorId: rebound.id,
+        action: "ADMIN_IDENTITY_REBOUND",
+        metadata: {
+          fromProvider: "netlify-identity",
+          toProvider: identity.provider,
+          authenticationMethods: identity.authenticationMethods,
+        },
+      });
+      await appendAudit(tx, {
+        aggregateType: "admin_user",
+        aggregateId: rebound.id,
+        actorId: rebound.id,
+        action: "ADMIN_LOGIN",
+        metadata: {
+          provider: identity.provider,
+          authenticationMethods: identity.authenticationMethods,
+        },
+      });
+      return { status: "rebound" as const, user: rebound };
+    }
     if (!bootstrapAllowed) return { status: "not_allowed" as const };
 
     const [created] = await tx.insert(adminUsers).values({
@@ -103,14 +143,21 @@ export async function bindOrAuthorizeAdmin(
       aggregateId: created.id,
       actorId: created.id,
       action: "ADMIN_LOGIN_BOUND",
-      metadata: { provider: identity.provider, role: "ADMIN" },
+      metadata: {
+        provider: identity.provider,
+        role: "ADMIN",
+        authenticationMethods: identity.authenticationMethods,
+      },
     });
     await appendAudit(tx, {
       aggregateType: "admin_user",
       aggregateId: created.id,
       actorId: created.id,
       action: "ADMIN_LOGIN",
-      metadata: { provider: identity.provider },
+      metadata: {
+        provider: identity.provider,
+        authenticationMethods: identity.authenticationMethods,
+      },
     });
     return { status: "bound" as const, user: created };
   });

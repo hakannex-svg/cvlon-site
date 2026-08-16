@@ -1,5 +1,3 @@
-import type { User } from "@netlify/identity";
-
 export function normalizeBootstrapEmail(value: string) {
   return value.trim().toLowerCase();
 }
@@ -14,25 +12,50 @@ export function bootstrapAdminEmails(raw = process.env.PRICE_CHECK_BOOTSTRAP_ADM
 }
 
 export type VerifiedStaffIdentity = {
-  issuer: string;
+  issuer: "https://accounts.google.com";
   subject: string;
   email: string;
-  provider: "netlify-identity";
+  provider: "google-oidc";
+  authenticationMethods: string[];
 };
 
-export function verifiedStaffIdentity(
-  user: Pick<User, "id" | "email">,
-  siteId = process.env.SITE_ID,
+type GoogleIdentityClaims = {
+  iss?: unknown;
+  sub?: unknown;
+  email?: unknown;
+  email_verified?: unknown;
+  hd?: unknown;
+  nonce?: unknown;
+  amr?: unknown;
+};
+
+const GOOGLE_ISSUERS = new Set([
+  "https://accounts.google.com",
+  "accounts.google.com",
+]);
+
+export function verifiedGoogleIdentity(
+  claims: GoogleIdentityClaims,
+  expectedNonce: string,
 ): VerifiedStaffIdentity | null {
-  const email = normalizeBootstrapEmail(user.email ?? "");
-  if (!siteId || !user.id || !email) {
-    return null;
-  }
+  if (!GOOGLE_ISSUERS.has(String(claims.iss ?? ""))) return null;
+  if (typeof claims.sub !== "string" || claims.sub.length < 1 || claims.sub.length > 255) return null;
+  if (typeof claims.email !== "string" || claims.email.length > 320) return null;
+  if (claims.email_verified !== true) return null;
+  if (typeof claims.nonce !== "string" || claims.nonce !== expectedNonce) return null;
+
+  const email = normalizeBootstrapEmail(claims.email);
+  if (!email) return null;
+  if (email.endsWith("@cvlon.com") && claims.hd !== "cvlon.com") return null;
+
   return {
-    issuer: `netlify-identity:${siteId}`,
-    subject: user.id,
+    issuer: "https://accounts.google.com",
+    subject: claims.sub,
     email,
-    provider: "netlify-identity",
+    provider: "google-oidc",
+    authenticationMethods: Array.isArray(claims.amr)
+      ? claims.amr.filter((method): method is string => typeof method === "string").slice(0, 12)
+      : [],
   };
 }
 

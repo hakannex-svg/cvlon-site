@@ -5,8 +5,18 @@ import test from "node:test";
 import {
   bootstrapAdminEmails,
   isBootstrapAdmin,
-  verifiedStaffIdentity,
+  verifiedGoogleIdentity,
 } from "../lib/price-check/admin/identity.ts";
+import {
+  createGoogleAuthorizationRequest,
+  verifyGoogleAuthorizationTransaction,
+} from "../lib/price-check/admin/oidc.ts";
+import {
+  ADMIN_SESSION_COOKIE,
+  clearSecureCookie,
+  readCookie,
+  secureCookie,
+} from "../lib/price-check/admin/session.ts";
 import {
   adminRoles,
   allowedOperationalStatuses,
@@ -17,9 +27,19 @@ import { canTransitionPriceCheck } from "../db/price-check/domain/status-policy.
 
 const exactBootstrap = "david@cvlon.com,hakannex@gmail.com";
 const validIdentity = {
-  id: "95c929fd-fb8d-4694-abf2-3049352efd5d",
+  iss: "https://accounts.google.com",
+  sub: "google-subject-hakan",
   email: "HAKANNEX@GMAIL.COM",
-  confirmedAt: "2026-08-16T04:00:00.000Z",
+  email_verified: true,
+  nonce: "expected-nonce",
+  amr: ["pwd", "mfa"],
+};
+
+const oidcConfig = {
+  clientId: "synthetic-client.apps.googleusercontent.com",
+  clientSecret: "synthetic-client-secret",
+  redirectUri: "https://deploy-preview-4--cvlon.netlify.app/api/admin/auth/google/callback",
+  sessionSecret: "synthetic-session-secret-that-is-long-enough-for-testing-only",
 };
 
 const validRevision = (overrides = {}) => ({
@@ -56,16 +76,46 @@ test("bootstrap authorization is exact-email only and uses the owner-corrected H
   assert.equal(isBootstrapAdmin("other@gmail.com", exactBootstrap), false);
 });
 
-test("verified staff identity requires signed subject/email claims and a stable site issuer", () => {
-  assert.deepEqual(verifiedStaffIdentity(validIdentity, "civilon-site-id"), {
-    issuer: "netlify-identity:civilon-site-id",
-    subject: validIdentity.id,
+test("verified Google identity requires issuer, subject, verified email, and matching nonce", () => {
+  assert.deepEqual(verifiedGoogleIdentity(validIdentity, "expected-nonce"), {
+    issuer: "https://accounts.google.com",
+    subject: validIdentity.sub,
     email: "hakannex@gmail.com",
-    provider: "netlify-identity",
+    provider: "google-oidc",
+    authenticationMethods: ["pwd", "mfa"],
   });
-  assert.equal(verifiedStaffIdentity({ ...validIdentity, id: "" }, "civilon-site-id"), null);
-  assert.equal(verifiedStaffIdentity({ ...validIdentity, email: undefined }, "civilon-site-id"), null);
-  assert.equal(verifiedStaffIdentity(validIdentity, ""), null);
+  assert.equal(verifiedGoogleIdentity({ ...validIdentity, iss: "https://attacker.invalid" }, "expected-nonce"), null);
+  assert.equal(verifiedGoogleIdentity({ ...validIdentity, sub: "" }, "expected-nonce"), null);
+  assert.equal(verifiedGoogleIdentity({ ...validIdentity, email_verified: false }, "expected-nonce"), null);
+  assert.equal(verifiedGoogleIdentity(validIdentity, "wrong-nonce"), null);
+  assert.equal(verifiedGoogleIdentity({ ...validIdentity, email: "david@cvlon.com" }, "expected-nonce"), null);
+  assert.equal(verifiedGoogleIdentity({ ...validIdentity, email: "david@cvlon.com", hd: "cvlon.com" }, "expected-nonce").email, "david@cvlon.com");
+});
+
+test("OIDC authorization request uses code flow, PKCE, minimal scopes, and signed state", async () => {
+  const authorization = await createGoogleAuthorizationRequest(oidcConfig);
+  assert.equal(authorization.url.origin, "https://accounts.google.com");
+  assert.equal(authorization.url.searchParams.get("response_type"), "code");
+  assert.equal(authorization.url.searchParams.get("scope"), "openid email profile");
+  assert.equal(authorization.url.searchParams.get("code_challenge_method"), "S256");
+  assert.equal(authorization.url.searchParams.get("redirect_uri"), oidcConfig.redirectUri);
+  assert.ok(authorization.url.searchParams.get("nonce"));
+  const state = authorization.url.searchParams.get("state");
+  const transaction = await verifyGoogleAuthorizationTransaction(authorization.transaction, state, oidcConfig);
+  assert.ok(transaction.codeVerifier.length >= 43);
+  await assert.rejects(verifyGoogleAuthorizationTransaction(authorization.transaction, `${state}tampered`, oidcConfig));
+});
+
+test("Civilon session cookies are host-only, secure, HTTP-only, and expire explicitly", () => {
+  const cookie = secureCookie(ADMIN_SESSION_COOKIE, "synthetic-token", 600);
+  assert.match(cookie, /^__Host-cvlon_admin_session=/);
+  assert.match(cookie, /Path=\//);
+  assert.match(cookie, /Max-Age=600/);
+  assert.match(cookie, /HttpOnly/);
+  assert.match(cookie, /Secure/);
+  assert.match(cookie, /SameSite=Lax/);
+  assert.equal(readCookie(`other=x; ${ADMIN_SESSION_COOKIE}=synthetic-token`, ADMIN_SESSION_COOKIE), "synthetic-token");
+  assert.match(clearSecureCookie(ADMIN_SESSION_COOKIE), /Max-Age=0/);
 });
 
 test("the signed Netlify lifecycle gates require the exact approved identities", async () => {
@@ -142,12 +192,13 @@ test("information request requires controlled state data and does not claim deli
   assert.equal(validateInformationRequest({ category: "Documentation", customerNote: "Clarify.", emailSent: true }).success, false);
 });
 
-test("admin source boundary uses server Identity, origin checks, no public analytics, and no public bootstrap variable", async () => {
-  const [auth, login, callback, identityHook, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
+test("admin source boundary uses server OIDC sessions, strict origin checks, no public analytics, and no public bootstrap variable", async () => {
+  const [auth, login, callback, logout, oidc, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
     readFile("lib/price-check/admin/auth.ts", "utf8"),
     readFile("components/admin/AdminLogin.tsx", "utf8"),
-    readFile("components/admin/AdminAuthCallback.tsx", "utf8"),
-    readFile("netlify/functions/identity.mts", "utf8"),
+    readFile("app/api/admin/auth/google/callback/route.ts", "utf8"),
+    readFile("app/api/admin/auth/logout/route.ts", "utf8"),
+    readFile("lib/price-check/admin/oidc.ts", "utf8"),
     readFile("netlify.toml", "utf8"),
     readFile("app/sitemap.ts", "utf8"),
     readFile("lib/analytics.ts", "utf8"),
@@ -156,20 +207,22 @@ test("admin source boundary uses server Identity, origin checks, no public analy
       "assignment", "revision", "information-request", "status",
     ].map(name => readFile(`app/api/admin/price-checks/[id]/${name}/route.ts`, "utf8"))),
   ]);
-  assert.match(auth, /getUser/);
-  assert.match(auth, /verifiedStaffIdentity/);
-  assert.match(auth, /verifyRequestOrigin/);
+  assert.match(auth, /resolveAdminSession/);
+  assert.match(auth, /cookies/);
+  assert.match(auth, /origin !== expectedOrigin/);
+  assert.doesNotMatch(auth, /getUser|verifyRequestOrigin/);
   assert.doesNotMatch(auth, /NEXT_PUBLIC_PRICE_CHECK_BOOTSTRAP/);
-  assert.match(login, /oauthLogin\("google"\)/);
-  assert.doesNotMatch(login, /signup\(|login\(/);
-  assert.match(callback, /handleAuthCallback/);
-  assert.match(callback, /params\.get\("access_token"\)/);
+  assert.match(login, /\/api\/admin\/auth\/google\/login/);
+  assert.doesNotMatch(login, /@netlify\/identity|oauthLogin|signup\(/);
+  assert.match(callback, /verifyGoogleAuthorizationTransaction/);
+  assert.match(callback, /exchangeGoogleAuthorizationCode/);
+  assert.match(callback, /isBootstrapAdmin/);
   assert.match(callback, /\/admin\/price-checks/);
-  assert.match(identityHook, /userLogin/);
-  assert.match(identityHook, /userSignup/);
-  assert.match(identityHook, /userValidate/);
-  assert.match(identityHook, /isBootstrapAdmin/);
-  assert.match(identityHook, /event\.deny/);
+  assert.match(logout, /revokeAdminSession/);
+  assert.match(oidc, /openid email profile/);
+  assert.match(oidc, /code_challenge_method/);
+  assert.match(oidc, /issuer: GOOGLE_ISSUERS/);
+  assert.match(oidc, /audience: config\.clientId/);
   assert.match(netlify, /private, no-store/);
   assert.doesNotMatch(sitemap, /admin/);
   assert.doesNotMatch(analytics, /price_check_admin|requester|assignee/);

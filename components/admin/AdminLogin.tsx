@@ -1,6 +1,5 @@
 "use client";
 
-import { oauthLogin } from "@netlify/identity";
 import { useEffect, useState } from "react";
 
 export function AdminLogin() {
@@ -20,10 +19,10 @@ export function AdminLogin() {
         <h1 id="admin-login-title">Price Check Administration</h1>
         <p>Continue with an invited Google identity. Authentication does not grant access unless the verified identity is also bound to an active Civilon administration record.</p>
         {state === "error" && <div className="admin-error" role="alert">The secure sign-in could not be completed. Try Google sign-in again.</div>}
-        <button className="admin-google-button" type="button" onClick={() => oauthLogin("google")}>
+        <a className="admin-google-button" href="/api/admin/auth/google/login">
           <span aria-hidden="true">G</span> Continue with Google
-        </button>
-        <p className="admin-login-footnote">Invite only · Google identity · Server-verified access</p>
+        </a>
+        <p className="admin-login-footnote">Exact allowlist · Google identity · Server-verified access</p>
       </section>
     </main>
   );

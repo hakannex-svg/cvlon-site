@@ -1,9 +1,10 @@
 import "@/db/price-check/server-boundary";
 
-import { getUser, verifyRequestOrigin } from "@netlify/identity";
+import { cookies } from "next/headers";
 
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
-import { isBootstrapAdmin, verifiedStaffIdentity } from "./identity";
+import { getGoogleOidcConfig, oidcRedirectOrigin } from "./oidc";
+import { ADMIN_SESSION_COOKIE } from "./session";
 import { isAdminRole, roleCan, type AdminCapability, type AdminRole } from "./policy";
 
 export type PriceCheckAdmin = {
@@ -22,31 +23,26 @@ export type AdminAccess =
 
 export async function getPriceCheckAdminAccess(): Promise<AdminAccess> {
   if (!isPriceCheckEnabled()) return { status: "disabled" };
-  const identityUser = await getUser();
-  if (!identityUser) return { status: "unauthenticated" };
-  const identity = verifiedStaffIdentity(identityUser);
-  if (!identity) return { status: "forbidden" };
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
+  if (!token) return { status: "unauthenticated" };
 
   try {
-    const [{ priceCheckDb }, { bindOrAuthorizeAdmin }] = await Promise.all([
+    const config = getGoogleOidcConfig();
+    const [{ priceCheckDb }, { resolveAdminSession }] = await Promise.all([
       import("@/db/price-check"),
-      import("@/db/price-check/repositories/admin-repository"),
+      import("@/db/price-check/repositories/session-repository"),
     ]);
-    const result = await bindOrAuthorizeAdmin(
-      priceCheckDb,
-      identity,
-      isBootstrapAdmin(identity.email),
-    );
-    if ((result.status !== "authorized" && result.status !== "bound") || !isAdminRole(result.user.role)) {
-      return { status: "forbidden" };
-    }
+    const user = await resolveAdminSession(priceCheckDb, token, config.sessionSecret);
+    if (!user) return { status: "unauthenticated" };
+    if (!user.active || !isAdminRole(user.role)) return { status: "forbidden" };
     return {
       status: "authorized",
       user: {
-        id: result.user.id,
-        email: result.user.displayEmail,
-        role: result.user.role,
-        active: result.user.active,
+        id: user.id,
+        email: user.displayEmail,
+        role: user.role,
+        active: user.active,
       },
     };
   } catch {
@@ -62,8 +58,11 @@ export async function requireAdminApi(capability: AdminCapability) {
 }
 
 export function verifyAdminMutationOrigin(request: Request) {
-  verifyRequestOrigin(request);
-  if (!request.headers.get("origin")) throw new Error("Missing request origin.");
+  const origin = request.headers.get("origin");
+  const expectedOrigin = oidcRedirectOrigin(getGoogleOidcConfig());
+  if (!origin || origin !== expectedOrigin) throw new Error("Invalid request origin.");
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite && fetchSite !== "same-origin") throw new Error("Cross-site request denied.");
 }
 
 export function privateJson(body: unknown, status = 200) {

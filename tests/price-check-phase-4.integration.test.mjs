@@ -3,6 +3,15 @@ import test from "node:test";
 import { NetlifyDB } from "@netlify/database-dev";
 
 const migrationsDirectory = new URL("../netlify/database/migrations/", import.meta.url).pathname.replace(/^\/(\w:)/, "$1");
+const sessionSecret = "synthetic-session-secret-that-is-long-enough-for-integration-tests";
+
+const googleIdentity = (email, subject) => ({
+  issuer: "https://accounts.google.com",
+  subject,
+  email,
+  provider: "google-oidc",
+  authenticationMethods: ["pwd", "mfa"],
+});
 
 async function withDatabase(run) {
   const server = new NetlifyDB({ logger: () => undefined });
@@ -35,12 +44,12 @@ async function seedRequest(db) {
   });
 }
 
-test("first verified Netlify Identity login binds an ADMIN, subsequent subject authorization is durable, and rebinding is denied", async () => {
+test("first verified Google OIDC login binds an ADMIN, subsequent subject authorization is durable, and rebinding is denied", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
     const { sql } = await import("drizzle-orm");
     const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
-    assert.equal(applied.length, 3);
-    const identity = { issuer: "netlify-identity:synthetic-site", subject: "identity-subject-hakan", email: "hakannex@gmail.com", provider: "netlify-identity" };
+    assert.equal(applied.length, 4);
+    const identity = googleIdentity("hakannex@gmail.com", "google-subject-hakan");
     const first = await bindOrAuthorizeAdmin(db, identity, true);
     assert.equal(first.status, "bound");
     assert.equal(first.user.role, "ADMIN");
@@ -58,11 +67,64 @@ test("first verified Netlify Identity login binds an ADMIN, subsequent subject a
   });
 });
 
+test("the exact approved account can migrate once from Netlify Identity to immutable Google subject binding", async () => {
+  await withDatabase(async ({ db, schema }) => {
+    const { eq } = await import("drizzle-orm");
+    const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
+    const adminId = "01J00000000000000000000000";
+    await db.insert(schema.adminUsers).values({
+      id: adminId,
+      identityProviderIssuer: "netlify-identity:synthetic-site",
+      identityProviderSubject: "legacy-netlify-subject",
+      displayEmail: "hakannex@gmail.com",
+      role: "ADMIN",
+      active: true,
+    });
+    const rebound = await bindOrAuthorizeAdmin(
+      db,
+      googleIdentity("hakannex@gmail.com", "google-subject-hakan"),
+      true,
+    );
+    assert.equal(rebound.status, "rebound");
+    assert.equal(rebound.user.id, adminId);
+    const [stored] = await db.select().from(schema.adminUsers).where(eq(schema.adminUsers.id, adminId));
+    assert.equal(stored.identityProviderIssuer, "https://accounts.google.com");
+    assert.equal(stored.identityProviderSubject, "google-subject-hakan");
+    const conflict = await bindOrAuthorizeAdmin(
+      db,
+      googleIdentity("hakannex@gmail.com", "different-google-subject"),
+      true,
+    );
+    assert.equal(conflict.status, "binding_conflict");
+    const events = await db.select().from(schema.auditEvents).where(eq(schema.auditEvents.aggregateId, adminId));
+    assert.equal(events.filter(event => event.action === "ADMIN_IDENTITY_REBOUND").length, 1);
+  });
+});
+
+test("opaque Civilon sessions rotate, expire through lookup policy, and revoke on logout", async () => {
+  await withDatabase(async ({ db }) => {
+    const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
+    const sessions = await import("../db/price-check/repositories/session-repository.ts");
+    const admin = (await bindOrAuthorizeAdmin(
+      db,
+      googleIdentity("david@cvlon.com", "google-subject-david"),
+      true,
+    )).user;
+    const first = await sessions.createAdminSession(db, admin.id, sessionSecret);
+    assert.equal((await sessions.resolveAdminSession(db, first.token, sessionSecret)).id, admin.id);
+    const second = await sessions.createAdminSession(db, admin.id, sessionSecret);
+    assert.equal(await sessions.resolveAdminSession(db, first.token, sessionSecret), null);
+    assert.equal((await sessions.resolveAdminSession(db, second.token, sessionSecret)).id, admin.id);
+    await sessions.revokeAdminSession(db, second.token, sessionSecret);
+    assert.equal(await sessions.resolveAdminSession(db, second.token, sessionSecret), null);
+  });
+});
+
 test("inactive staff is rejected and local role remains authoritative", async () => {
   await withDatabase(async ({ db, schema }) => {
     const { eq } = await import("drizzle-orm");
     const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
-    const identity = { issuer: "netlify-identity:synthetic-site", subject: "identity-subject-david", email: "david@cvlon.com", provider: "netlify-identity" };
+    const identity = googleIdentity("david@cvlon.com", "google-subject-david");
     const bound = await bindOrAuthorizeAdmin(db, identity, true);
     await db.update(schema.adminUsers).set({ active: false, role: "AUDITOR" }).where(eq(schema.adminUsers.id, bound.user.id));
     const inactive = await bindOrAuthorizeAdmin(db, identity, true);
@@ -74,7 +136,7 @@ test("assignment, revision, normalization, status, and audit are transactional w
   await withDatabase(async ({ db, schema }) => {
     const { eq } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/admin-repository.ts");
-    const identity = { issuer: "netlify-identity:synthetic-site", subject: "identity-subject-hakan", email: "hakannex@gmail.com", provider: "netlify-identity" };
+    const identity = googleIdentity("hakannex@gmail.com", "google-subject-hakan");
     const admin = (await repository.bindOrAuthorizeAdmin(db, identity, true)).user;
     const created = await seedRequest(db);
     await repository.assignPriceCheck(db, { priceCheckId: created.priceCheckId, assigneeId: admin.id, actor: admin });
@@ -102,7 +164,7 @@ test("failed assignment and revision attempts leave the aggregate unchanged", as
   await withDatabase(async ({ db, schema }) => {
     const { eq, sql } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/admin-repository.ts");
-    const admin = (await repository.bindOrAuthorizeAdmin(db, { issuer: "netlify-identity:synthetic-site", subject: "subject", email: "david@cvlon.com", provider: "netlify-identity" }, true)).user;
+    const admin = (await repository.bindOrAuthorizeAdmin(db, googleIdentity("david@cvlon.com", "google-subject-david"), true)).user;
     const created = await seedRequest(db);
     await assert.rejects(repository.assignPriceCheck(db, { priceCheckId: created.priceCheckId, assigneeId: "01AAAAAAAAAAAAAAAAAAAAAAAA", actor: admin }));
     await assert.rejects(repository.createAdminRevision(db, { priceCheckId: "01BBBBBBBBBBBBBBBBBBBBBBBB", actor: admin, transaction: {} }));
