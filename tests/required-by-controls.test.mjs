@@ -13,8 +13,10 @@ test("AOG needed-by UI preserves the existing Netlify requiredBy field", () => {
   assert.doesNotMatch(form + netlify, /name="required-by"/);
   assert.doesNotMatch(form, /type="datetime-local"/);
   assert.match(form, /type="date" name="requiredByDate"/);
+  assert.match(form, /neededByDate \? "date-has-value" : "date-is-empty"/);
   assert.doesNotMatch(form, /type="time"/);
   for (const name of ["requiredByHour", "requiredByMinute", "requiredByPeriod"]) assert.match(form, new RegExp(`name="${name}"`));
+  for (const prompt of ["Hour", "Min", "AM/PM"]) assert.match(form, new RegExp(`<option value="">${prompt.replace("/", "\\/")}</option>`));
   assert.match(form, /Use local time at the aircraft location\./);
 });
 
