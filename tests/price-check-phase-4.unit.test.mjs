@@ -72,7 +72,10 @@ test("the signed Netlify login event gate denies every non-Google, wrong, missin
   const { default: identityEvents } = await import("../netlify/functions/identity.mts");
   const run = (provider, email) => {
     let denied = false;
-    identityEvents.userLogin({ user: { provider, email }, deny() { denied = true; } });
+    const event = { user: { provider, email }, deny() { denied = true; } };
+    identityEvents.userValidate(event);
+    identityEvents.userSignup(event);
+    identityEvents.userLogin(event);
     return denied;
   };
   const previous = process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS;
@@ -158,6 +161,8 @@ test("admin source boundary uses server Identity, origin checks, no public analy
   assert.match(callback, /params\.get\("access_token"\)/);
   assert.match(callback, /\/admin\/price-checks/);
   assert.match(identityHook, /userLogin/);
+  assert.match(identityHook, /userSignup/);
+  assert.match(identityHook, /userValidate/);
   assert.match(identityHook, /provider !== "google"/);
   assert.match(identityHook, /isBootstrapAdmin/);
   assert.match(identityHook, /event\.deny/);

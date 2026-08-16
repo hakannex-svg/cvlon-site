@@ -5,11 +5,15 @@ type IdentityLoginEvent = {
   deny(): unknown;
 };
 
+function enforceApprovedGoogleIdentity(event: IdentityLoginEvent) {
+  const email = normalizeBootstrapEmail(event.user.email ?? "");
+  if (event.user.provider !== "google" || !email || !isBootstrapAdmin(email)) {
+    return event.deny();
+  }
+}
+
 export default {
-  userLogin(event: IdentityLoginEvent) {
-    const email = normalizeBootstrapEmail(event.user.email ?? "");
-    if (event.user.provider !== "google" || !email || !isBootstrapAdmin(email)) {
-      return event.deny();
-    }
-  },
+  userValidate: enforceApprovedGoogleIdentity,
+  userSignup: enforceApprovedGoogleIdentity,
+  userLogin: enforceApprovedGoogleIdentity,
 };
