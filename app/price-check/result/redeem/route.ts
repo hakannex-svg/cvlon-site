@@ -12,6 +12,14 @@ function unavailable(request: Request) {
   return response;
 }
 
+function cleanResultUrl(request: Request) {
+  const resultUrl = new URL("/price-check/result", request.url);
+  // An explicit empty query prevents hosting-layer redirect handling from
+  // carrying the redemption credential onto the customer result URL.
+  resultUrl.search = "?";
+  return resultUrl;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
@@ -23,7 +31,7 @@ export async function GET(request: Request) {
     const [{ priceCheckDb }, { redeemResultToken }] = await Promise.all([import("@/db/price-check"), import("@/db/price-check/repositories/result-delivery-repository")]);
     const redeemed = await redeemResultToken(priceCheckDb, { token, tokenKey: key });
     if (!redeemed) return unavailable(request);
-    const response = NextResponse.redirect(new URL("/price-check/result", request.url), 303);
+    const response = NextResponse.redirect(cleanResultUrl(request), 303);
     response.cookies.set(RESULT_SESSION_COOKIE, createResultSession(key, redeemed), { secure: true, httpOnly: true, sameSite: "lax", path: "/price-check/result", maxAge: 30 * 60 });
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");

@@ -49,6 +49,7 @@ test("private result routes carry cache, robots, and referrer protections", () =
   const netlify = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
   const middleware = fs.readFileSync(new URL("../proxy.ts", import.meta.url), "utf8");
   const page = fs.readFileSync(new URL("../app/price-check/result/page.tsx", import.meta.url), "utf8");
+  const redeem = fs.readFileSync(new URL("../app/price-check/result/redeem/route.ts", import.meta.url), "utf8");
   assert.match(netlify, /for = "\/price-check\/result"/);
   assert.match(netlify, /for = "\/price-check\/result\/\*"/);
   assert.match(netlify, /private, no-store/);
@@ -59,6 +60,8 @@ test("private result routes carry cache, robots, and referrer protections", () =
   assert.match(middleware, /noindex, nofollow/);
   assert.match(middleware, /no-referrer/);
   assert.match(page, /robots: \{ index: false, follow: false \}/);
+  assert.match(redeem, /resultUrl\.search = "\?"/);
+  assert.match(redeem, /NextResponse\.redirect\(cleanResultUrl\(request\), 303\)/);
 });
 
 test("Phase 6 remains manual and contains no OpenAI or upload implementation", () => {
