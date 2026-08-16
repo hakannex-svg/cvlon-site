@@ -32,7 +32,7 @@ Private result responses use `Cache-Control: private, no-store`, `X-Robots-Tag: 
 
 `TransactionalEmailProvider` isolates delivery from the result domain. Phase 6 uses `PostmarkTransactionalEmailProvider`, the official HTTPS Email API, multipart HTML/text, link tracking disabled and minimum necessary email content. The subject contains only the Civilon Price Check reference.
 
-Deploy Preview uses Postmark’s documented `POSTMARK_API_TEST` server-token value. The API validates the message and returns a provider result without delivering to an inbox. Production live sending is not configured.
+Deploy Preview uses Postmark’s documented non-delivering server test token. The API validates the message and returns a provider result without delivering to an inbox. Production live sending is not configured.
 
 Approval does not call Postmark. “Send result” transactionally creates/reuses the secure credential and an idempotent `RESULT_READY` outbox row. A separate leased worker sends the message, records the provider message ID and marks the result `SENT` only after provider success. Failure leaves the result `APPROVED`, records a sanitized code and schedules exponential retry; attempt five enters `dead_letter`. Database idempotency and leases prevent repeated/concurrent workers from creating duplicate successful sends.
 
