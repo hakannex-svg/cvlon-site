@@ -110,6 +110,7 @@ test("implementation has no Files API, customer extraction UI or browser secret"
 test("admin attachment workflow exposes accessible queued and processing feedback", () => {
   const source = fs.readFileSync(new URL("../components/admin/AdminAttachmentWorkspace.tsx", import.meta.url), "utf8");
   const review = fs.readFileSync(new URL("../components/admin/AdminExtractionReview.tsx", import.meta.url), "utf8");
+  const detail = fs.readFileSync(new URL("../app/admin/price-checks/[id]/page.tsx", import.meta.url), "utf8");
   assert.match(source, /state:\s*"pending"/);
   assert.match(source, /state:\s*"running"/);
   assert.match(source, /aria-live="polite"/);
@@ -117,6 +118,10 @@ test("admin attachment workflow exposes accessible queued and processing feedbac
   assert.match(source, /feedbackRef\.current\?\.focus\(\)/);
   assert.match(source, /\[message, error, extractionStates\]/);
   assert.match(review, /feedbackRef\.current\?\.focus\(\)/);
+  assert.match(review, /sessionStorage\.setItem\(revisionFocusKey, "pending"\)/);
+  assert.match(review, /sessionStorage\.removeItem\(revisionFocusKey\)/);
+  assert.match(review, /document\.getElementById\("reviewed-heading"\)\?\.focus\(\)/);
+  assert.match(detail, /id="reviewed-heading" tabIndex=\{-1\}/);
   assert.match(`${source}\n${review}`, /tabIndex=\{-1\}/);
 });
 

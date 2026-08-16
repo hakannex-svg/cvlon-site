@@ -58,10 +58,16 @@ export function AdminExtractionReview({ priceCheckId, extractions, transaction, 
   const feedbackRef = useRef<HTMLParagraphElement | null>(null);
   const router = useRouter();
   const line = proposal?.line_items?.[lineIndex];
+  const revisionFocusKey = `civilon:extraction-review-focus:${priceCheckId}`;
   useEffect(() => {
     if (!message && !error) return;
     window.requestAnimationFrame(() => feedbackRef.current?.focus());
   }, [message, error]);
+  useEffect(() => {
+    if (window.sessionStorage.getItem(revisionFocusKey) !== "pending") return;
+    window.sessionStorage.removeItem(revisionFocusKey);
+    window.requestAnimationFrame(() => document.getElementById("reviewed-heading")?.focus());
+  }, [revisionFocusKey, transaction, extractions]);
 
   async function apply() {
     if (!selected || !line) return;
@@ -76,6 +82,7 @@ export function AdminExtractionReview({ priceCheckId, extractions, transaction, 
       const result = await response.json() as { ok: boolean; error?: string; version?: number };
       if (!response.ok || !result.ok) throw new Error(result.error || "Confirmed details could not be applied.");
       setMessage(`Revision ${result.version} created. Deterministic pricing will use the human-confirmed revision only.`);
+      window.sessionStorage.setItem(revisionFocusKey, "pending");
       router.refresh();
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Confirmed details could not be applied."); }
     finally { setBusy(false); }
