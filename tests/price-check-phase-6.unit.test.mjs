@@ -48,7 +48,8 @@ test("result-ready email is multipart, privacy-minimized, and contains the secur
 test("private result routes carry cache, robots, and referrer protections", () => {
   const netlify = fs.readFileSync(new URL("../netlify.toml", import.meta.url), "utf8");
   const page = fs.readFileSync(new URL("../app/price-check/result/page.tsx", import.meta.url), "utf8");
-  assert.match(netlify, /\/price-check\/result\*/);
+  assert.match(netlify, /for = "\/price-check\/result"/);
+  assert.match(netlify, /for = "\/price-check\/result\/\*"/);
   assert.match(netlify, /private, no-store/);
   assert.match(netlify, /noindex, nofollow/);
   assert.match(netlify, /no-referrer/);
