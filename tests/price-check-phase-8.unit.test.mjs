@@ -109,9 +109,14 @@ test("implementation has no Files API, customer extraction UI or browser secret"
 
 test("admin attachment workflow exposes accessible queued and processing feedback", () => {
   const source = fs.readFileSync(new URL("../components/admin/AdminAttachmentWorkspace.tsx", import.meta.url), "utf8");
+  const review = fs.readFileSync(new URL("../components/admin/AdminExtractionReview.tsx", import.meta.url), "utf8");
   assert.match(source, /state:\s*"pending"/);
   assert.match(source, /state:\s*"running"/);
   assert.match(source, /aria-live="polite"/);
+  assert.match(source, /extractionStatusRefs\.current\[activeExtraction\.attachmentId\]\?\.focus\(\)/);
+  assert.match(source, /feedbackRef\.current\?\.focus\(\)/);
+  assert.match(review, /feedbackRef\.current\?\.focus\(\)/);
+  assert.match(`${source}\n${review}`, /tabIndex=\{-1\}/);
 });
 
 test("public upload disclosure uses the owner-approved privacy wording", () => {

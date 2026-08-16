@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DocumentExtraction, ExtractionLineItem, MaterialField } from "@/lib/price-check/extraction/schema";
 
@@ -55,8 +55,13 @@ export function AdminExtractionReview({ priceCheckId, extractions, transaction, 
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const feedbackRef = useRef<HTMLParagraphElement | null>(null);
   const router = useRouter();
   const line = proposal?.line_items?.[lineIndex];
+  useEffect(() => {
+    if (!message && !error) return;
+    window.requestAnimationFrame(() => feedbackRef.current?.focus());
+  }, [message, error]);
 
   async function apply() {
     if (!selected || !line) return;
@@ -96,6 +101,6 @@ export function AdminExtractionReview({ priceCheckId, extractions, transaction, 
         {canApply && <div className="admin-extraction-apply"><label htmlFor="extraction-change-reason">Change reason<input id="extraction-change-reason" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={240} /></label><button type="button" disabled={busy} onClick={apply}>{busy ? "Applying…" : "Apply confirmed document details"}</button></div>}
       </>}
     </>}
-    {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-success" role="status">{message}</p>}
+    {error && <p ref={feedbackRef} tabIndex={-1} className="admin-error" role="alert">{error}</p>}{message && <p ref={feedbackRef} tabIndex={-1} className="admin-success" role="status">{message}</p>}
   </section>;
 }

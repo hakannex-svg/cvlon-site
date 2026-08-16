@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type AttachmentItem = {
   id: string;
@@ -46,6 +46,16 @@ export function AdminAttachmentWorkspace({ priceCheckId, attachments, canDownloa
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [activeExtraction, setActiveExtraction] = useState<{ attachmentId: string; state: "pending" | "running" } | null>(null);
+  const extractionStatusRefs = useRef<Record<string, HTMLSpanElement | null>>({});
+  const feedbackRef = useRef<HTMLParagraphElement | null>(null);
+  useEffect(() => {
+    if (!activeExtraction) return;
+    window.requestAnimationFrame(() => extractionStatusRefs.current[activeExtraction.attachmentId]?.focus());
+  }, [activeExtraction]);
+  useEffect(() => {
+    if (!message && !error) return;
+    window.requestAnimationFrame(() => feedbackRef.current?.focus());
+  }, [message, error]);
   async function reconcile() {
     setBusy(true); setError(""); setMessage("");
     try {
@@ -85,10 +95,10 @@ export function AdminAttachmentWorkspace({ priceCheckId, attachments, canDownloa
   };
   return <section className="admin-panel admin-attachments" aria-labelledby="attachments-heading">
     <div className="admin-panel-heading"><div><p className="admin-eyebrow">Private evidence</p><h2 id="attachments-heading">Uploaded documents</h2></div>{canReconcile && attachments.some((item) => item.scanState !== "CLEAN" && item.scanState !== "REJECTED") && <button type="button" disabled={busy} onClick={reconcile}>{busy ? "Refreshing…" : "Refresh scan status"}</button>}</div>
-    {error && <p className="admin-error" role="alert">{error}</p>}{message && <p className="admin-success" role="status">{message}</p>}
+    {error && <p ref={feedbackRef} tabIndex={-1} className="admin-error" role="alert">{error}</p>}{message && <p ref={feedbackRef} tabIndex={-1} className="admin-success" role="status">{message}</p>}
     {attachments.length ? <ul>{attachments.map((item) => { const persisted = stateFor(item.id); const extraction = activeExtraction?.attachmentId === item.id ? { ...persisted, jobState: activeExtraction.state } : persisted; const label = extractionLabel(extraction); const failed = label === "Extraction failed"; return <li key={item.id}>
       <div><strong>{item.displayFilename}</strong><span>{bytes(item.byteSize)} · {item.detectedMime ?? item.declaredMime ?? "Type pending"}</span><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time></div>
-      <div><span className={`admin-scan-state state-${item.scanState.toLowerCase()}`}>{stateCopy[item.scanState]}</span>{label && <span aria-live="polite" className={`admin-extraction-state ${failed ? "is-failed" : ""}`}>{label}</span>}<div className="admin-attachment-actions">{canDownload && item.scanState === "CLEAN" && <a href={`/api/admin/price-checks/${priceCheckId}/attachments/${item.id}/download`} target="_blank" rel="noreferrer">Download</a>}{canExtract && item.scanState === "CLEAN" && !label && <button type="button" disabled={busy} onClick={() => extract(item.id)}>Extract document details</button>}{canRetry && failed && <button type="button" disabled={busy} onClick={() => extract(item.id, true)}>Retry extraction</button>}</div></div>
+      <div><span className={`admin-scan-state state-${item.scanState.toLowerCase()}`}>{stateCopy[item.scanState]}</span>{label && <span ref={(node) => { extractionStatusRefs.current[item.id] = node; }} tabIndex={-1} aria-live="polite" className={`admin-extraction-state ${failed ? "is-failed" : ""}`}>{label}</span>}<div className="admin-attachment-actions">{canDownload && item.scanState === "CLEAN" && <a href={`/api/admin/price-checks/${priceCheckId}/attachments/${item.id}/download`} target="_blank" rel="noreferrer">Download</a>}{canExtract && item.scanState === "CLEAN" && !label && <button type="button" disabled={busy} onClick={() => extract(item.id)}>Extract document details</button>}{canRetry && failed && <button type="button" disabled={busy} onClick={() => extract(item.id, true)}>Retry extraction</button>}</div></div>
     </li>; })}</ul> : <p className="admin-muted">No supporting document was uploaded. Manual transaction review remains available.</p>}
     <p className="admin-muted">Extraction is optional and staff-triggered. Only files confirmed clean by AWS malware scanning, server validation and an integrity recheck can be sent for structured extraction.</p>
   </section>;
