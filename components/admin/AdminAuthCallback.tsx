@@ -23,8 +23,12 @@ export function AdminAuthCallback() {
           window.location.replace("/admin/login?auth=callback");
           return;
         }
-        if (provider !== "google" || !providerToken) {
-          window.location.replace("/admin/login?auth=provider");
+        if (provider !== "google") {
+          window.location.replace("/admin/login?auth=provider-name");
+          return;
+        }
+        if (!providerToken) {
+          window.location.replace("/admin/login?auth=provider-token");
           return;
         }
         const response = await fetch("/api/admin/auth/google-session", {
