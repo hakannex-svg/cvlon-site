@@ -24,17 +24,6 @@ export async function getPriceCheckAdminAccess(): Promise<AdminAccess> {
   if (!isPriceCheckEnabled()) return { status: "disabled" };
   const identityUser = await getUser();
   if (!identityUser) return { status: "unauthenticated" };
-  console.info(`Civilon admin identity check ${JSON.stringify({
-    hasId: Boolean(identityUser.id),
-    hasEmail: Boolean(identityUser.email),
-    confirmed: Boolean(identityUser.confirmedAt),
-    hasSiteId: Boolean(process.env.SITE_ID),
-    exactEmailAllowed: isBootstrapAdmin(identityUser.email ?? ""),
-    accountProvider: identityUser.provider ?? "missing",
-    linkedProviders: Array.isArray(identityUser.appMetadata?.providers)
-      ? identityUser.appMetadata.providers.filter((provider): provider is string => typeof provider === "string")
-      : [],
-  })}`);
   const identity = verifiedStaffIdentity(identityUser);
   if (!identity) return { status: "forbidden" };
 
@@ -48,7 +37,6 @@ export async function getPriceCheckAdminAccess(): Promise<AdminAccess> {
       identity,
       isBootstrapAdmin(identity.email),
     );
-    console.info(`Civilon admin binding ${JSON.stringify({ status: result.status })}`);
     if ((result.status !== "authorized" && result.status !== "bound") || !isAdminRole(result.user.role)) {
       return { status: "forbidden" };
     }

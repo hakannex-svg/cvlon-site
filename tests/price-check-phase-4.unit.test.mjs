@@ -19,7 +19,6 @@ const exactBootstrap = "david@cvlon.com,hakannex@gmail.com";
 const validIdentity = {
   id: "95c929fd-fb8d-4694-abf2-3049352efd5d",
   email: "HAKANNEX@GMAIL.COM",
-  provider: "google",
   confirmedAt: "2026-08-16T04:00:00.000Z",
 };
 
@@ -57,18 +56,19 @@ test("bootstrap authorization is exact-email only and uses the owner-corrected H
   assert.equal(isBootstrapAdmin("other@gmail.com", exactBootstrap), false);
 });
 
-test("verified staff identity requires confirmed server claims and a stable site issuer", () => {
+test("verified staff identity requires signed subject/email claims and a stable site issuer", () => {
   assert.deepEqual(verifiedStaffIdentity(validIdentity, "civilon-site-id"), {
     issuer: "netlify-identity:civilon-site-id",
     subject: validIdentity.id,
     email: "hakannex@gmail.com",
-    provider: "google",
+    provider: "netlify-identity",
   });
-  assert.equal(verifiedStaffIdentity({ ...validIdentity, confirmedAt: undefined }, "civilon-site-id"), null);
+  assert.equal(verifiedStaffIdentity({ ...validIdentity, id: "" }, "civilon-site-id"), null);
+  assert.equal(verifiedStaffIdentity({ ...validIdentity, email: undefined }, "civilon-site-id"), null);
   assert.equal(verifiedStaffIdentity(validIdentity, ""), null);
 });
 
-test("the signed Netlify gates allow exact invitations but require Google for login", async () => {
+test("the signed Netlify lifecycle gates require the exact approved identities", async () => {
   const { default: identityEvents } = await import("../netlify/functions/identity.mts");
   const originalInfo = console.info;
   console.info = () => {};
@@ -84,8 +84,8 @@ test("the signed Netlify gates allow exact invitations but require Google for lo
     assert.equal(run("userValidate", "email", "hakannex@gmail.com"), false);
     assert.equal(run("userSignup", "email", "DAVID@CVLON.COM"), false);
     assert.equal(run("userLogin", "google", "hakannex@gmail.com"), false);
-    assert.equal(run("userLogin", "email", "hakannex@gmail.com"), true);
-    assert.equal(run("userLogin", "github", "david@cvlon.com"), true);
+    assert.equal(run("userLogin", "email", "hakannex@gmail.com"), false);
+    assert.equal(run("userLogin", "github", "david@cvlon.com"), false);
     for (const stage of ["userValidate", "userSignup", "userLogin"]) {
       assert.equal(run(stage, "google", "hakan@shipnex.com"), true);
       assert.equal(run(stage, "google", "other@cvlon.com"), true);
@@ -167,7 +167,6 @@ test("admin source boundary uses server Identity, origin checks, no public analy
   assert.match(identityHook, /userLogin/);
   assert.match(identityHook, /userSignup/);
   assert.match(identityHook, /userValidate/);
-  assert.match(identityHook, /provider !== "google"/);
   assert.match(identityHook, /isBootstrapAdmin/);
   assert.match(identityHook, /event\.deny/);
   assert.match(netlify, /private, no-store/);

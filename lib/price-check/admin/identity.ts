@@ -17,22 +17,22 @@ export type VerifiedStaffIdentity = {
   issuer: string;
   subject: string;
   email: string;
-  provider: "google";
+  provider: "netlify-identity";
 };
 
 export function verifiedStaffIdentity(
-  user: Pick<User, "id" | "email" | "confirmedAt">,
+  user: Pick<User, "id" | "email">,
   siteId = process.env.SITE_ID,
 ): VerifiedStaffIdentity | null {
   const email = normalizeBootstrapEmail(user.email ?? "");
-  if (!siteId || !user.id || !email || !user.confirmedAt) {
+  if (!siteId || !user.id || !email) {
     return null;
   }
   return {
     issuer: `netlify-identity:${siteId}`,
     subject: user.id,
     email,
-    provider: "google",
+    provider: "netlify-identity",
   };
 }
 

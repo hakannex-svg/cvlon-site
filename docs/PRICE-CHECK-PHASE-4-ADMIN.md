@@ -28,19 +28,18 @@ It is scoped to the Phase 4 preview branch and is never exposed through a `NEXT_
 
 ## Issuer and subject binding
 
-Netlify calls the deployed `userLogin` event function as a signed platform event before issuing a login session. The event gate requires:
+Netlify calls the deployed Identity lifecycle function as a signed platform event. The event gate requires:
 
-- current login provider exactly `google`;
 - an exact bootstrap email;
-- denial of email/password, other providers, missing claims, wrong emails, and domain-only matches.
+- denial of missing or wrong emails and domain-only matches at validation, signup, and login.
 
-The application then calls `getUser()` from `@netlify/identity`, verifies the confirmed signed Netlify session, and binds the stable Netlify Identity issuer namespace plus immutable Netlify user ID to the local `admin_users` record. An invited Netlify user's `app_metadata.provider` describes account creation and is not used as proof of the current login method; the signed `userLogin` event is the provider gate.
+The application then calls `getUser()` from `@netlify/identity`, verifies the signed Netlify session, and binds the stable Netlify Identity issuer namespace plus immutable Netlify user ID to the local `admin_users` record. Netlify's server-side JWT-derived `User` does not include `confirmedAt`, and an invited user's provider metadata remains `email` even when the visible flow uses Google OAuth. Those fields are therefore not treated as authorization claims. Google remains the only configured external provider and the only login action exposed by Civilon, while application authorization remains exact-email bootstrap plus immutable issuer/subject binding and local active role.
 
 First authorized login creates an `admin_users` row with issuer, immutable subject, normalized display email, `ADMIN`, and `active=true`. It records `ADMIN_LOGIN_BOUND` and `ADMIN_LOGIN`. Later authorization uses issuer + subject + active flag + local role. A matching email with a different subject produces a binding conflict and is never rebound automatically.
 
 ## Session and CSRF architecture
 
-Google OAuth begins in the browser with `oauthLogin("google")`. Netlify Identity runs the blocking signed login event, processes the provider callback, and stores the signed session in its secure cookie architecture. Protected server pages and every administration API independently call `getUser()` and require issuer + immutable subject + local active flag + local role.
+Google OAuth begins in the browser with `oauthLogin("google")`. Netlify Identity processes the provider callback and stores the signed session in its secure cookie architecture. Protected server pages and every administration API independently call `getUser()` and require issuer + immutable subject + local active flag + local role.
 
 No bearer token is stored by Civilon in `localStorage` or application code. The callback fragment is removed before navigation. Mutation endpoints require same-origin cookies and call Netlify Identity's `verifyRequestOrigin()`; a missing `Origin` is also rejected. Responses use `private, no-store`, vary on cookies, and carry `X-Robots-Tag: noindex, nofollow, noarchive`.
 

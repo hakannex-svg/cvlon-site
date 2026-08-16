@@ -5,13 +5,6 @@ type IdentityLoginEvent = {
   deny(): unknown;
 };
 
-function enforceApprovedGoogleIdentity(event: IdentityLoginEvent) {
-  const email = normalizeBootstrapEmail(event.user.email ?? "");
-  if (event.user.provider !== "google" || !email || !isBootstrapAdmin(email)) {
-    return event.deny();
-  }
-}
-
 function enforceApprovedInvite(event: IdentityLoginEvent) {
   const email = normalizeBootstrapEmail(event.user.email ?? "");
   if (!email || !isBootstrapAdmin(email)) {
@@ -39,6 +32,6 @@ export default {
   },
   userLogin(event: IdentityLoginEvent) {
     recordStage("login", event);
-    return enforceApprovedGoogleIdentity(event);
+    return enforceApprovedInvite(event);
   },
 };
