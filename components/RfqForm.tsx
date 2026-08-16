@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type InvalidEvent } from "react";
 import { trackCivilonEvent } from "@/lib/analytics";
-import { composeRequiredBy, validateRfq, type NeededByMode, type RfqValidationErrors } from "@/lib/rfq-logic";
+import { composeRequiredBy, FIVE_MINUTE_OPTIONS, validateNeededBy, validateRfq, type NeededByMode, type RfqValidationErrors, type TimePeriod } from "@/lib/rfq-logic";
 import { isApprovedSubmissionHost } from "@/lib/submission-host";
 import type { AogMessageData } from "@/lib/aog";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
@@ -45,13 +45,16 @@ export function RfqForm({
   const [aogValues, setAogValues] = useState<AogValues>(emptyAogValues);
   const [neededByMode, setNeededByMode] = useState<NeededByMode>("asap");
   const [neededByDate, setNeededByDate] = useState("");
-  const [neededByTime, setNeededByTime] = useState("");
+  const [neededByHour, setNeededByHour] = useState("");
+  const [neededByMinute, setNeededByMinute] = useState("");
+  const [neededByPeriod, setNeededByPeriod] = useState<TimePeriod>("");
+  const [neededByError, setNeededByError] = useState("");
   const [errors, setErrors] = useState<RfqValidationErrors>({});
   const [status, setStatus] = useState<SubmissionState>("idle");
   const [whatsAppData, setWhatsAppData] = useState<AogMessageData>({});
   const fieldId = (name: string) => idPrefix ? `${idPrefix}-${name}` : name;
   const analyticsContext = { source_page: sourcePage, aircraft_brand: aircraftBrand, part_category: partCategory };
-  const requiredBy = composeRequiredBy(neededByMode, neededByDate, neededByTime);
+  const requiredBy = composeRequiredBy(neededByMode, neededByDate, neededByHour, neededByMinute, neededByPeriod);
 
   function setAogField(name: keyof AogValues, value: string) {
     setAogValues((current) => ({ ...current, [name]: value }));
@@ -76,7 +79,9 @@ export function RfqForm({
     const formData = new FormData(form);
     formData.delete("requiredByChoice");
     formData.delete("requiredByDate");
-    formData.delete("requiredByTime");
+    formData.delete("requiredByHour");
+    formData.delete("requiredByMinute");
+    formData.delete("requiredByPeriod");
     const validationErrors = validateRfq({
       partNumber: String(formData.get("partNumber") ?? ""),
       email: String(formData.get("email") ?? ""),
@@ -84,9 +89,14 @@ export function RfqForm({
       aircraftLocation: aogValues.aircraftLocation,
     }, isAog);
 
-    if (Object.keys(validationErrors).length) {
+    const neededError = validateNeededBy(neededByMode, neededByDate, neededByHour, neededByMinute, neededByPeriod);
+    setNeededByError(neededError ?? "");
+
+    if (Object.keys(validationErrors).length || neededError) {
       setErrors(validationErrors);
-      const firstInvalid = form.querySelector<HTMLElement>("[aria-invalid='true'], :invalid");
+      const firstInvalid = neededError
+        ? Array.from(form.querySelectorAll<HTMLInputElement | HTMLSelectElement>(".needed-by-specific input,.needed-by-specific select")).find((control) => !control.value)
+        : form.querySelector<HTMLElement>("[aria-invalid='true'], :invalid");
       firstInvalid?.focus();
       return;
     }
@@ -248,13 +258,21 @@ export function RfqForm({
               <legend>Needed by</legend>
               <input type="hidden" name="requiredBy" value={requiredBy} />
               <div className="needed-by-options">
-                <label><input type="radio" name="requiredByChoice" value="asap" checked={neededByMode === "asap"} onChange={() => setNeededByMode("asap")} />ASAP</label>
-                <label><input type="radio" name="requiredByChoice" value="specific" checked={neededByMode === "specific"} onChange={() => setNeededByMode("specific")} />Specific date &amp; time</label>
+                <label><input type="radio" name="requiredByChoice" value="asap" checked={neededByMode === "asap"} onChange={() => { setNeededByMode("asap"); setNeededByError(""); }} />ASAP</label>
+                <label><input type="radio" name="requiredByChoice" value="specific" checked={neededByMode === "specific"} onChange={() => { setNeededByMode("specific"); setNeededByError(""); }} />Specific date &amp; time</label>
               </div>
               {neededByMode === "specific" && <div className="needed-by-specific">
-                <label htmlFor={fieldId("required-by-date")}><FieldLabel htmlFor={fieldId("required-by-date")} required>Date</FieldLabel><input id={fieldId("required-by-date")} type="date" name="requiredByDate" value={neededByDate} required onChange={(event) => setNeededByDate(event.target.value)} /></label>
-                <label htmlFor={fieldId("required-by-time")}><FieldLabel htmlFor={fieldId("required-by-time")} required>Time</FieldLabel><input id={fieldId("required-by-time")} type="time" name="requiredByTime" value={neededByTime} required onChange={(event) => setNeededByTime(event.target.value)} /></label>
-                <small className="field-help">Use local time at the aircraft location.</small>
+                <label htmlFor={fieldId("required-by-date")}><FieldLabel htmlFor={fieldId("required-by-date")} required>Date</FieldLabel><input id={fieldId("required-by-date")} type="date" name="requiredByDate" value={neededByDate} aria-required="true" aria-invalid={Boolean(neededByError && !neededByDate)} aria-describedby={neededByError ? fieldId("needed-by-error") : fieldId("needed-by-help")} onChange={(event) => { setNeededByDate(event.target.value); setNeededByError(""); }} /></label>
+                <fieldset className="time-select-group" aria-describedby={neededByError ? fieldId("needed-by-error") : fieldId("needed-by-help")}>
+                  <legend>Time <span aria-hidden="true">*</span></legend>
+                  <div>
+                    <label htmlFor={fieldId("required-by-hour")}><span>Hour</span><select id={fieldId("required-by-hour")} name="requiredByHour" value={neededByHour} aria-required="true" aria-invalid={Boolean(neededByError && !neededByHour)} onChange={(event) => { setNeededByHour(event.target.value); setNeededByError(""); }}><option value="">—</option>{Array.from({ length: 12 }, (_, index) => String(index + 1).padStart(2, "0")).map((hour) => <option key={hour}>{hour}</option>)}</select></label>
+                    <label htmlFor={fieldId("required-by-minute")}><span>Minute</span><select id={fieldId("required-by-minute")} name="requiredByMinute" value={neededByMinute} aria-required="true" aria-invalid={Boolean(neededByError && !neededByMinute)} onChange={(event) => { setNeededByMinute(event.target.value); setNeededByError(""); }}><option value="">—</option>{FIVE_MINUTE_OPTIONS.map((minute) => <option key={minute}>{minute}</option>)}</select></label>
+                    <label htmlFor={fieldId("required-by-period")}><span>AM / PM</span><select id={fieldId("required-by-period")} name="requiredByPeriod" value={neededByPeriod} aria-required="true" aria-invalid={Boolean(neededByError && !neededByPeriod)} onChange={(event) => { setNeededByPeriod(event.target.value as TimePeriod); setNeededByError(""); }}><option value="">—</option><option>AM</option><option>PM</option></select></label>
+                  </div>
+                </fieldset>
+                <small className="field-help" id={fieldId("needed-by-help")}>Use local time at the aircraft location.</small>
+                {neededByError && <small className="field-error needed-by-error" id={fieldId("needed-by-error")} role="alert">{neededByError}</small>}
               </div>}
             </fieldset>
             <label htmlFor={fieldId("aircraft-type-tail")}>
