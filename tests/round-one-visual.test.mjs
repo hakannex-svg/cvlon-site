@@ -25,7 +25,7 @@ test("AOG preparation copy is practical and customer-facing", () => {
 
 test("round-one styles cover field hierarchy, cards and precise process rails", () => {
   const css = read("app", "globals.css");
-  assert.match(css, /\.quick-rfq input::placeholder \{ color:#617487; font-weight:400/);
+  assert.match(css, /\.quick-rfq input::placeholder,.quick-rfq textarea::placeholder \{ color:#66798b; font-weight:400/);
   assert.match(css, /\.service-card:focus-within/);
   assert.match(css, /\.link-cards>a:focus-visible/);
   assert.match(css, /\.process-rail li:not\(:last-child\):after[^}]*left:calc\(50% \+ 18px\)/);

@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type InvalidEvent } from "react";
 import { trackCivilonEvent } from "@/lib/analytics";
-import { validateRfq, type RfqValidationErrors } from "@/lib/rfq-logic";
+import { composeRequiredBy, validateRfq, type NeededByMode, type RfqValidationErrors } from "@/lib/rfq-logic";
 import { isApprovedSubmissionHost } from "@/lib/submission-host";
 import type { AogMessageData } from "@/lib/aog";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
@@ -21,7 +21,6 @@ type RfqFormProps = {
 type AogValues = {
   callbackNumber: string;
   aircraftLocation: string;
-  requiredBy: string;
   aircraftTypeTail: string;
 };
 
@@ -30,7 +29,6 @@ type SubmissionState = "idle" | "submitting" | "success" | "error" | "preview";
 const emptyAogValues: AogValues = {
   callbackNumber: "",
   aircraftLocation: "",
-  requiredBy: "",
   aircraftTypeTail: "",
 };
 
@@ -45,11 +43,15 @@ export function RfqForm({
 }: RfqFormProps) {
   const [isAog, setIsAog] = useState(defaultAog);
   const [aogValues, setAogValues] = useState<AogValues>(emptyAogValues);
+  const [neededByMode, setNeededByMode] = useState<NeededByMode>("asap");
+  const [neededByDate, setNeededByDate] = useState("");
+  const [neededByTime, setNeededByTime] = useState("");
   const [errors, setErrors] = useState<RfqValidationErrors>({});
   const [status, setStatus] = useState<SubmissionState>("idle");
   const [whatsAppData, setWhatsAppData] = useState<AogMessageData>({});
   const fieldId = (name: string) => idPrefix ? `${idPrefix}-${name}` : name;
   const analyticsContext = { source_page: sourcePage, aircraft_brand: aircraftBrand, part_category: partCategory };
+  const requiredBy = composeRequiredBy(neededByMode, neededByDate, neededByTime);
 
   function setAogField(name: keyof AogValues, value: string) {
     setAogValues((current) => ({ ...current, [name]: value }));
@@ -72,6 +74,9 @@ export function RfqForm({
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
+    formData.delete("requiredByChoice");
+    formData.delete("requiredByDate");
+    formData.delete("requiredByTime");
     const validationErrors = validateRfq({
       partNumber: String(formData.get("partNumber") ?? ""),
       email: String(formData.get("email") ?? ""),
@@ -91,7 +96,7 @@ export function RfqForm({
       quantity: String(formData.get("quantity") ?? ""),
       aircraftTypeTail: aogValues.aircraftTypeTail,
       aircraftLocation: aogValues.aircraftLocation,
-      requiredBy: aogValues.requiredBy,
+      requiredBy,
     };
     setWhatsAppData(messageData);
     setStatus("submitting");
@@ -239,10 +244,19 @@ export function RfqForm({
             />
             {errors.aircraftLocation && <small className="field-error" id={fieldId("aircraft-location-error")}>{errors.aircraftLocation}</small>}
           </label>
-            <label htmlFor={fieldId("required-by")}>
-              <FieldLabel htmlFor={fieldId("required-by")}>Required by</FieldLabel>
-              <input id={fieldId("required-by")} type="datetime-local" name="requiredBy" value={aogValues.requiredBy} onChange={(event) => setAogField("requiredBy", event.target.value)} />
-            </label>
+            <fieldset className="needed-by-fields">
+              <legend>Needed by</legend>
+              <input type="hidden" name="requiredBy" value={requiredBy} />
+              <div className="needed-by-options">
+                <label><input type="radio" name="requiredByChoice" value="asap" checked={neededByMode === "asap"} onChange={() => setNeededByMode("asap")} />ASAP</label>
+                <label><input type="radio" name="requiredByChoice" value="specific" checked={neededByMode === "specific"} onChange={() => setNeededByMode("specific")} />Specific date &amp; time</label>
+              </div>
+              {neededByMode === "specific" && <div className="needed-by-specific">
+                <label htmlFor={fieldId("required-by-date")}><FieldLabel htmlFor={fieldId("required-by-date")} required>Date</FieldLabel><input id={fieldId("required-by-date")} type="date" name="requiredByDate" value={neededByDate} required onChange={(event) => setNeededByDate(event.target.value)} /></label>
+                <label htmlFor={fieldId("required-by-time")}><FieldLabel htmlFor={fieldId("required-by-time")} required>Time</FieldLabel><input id={fieldId("required-by-time")} type="time" name="requiredByTime" value={neededByTime} required onChange={(event) => setNeededByTime(event.target.value)} /></label>
+                <small className="field-help">Use local time at the aircraft location.</small>
+              </div>}
+            </fieldset>
             <label htmlFor={fieldId("aircraft-type-tail")}>
               <FieldLabel htmlFor={fieldId("aircraft-type-tail")}>Aircraft type / tail number</FieldLabel>
               <input id={fieldId("aircraft-type-tail")} name="aircraftTypeTail" value={aogValues.aircraftTypeTail} placeholder="e.g. Challenger 605" onChange={(event) => setAogField("aircraftTypeTail", event.target.value)} />

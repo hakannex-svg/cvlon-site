@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { validateRfq } from "../lib/rfq-logic.ts";
+import { composeRequiredBy, validateRfq } from "../lib/rfq-logic.ts";
 
 const baseValues = {
   partNumber: "101-384025-5",
@@ -26,4 +26,13 @@ test("unchecking AOG removes conditional requirements without clearing values", 
   assert.deepEqual(validateRfq(enteredValues, false), {});
   assert.equal(enteredValues.callbackNumber, "12015550123");
   assert.equal(enteredValues.aircraftLocation, "KTEB");
+});
+
+test("ASAP serializes into the existing requiredBy value", () => {
+  assert.equal(composeRequiredBy("asap", "", ""), "ASAP");
+});
+
+test("specific date and time serialize as a local ISO value", () => {
+  assert.equal(composeRequiredBy("specific", "2026-08-20", "15:00"), "2026-08-20T15:00");
+  assert.equal(composeRequiredBy("specific", "2026-08-20", ""), "");
 });

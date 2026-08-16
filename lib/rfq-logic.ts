@@ -7,6 +7,13 @@ export type RfqValidationValues = {
 
 export type RfqValidationErrors = Partial<Record<keyof RfqValidationValues, string>>;
 
+export type NeededByMode = "asap" | "specific";
+
+export function composeRequiredBy(mode: NeededByMode, date: string, time: string): string {
+  if (mode === "asap") return "ASAP";
+  return date && time ? `${date}T${time}` : "";
+}
+
 export function validateRfq(values: RfqValidationValues, isAog: boolean): RfqValidationErrors {
   const errors: RfqValidationErrors = {};
   if (!values.partNumber.trim()) errors.partNumber = "Enter a part number.";
