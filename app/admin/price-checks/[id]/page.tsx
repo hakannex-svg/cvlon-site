@@ -5,6 +5,7 @@ import { AdminChrome } from "@/components/admin/AdminChrome";
 import { AdminDetailActions } from "@/components/admin/AdminDetailActions";
 import { AdminComparableWorkspace } from "@/components/admin/AdminComparableWorkspace";
 import { AdminResultWorkspace } from "@/components/admin/AdminResultWorkspace";
+import { AdminAttachmentWorkspace } from "@/components/admin/AdminAttachmentWorkspace";
 import { getPriceCheckAdminAccess } from "@/lib/price-check/admin/auth";
 import { formatAge, formatDateTime, formatMoney, staffDisplayName, statusLabels } from "@/lib/price-check/admin/display";
 import { allowedOperationalStatuses, roleCan } from "@/lib/price-check/admin/policy";
@@ -41,7 +42,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
   }
   if (!detail) notFound();
 
-  const { priceCheck, requester, assignee, documentation, revisions, audit, jobs, admins } = detail;
+  const { priceCheck, requester, assignee, documentation, revisions, audit, jobs, admins, attachments } = detail;
   const latestRevision = revisions[0];
   const reviewedSnapshot = latestRevision?.version > 1 ? latestRevision.normalizedSnapshot as Record<string, unknown> : null;
   const revisionDefaults: Record<string, string | boolean | string[] | null> = {
@@ -177,7 +178,14 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
 
           <section className="admin-panel" aria-labelledby="reviewed-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Versioned review</p><h2 id="reviewed-heading">Reviewed transaction</h2></div>{reviewedSnapshot && <span>Revision {latestRevision.version}</span>}</div>{reviewedSnapshot ? <><dl className="admin-definition-grid">{Object.entries(reviewedSnapshot).filter(([key]) => key !== "documentationCodes").map(([key, item]) => <div key={key}><dt>{key.replace(/([A-Z])/g, " $1")}</dt><dd>{value(item)}</dd></div>)}</dl><p className="admin-revision-reason"><b>Change reason:</b> {latestRevision.changeReason}</p></> : <div className="admin-empty-state"><strong>No staff correction has been created.</strong><p>Analysis will use the original submitted transaction until an authorized revision is saved.</p></div>}</section>
 
-          <section className="admin-panel" aria-labelledby="docs-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Requirements</p><h2 id="docs-heading">Documentation</h2></div></div>{documentation.length ? <ul className="admin-chip-list">{documentation.map(item => <li key={item.requirementCode}>{item.requirementCode.replaceAll("_", " ")}{item.otherText ? ` — ${item.otherText}` : ""}</li>)}</ul> : <p className="admin-muted">No documentation requirements were selected.</p>}<p className="admin-muted">Secure document upload remains unavailable in Phase 4.</p></section>
+          <section className="admin-panel" aria-labelledby="docs-heading"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Requirements</p><h2 id="docs-heading">Documentation requirements</h2></div></div>{documentation.length ? <ul className="admin-chip-list">{documentation.map(item => <li key={item.requirementCode}>{item.requirementCode.replaceAll("_", " ")}{item.otherText ? ` — ${item.otherText}` : ""}</li>)}</ul> : <p className="admin-muted">No documentation requirements were selected.</p>}</section>
+
+          <AdminAttachmentWorkspace
+            priceCheckId={priceCheck.id}
+            attachments={attachments.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() }))}
+            canDownload={roleCan(access.user.role, "download_attachment")}
+            canReconcile={roleCan(access.user.role, "reconcile_attachment")}
+          />
 
           <AdminComparableWorkspace
             priceCheckId={priceCheck.id}

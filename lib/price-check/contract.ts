@@ -77,6 +77,7 @@ export type PriceCheckSubmission = {
   warrantyText: string | null;
   documentationCodes: DocumentationCode[];
   documentationOther: string | null;
+  attachmentHandles: string[];
   notes: string | null;
   firstName: string;
   lastName: string;

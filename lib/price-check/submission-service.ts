@@ -42,6 +42,7 @@ function requestInput(
   submission: PriceCheckSubmission,
   hash: string,
   publicReference: string,
+  attachments: CreatePriceCheckRequestInput["attachments"] = [],
 ): CreatePriceCheckRequestInput {
   return {
     requester: {
@@ -80,6 +81,7 @@ function requestInput(
       code,
       otherText: code === "OTHER" ? submission.documentationOther : null,
     })),
+    attachments,
     attribution: {
       sourcePage: submission.sourcePage,
       landingPage: submission.landingPage,
@@ -100,17 +102,26 @@ export async function submitPriceCheck(
   db: PriceCheckDb,
   submission: PriceCheckSubmission,
   dependencies: SubmissionDependencies = defaultDependencies,
+  context: { uploadSessionToken?: string | null } = {},
 ) {
   const hash = idempotencyHash(submission.idempotencyKey);
   const existing = await dependencies.findByIdempotency(db, hash);
   if (existing) return { reference: existing.publicReference, created: false };
+
+  const attachments = submission.attachmentHandles.length > 0
+    ? await (await import("./uploads/binding.ts")).prepareVerifiedAttachments(
+        db,
+        submission.attachmentHandles,
+        context.uploadSessionToken,
+      )
+    : [];
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const publicReference = dependencies.generateReference();
     try {
       const created = await dependencies.create(
         db,
-        requestInput(submission, hash, publicReference),
+        requestInput(submission, hash, publicReference, attachments),
       );
       return { reference: created.publicReference, created: true };
     } catch (error) {

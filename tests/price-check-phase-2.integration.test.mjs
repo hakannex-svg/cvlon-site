@@ -36,14 +36,14 @@ async function withPriceCheckDatabase(run) {
   }
 }
 
-test("Price Check migrations build an empty 20-table database and replay as a no-op", async () => {
+test("Price Check migrations build an empty 22-table database and replay as a no-op", async () => {
   await withPriceCheckDatabase(async ({ server, applied }) => {
-    assert.equal(applied.length, 6);
+    assert.equal(applied.length, 7);
     assert.deepEqual(await server.applyMigrations(migrationsDirectory), []);
     const { rows } = await server.query(
       "select count(*)::int as count from information_schema.tables where table_schema = 'public'",
     );
-    assert.equal(rows[0].count, 20);
+    assert.equal(rows[0].count, 22);
   });
 });
 

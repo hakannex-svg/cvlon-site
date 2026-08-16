@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 import { FieldLabel } from "./FieldLabel";
 import { trackCivilonEvent } from "@/lib/analytics";
@@ -79,7 +79,22 @@ const transactionFields = new Set([
   "coreDisposition", "exchangeFee", "freight", "transactionDate", "warrantyValue",
   "warrantyUnit", "warrantyText", "notes",
 ]);
-const documentFields = new Set(["documentationCodes", "documentationOther"]);
+const documentFields = new Set(["documentationCodes", "documentationOther", "attachmentHandles"]);
+
+type UploadItem = {
+  id: string;
+  file: File;
+  status: "authorizing" | "uploading" | "pending" | "error";
+  progress: number;
+  handle?: string;
+  error?: string;
+};
+
+function readableBytes(bytes: number) {
+  return bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 
 export function PriceCheckForm() {
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -87,8 +102,84 @@ export function PriceCheckForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [reference, setReference] = useState("");
+  const [uploads, setUploads] = useState<UploadItem[]>([]);
   const idempotencyKey = useRef("");
   const started = useRef(false);
+  const activeUploads = useRef(new Map<string, XMLHttpRequest>());
+
+  function updateUpload(id: string, update: Partial<UploadItem>) {
+    setUploads((current) => current.map((item) => item.id === id ? { ...item, ...update } : item));
+  }
+
+  async function uploadFile(item: UploadItem) {
+    try {
+      const authorization = await fetch("/api/price-check/uploads/authorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: item.file.name, mime: item.file.type, size: item.file.size }),
+      });
+      const result = await authorization.json() as {
+        ok: boolean;
+        error?: string;
+        handle?: string;
+        upload?: { url: string; fields: Record<string, string> };
+      };
+      if (!authorization.ok || !result.ok || !result.handle || !result.upload) {
+        throw new Error(result.error || "The document could not be authorized.");
+      }
+      updateUpload(item.id, { status: "uploading", progress: 0, handle: result.handle });
+      await new Promise<void>((resolve, reject) => {
+        const request = new XMLHttpRequest();
+        activeUploads.current.set(item.id, request);
+        request.open("POST", result.upload!.url);
+        request.upload.addEventListener("progress", (event) => {
+          if (event.lengthComputable) updateUpload(item.id, { progress: Math.min(99, Math.round(event.loaded / event.total * 100)) });
+        });
+        request.addEventListener("load", () => {
+          activeUploads.current.delete(item.id);
+          if (request.status >= 200 && request.status < 300) resolve();
+          else reject(new Error("The private storage service rejected the upload."));
+        });
+        request.addEventListener("error", () => reject(new Error("The upload was interrupted.")));
+        request.addEventListener("abort", () => reject(new Error("Upload removed.")));
+        const body = new FormData();
+        for (const [name, value] of Object.entries(result.upload!.fields)) body.append(name, value);
+        body.append("file", item.file);
+        request.send(body);
+      });
+      updateUpload(item.id, { status: "pending", progress: 100 });
+    } catch (error) {
+      activeUploads.current.delete(item.id);
+      updateUpload(item.id, {
+        status: "error",
+        progress: 0,
+        error: error instanceof Error ? error.message : "The upload failed.",
+      });
+    }
+  }
+
+  function chooseFiles(event: ChangeEvent<HTMLInputElement>) {
+    const selected = Array.from(event.target.files ?? []);
+    event.target.value = "";
+    const available = Math.max(0, 3 - uploads.length);
+    const accepted = selected.slice(0, available).map((file) => ({
+      id: window.crypto.randomUUID(), file, status: "authorizing" as const, progress: 0,
+    }));
+    if (selected.length > available) {
+      setErrors((current) => ({ ...current, attachmentHandles: "A maximum of 3 documents may be added." }));
+    } else {
+      setErrors((current) => ({ ...current, attachmentHandles: "" }));
+    }
+    setUploads((current) => [...current, ...accepted]);
+    for (const item of accepted) void uploadFile(item);
+  }
+
+  function removeUpload(id: string) {
+    activeUploads.current.get(id)?.abort();
+    activeUploads.current.delete(id);
+    setUploads((current) => current.filter((item) => item.id !== id));
+    setErrors((current) => ({ ...current, attachmentHandles: "" }));
+  }
 
   function update<K extends keyof FormValues>(field: K, value: FormValues[K]) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -172,6 +263,7 @@ export function PriceCheckForm() {
       coreCharge: values.transactionType === "exchange" ? values.coreCharge : "",
       coreDisposition: values.transactionType === "exchange" ? values.coreDisposition : "",
       exchangeFee: values.transactionType === "exchange" ? values.exchangeFee : "",
+      attachmentHandles: uploads.filter((item) => item.status === "pending" && item.handle).map((item) => item.handle!),
       idempotencyKey: idempotencyKey.current,
       ...attribution(),
     };
@@ -203,7 +295,7 @@ export function PriceCheckForm() {
       <p>Civilon will review the transaction context. Some requests require additional information, and the current service uses human review before any result is prepared.</p>
       <p>Keep this reference for your records. If Civilon completes and approves a reviewed result, access instructions will be sent separately to the business email provided.</p>
       <button type="button" className="button button-primary" onClick={() => {
-        setReference(""); setStep(1); setValues(initialValues); setErrors({});
+        setReference(""); setStep(1); setValues(initialValues); setErrors({}); setUploads([]);
         idempotencyKey.current = ""; started.current = false;
       }}>Start another Price Check</button>
     </section>;
@@ -265,11 +357,23 @@ export function PriceCheckForm() {
       </section>}
 
       {step === 2 && <section aria-labelledby="price-check-step-2">
-        <div className="price-check-step-heading"><span>STEP 02</span><h2 id="price-check-step-2">Optional supporting document</h2><p>Secure quote or invoice upload is planned, but it is intentionally unavailable in this preview phase. Do not send a file through this form.</p></div>
-        <div className="pc-document-notice" role="note"><strong>No upload control in this phase</strong><p>Your transaction details and requested documentation can still be reviewed without a file. Civilon may request additional information later.</p></div>
+        <div className="price-check-step-heading"><span>STEP 02</span><h2 id="price-check-step-2">Supporting document — optional</h2><p>Upload a supplier quote, invoice or purchase document if it helps us review the transaction.</p></div>
+        <div className="pc-upload-panel">
+          <div className="pc-upload-intro"><div><strong>Private document upload</strong><p>PDF, JPG, PNG or WebP · Up to 10 MB each · Maximum 3 files</p></div><label className="pc-file-button" htmlFor="price-check-attachments">Choose files</label><input id="price-check-attachments" className="pc-file-input" type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp" onChange={chooseFiles} disabled={uploads.length >= 3} /></div>
+          {uploads.length > 0 && <ul className="pc-upload-list" aria-live="polite">{uploads.map((item) => <li key={item.id} className={`is-${item.status}`}>
+            <div className="pc-upload-row"><div><strong>{item.file.name}</strong><span>{readableBytes(item.file.size)}</span></div><button type="button" onClick={() => removeUpload(item.id)} aria-label={`Remove ${item.file.name}`}>Remove</button></div>
+            {item.status === "authorizing" && <p role="status">Preparing private upload…</p>}
+            {item.status === "uploading" && <div><progress max="100" value={item.progress}>{item.progress}%</progress><p role="status">Uploading — {item.progress}%</p></div>}
+            {item.status === "pending" && <p role="status"><span aria-hidden="true">◷</span> Uploaded — security scan pending</p>}
+            {item.status === "error" && <p className="field-error" role="alert">{item.error}</p>}
+          </li>)}</ul>}
+          {errors.attachmentHandles && <small className="field-error" id="price-check-attachmentHandles-error">{errors.attachmentHandles}</small>}
+        </div>
+        {/* TODO(legal): final counsel approval is required before production exposure. */}
+        <div className="pc-document-notice" role="note"><strong>Commercially sensitive information</strong><p>Civilon stores uploaded files privately and uses them only to provide the requested Price Check under the current service-processing policy. Automated extraction is not active. Public privacy wording is pending final legal review.</p></div>
         <fieldset className="pc-document-grid"><legend>Documentation requirements</legend><p>Select only what matters to this request. Not every record applies to every part or condition.</p><div>{documentationCodes.map((code) => <label key={code}><input type="checkbox" checked={values.documentationCodes.includes(code)} onChange={(e) => update("documentationCodes", e.target.checked ? [...values.documentationCodes, code] : values.documentationCodes.filter((current) => current !== code))} /><span>{documentLabels[code]}</span></label>)}</div></fieldset>
         {values.documentationCodes.includes("OTHER") && <label htmlFor="price-check-documentationOther"><FieldLabel htmlFor="price-check-documentationOther" required>Other documentation</FieldLabel><input id="price-check-documentationOther" value={values.documentationOther} onChange={(e) => update("documentationOther", e.target.value)} maxLength={240} {...errorProps("documentationOther")} placeholder="Describe the requested record" />{fieldError("documentationOther")}</label>}
-        <div className="pc-step-actions two"><button type="button" className="pc-back" onClick={() => setStep(1)}>Back</button><button type="button" className="pc-next" onClick={() => { if (values.documentationCodes.includes("OTHER") && !values.documentationOther.trim()) { const next={documentationOther:"Describe the other documentation requirement."}; setErrors(next); focusFirst(next); return; } setErrors({}); setStep(3); }}>Continue without document <span aria-hidden="true">→</span></button></div>
+        <div className="pc-step-actions two"><button type="button" className="pc-back" onClick={() => setStep(1)}>Back</button><button type="button" className="pc-next" disabled={uploads.some((item) => item.status === "authorizing" || item.status === "uploading")} onClick={() => { if (values.documentationCodes.includes("OTHER") && !values.documentationOther.trim()) { const next={documentationOther:"Describe the other documentation requirement."}; setErrors(next); focusFirst(next); return; } setErrors({}); setStep(3); }}>{uploads.some((item) => item.status === "pending") ? "Continue" : "Continue without document"} <span aria-hidden="true">→</span></button></div>
       </section>}
 
       {step === 3 && <section aria-labelledby="price-check-step-3">
