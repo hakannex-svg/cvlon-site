@@ -118,36 +118,6 @@ test("Civilon session cookies are host-only, secure, HTTP-only, and expire expli
   assert.match(clearSecureCookie(ADMIN_SESSION_COOKIE), /Max-Age=0/);
 });
 
-test("the signed Netlify lifecycle gates require the exact approved identities", async () => {
-  const { default: identityEvents } = await import("../netlify/functions/identity.mts");
-  const originalInfo = console.info;
-  console.info = () => {};
-  const run = (stage, provider, email) => {
-    let denied = false;
-    const event = { user: { provider, email }, deny() { denied = true; } };
-    identityEvents[stage](event);
-    return denied;
-  };
-  const previous = process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS;
-  process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS = exactBootstrap;
-  try {
-    assert.equal(run("userValidate", "email", "hakannex@gmail.com"), false);
-    assert.equal(run("userSignup", "email", "DAVID@CVLON.COM"), false);
-    assert.equal(run("userLogin", "google", "hakannex@gmail.com"), false);
-    assert.equal(run("userLogin", "email", "hakannex@gmail.com"), false);
-    assert.equal(run("userLogin", "github", "david@cvlon.com"), false);
-    for (const stage of ["userValidate", "userSignup", "userLogin"]) {
-      assert.equal(run(stage, "google", "hakan@shipnex.com"), true);
-      assert.equal(run(stage, "google", "other@cvlon.com"), true);
-      assert.equal(run(stage, "google", undefined), true);
-    }
-  } finally {
-    console.info = originalInfo;
-    if (previous === undefined) delete process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS;
-    else process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS = previous;
-  }
-});
-
 test("RBAC matrix is deny-by-default and preserves auditor read-only access", () => {
   assert.deepEqual(adminRoles, ["ANALYST", "REVIEWER", "ADMIN", "AUDITOR"]);
   assert.equal(roleCan("ANALYST", "revise"), true);
@@ -193,13 +163,14 @@ test("information request requires controlled state data and does not claim deli
 });
 
 test("admin source boundary uses server OIDC sessions, strict origin checks, no public analytics, and no public bootstrap variable", async () => {
-  const [auth, login, callback, logout, urlCleaner, oidc, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
+  const [auth, login, callback, logout, urlCleaner, oidc, packageManifest, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
     readFile("lib/price-check/admin/auth.ts", "utf8"),
     readFile("components/admin/AdminLogin.tsx", "utf8"),
     readFile("app/api/admin/auth/google/callback/route.ts", "utf8"),
     readFile("app/api/admin/auth/logout/route.ts", "utf8"),
     readFile("components/admin/AdminAuthUrlCleaner.tsx", "utf8"),
     readFile("lib/price-check/admin/oidc.ts", "utf8"),
+    readFile("package.json", "utf8"),
     readFile("netlify.toml", "utf8"),
     readFile("app/sitemap.ts", "utf8"),
     readFile("lib/analytics.ts", "utf8"),
@@ -227,6 +198,7 @@ test("admin source boundary uses server OIDC sessions, strict origin checks, no 
   assert.match(oidc, /code_challenge_method/);
   assert.match(oidc, /issuer: GOOGLE_ISSUERS/);
   assert.match(oidc, /audience: config\.clientId/);
+  assert.doesNotMatch(packageManifest, /@netlify\/identity/);
   assert.match(netlify, /private, no-store/);
   assert.doesNotMatch(sitemap, /admin/);
   assert.doesNotMatch(analytics, /price_check_admin|requester|assignee/);
