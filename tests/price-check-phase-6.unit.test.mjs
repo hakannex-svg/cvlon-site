@@ -63,6 +63,7 @@ test("private result routes carry cache, robots, and referrer protections", () =
   assert.match(page, /robots: \{ index: false, follow: false \}/);
   assert.match(redeem, /\/price-check\/result\?redeemed=1/);
   assert.match(redeem, /NextResponse\.redirect\(cleanResultUrl\(request\), 303\)/);
+  assert.match(redeem, /path: "\/"/);
   assert.match(cleanUrl, /history\.replaceState\(null, "", "\/price-check\/result"\)/);
 });
 

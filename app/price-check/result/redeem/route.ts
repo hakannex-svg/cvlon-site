@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     const redeemed = await redeemResultToken(priceCheckDb, { token, tokenKey: key });
     if (!redeemed) return unavailable(request);
     const response = NextResponse.redirect(cleanResultUrl(request), 303);
-    response.cookies.set(RESULT_SESSION_COOKIE, createResultSession(key, redeemed), { secure: true, httpOnly: true, sameSite: "lax", path: "/price-check/result", maxAge: 30 * 60 });
+    response.cookies.set(RESULT_SESSION_COOKIE, createResultSession(key, redeemed), { secure: true, httpOnly: true, sameSite: "lax", path: "/", maxAge: 30 * 60 });
     response.headers.set("Cache-Control", "private, no-store");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     response.headers.set("Referrer-Policy", "no-referrer");
