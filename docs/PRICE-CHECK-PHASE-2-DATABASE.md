@@ -131,16 +131,20 @@ Remote migration validation is allowed only on the Draft PR Deploy Preview datab
 
 ## Deploy Preview result
 
-To be completed from the genuine Draft PR deployment:
+Draft [PR #2](https://github.com/hakannex-svg/cvlon-site/pull/2) targets `codex/civilon-price-check` from `codex/civilon-price-check-phase-2` and must not be merged.
 
-- PR: pending
-- Git SHA: pending
-- Deploy Preview URL and deploy ID: pending
-- isolated database branch name/ID: pending
-- migrations applied: pending
-- preview public table count: pending
-- synthetic transactional verification: pending
-- production public table count after preview: must remain `0`
+The migration-bearing preview was built from Git SHA `0e4c657be9633409649448874616663eb4bfded4`:
+
+- Deploy Preview URL: `https://deploy-preview-2--cvlon.netlify.app`
+- deploy ID/permalink: `6a8123a03deb990008934ff3`
+- isolated database branch: `codex/civilon-price-check-phase-2`, shown by Netlify as shared only between deploys for PR #2; the dashboard exposes the encoded branch name as its route identifier rather than a separate branch ID
+- automatic migration: one migration applied successfully
+- preview public schema: exactly 19 expected tables, initially zero rows
+- authenticated SQL-console proof: one synthetic `MAINTENANCE` job inserted and read successfully; a second row with the same idempotency key was rejected by `processing_jobs_idempotency_uidx`; the synthetic row was then deleted and a final count returned zero
+- production public schema after preview validation: zero tables (`No items in database`); no production query or migration was executed
+- public regression: all 16 existing routes returned HTTP 200, `/price-check` returned 404, `robots.txt` remained `Disallow: /`, page robots remained `noindex, follow`, and no public page referenced Price Check
+
+The remote validation used Netlify's authenticated branch-scoped data console. No connection string was revealed, copied, logged, or placed in source, and no raw SQL endpoint was added.
 
 ## Security boundary
 
