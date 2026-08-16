@@ -124,6 +124,7 @@ test("admin attachment workflow exposes accessible queued and processing feedbac
   assert.match(review, /document\.getElementById\("reviewed-heading"\)\?\.focus\(\)/);
   assert.match(detail, /id="reviewed-heading" tabIndex=\{-1\}/);
   assert.match(css, /\.admin-detail-main,\.admin-detail-main \*\{min-width:0\}/);
+  assert.match(css, /\.admin-preview-seed button\{width:100%;white-space:normal\}/);
   assert.match(`${source}\n${review}`, /tabIndex=\{-1\}/);
 });
 
