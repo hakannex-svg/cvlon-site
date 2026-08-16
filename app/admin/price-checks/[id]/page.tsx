@@ -122,12 +122,17 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
     return <AdminAccessDenied unavailable />;
   }
   let resultData;
+  let aiExplanationData;
   try {
-    const [{ priceCheckDb }, resultRepository] = await Promise.all([
+    const [{ priceCheckDb }, resultRepository, explanationRepository] = await Promise.all([
       import("@/db/price-check"),
       import("@/db/price-check/repositories/result-delivery-repository"),
+      import("@/db/price-check/repositories/explanation-repository"),
     ]);
-    resultData = await resultRepository.getAdminResultWorkspace(priceCheckDb, priceCheck.id);
+    [resultData, aiExplanationData] = await Promise.all([
+      resultRepository.getAdminResultWorkspace(priceCheckDb, priceCheck.id),
+      explanationRepository.getAdminExplanationWorkspace(priceCheckDb, priceCheck.id),
+    ]);
   } catch {
     return <AdminAccessDenied unavailable />;
   }
@@ -250,12 +255,18 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             confidence={resultAnalysis.confidence}
             rangeAvailable={Boolean(resultAnalysis.marketLow && resultAnalysis.marketMedian && resultAnalysis.marketHigh && resultAnalysis.currencyCode)}
             availableFactors={resultFactors}
-            currentResult={currentResult ? { id: currentResult.id, version: currentResult.version, state: currentResult.state, explanation: currentResult.approvedExplanation, factorCodes: currentResult.approvedFactorList, displayRange: currentResult.displayRange, displayEvidenceCount: currentResult.displayEvidenceCount, limitation: currentResult.limitedEvidenceStatement } : null}
+            currentResult={currentResult ? { id: currentResult.id, version: currentResult.version, state: currentResult.state, explanation: currentResult.approvedExplanation, factorCodes: currentResult.approvedFactorList, displayRange: currentResult.displayRange, displayEvidenceCount: currentResult.displayEvidenceCount, limitation: currentResult.limitedEvidenceStatement, sourceAiArtifactId: currentResult.sourceAiArtifactId } : null}
             previewModel={previewModel}
             canDraft={roleCan(access.user.role, "draft_result") && ["analysis_ready", "human_review", "approved"].includes(priceCheck.status)}
+            canDraftAi={roleCan(access.user.role, "draft_ai_explanation") && ["analysis_ready", "human_review", "approved"].includes(priceCheck.status)}
             canApprove={roleCan(access.user.role, "approve_result")}
             canSend={roleCan(access.user.role, "send_result")}
             previewWorkerEnabled={process.env.CONTEXT === "deploy-preview" && process.env.BRANCH === "codex/civilon-price-check-phase-6" && process.env.PRICE_CHECK_PHASE6_PREVIEW_WORKER_ENABLED === "true"}
+            aiWorkspace={{
+              status: aiExplanationData.status,
+              current: aiExplanationData.current ? { ...aiExplanationData.current, createdAt: aiExplanationData.current.createdAt.toISOString() } : null,
+              history: aiExplanationData.history.map((item) => ({ ...item, createdAt: item.createdAt.toISOString() })),
+            }}
             delivery={resultData.delivery.map((item) => ({ state: item.state, attemptCount: item.attemptCount, failureCode: item.sanitizedFailureCode, sentAt: item.sentAt?.toISOString() ?? null }))}
           /> : <section className="admin-panel admin-placeholder"><p className="admin-eyebrow">Customer result</p><h2>No customer result can be drafted yet.</h2><p>A persisted deterministic analysis must be marked analysis ready before customer-result preparation begins.</p></section>}
 
