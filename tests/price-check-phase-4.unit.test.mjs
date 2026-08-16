@@ -68,28 +68,29 @@ test("verified staff identity requires confirmed server claims and a stable site
   assert.equal(verifiedStaffIdentity(validIdentity, ""), null);
 });
 
-test("the signed Netlify login event gate denies every non-Google, wrong, missing, and domain-only identity", async () => {
+test("the signed Netlify gates allow exact invitations but require Google for login", async () => {
   const { default: identityEvents } = await import("../netlify/functions/identity.mts");
   const originalInfo = console.info;
   console.info = () => {};
-  const run = (provider, email) => {
+  const run = (stage, provider, email) => {
     let denied = false;
     const event = { user: { provider, email }, deny() { denied = true; } };
-    identityEvents.userValidate(event);
-    identityEvents.userSignup(event);
-    identityEvents.userLogin(event);
+    identityEvents[stage](event);
     return denied;
   };
   const previous = process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS;
   process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS = exactBootstrap;
   try {
-    assert.equal(run("google", "hakannex@gmail.com"), false);
-    assert.equal(run("google", "DAVID@CVLON.COM"), false);
-    assert.equal(run("email", "hakannex@gmail.com"), true);
-    assert.equal(run("github", "david@cvlon.com"), true);
-    assert.equal(run("google", "hakan@shipnex.com"), true);
-    assert.equal(run("google", "other@cvlon.com"), true);
-    assert.equal(run("google", undefined), true);
+    assert.equal(run("userValidate", "email", "hakannex@gmail.com"), false);
+    assert.equal(run("userSignup", "email", "DAVID@CVLON.COM"), false);
+    assert.equal(run("userLogin", "google", "hakannex@gmail.com"), false);
+    assert.equal(run("userLogin", "email", "hakannex@gmail.com"), true);
+    assert.equal(run("userLogin", "github", "david@cvlon.com"), true);
+    for (const stage of ["userValidate", "userSignup", "userLogin"]) {
+      assert.equal(run(stage, "google", "hakan@shipnex.com"), true);
+      assert.equal(run(stage, "google", "other@cvlon.com"), true);
+      assert.equal(run(stage, "google", undefined), true);
+    }
   } finally {
     console.info = originalInfo;
     if (previous === undefined) delete process.env.PRICE_CHECK_BOOTSTRAP_ADMIN_EMAILS;
