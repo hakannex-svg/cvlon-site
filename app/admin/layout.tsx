@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdminAuthUrlCleaner } from "@/components/admin/AdminAuthUrlCleaner";
 
 export const metadata: Metadata = {
   title: "Civilon Operations",
@@ -12,5 +13,5 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <><AdminAuthUrlCleaner />{children}</>;
 }

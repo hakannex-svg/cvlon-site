@@ -23,9 +23,10 @@ function callbackRedirect(config: GoogleOidcConfig, path: string, cookies: strin
     Location: new URL(path, oidcRedirectOrigin(config)).toString(),
     "Cache-Control": "private, no-store, max-age=0",
     "X-Robots-Tag": "noindex, nofollow, noarchive",
+    "Referrer-Policy": "no-referrer",
   });
   for (const cookie of cookies) headers.append("Set-Cookie", cookie);
-  return new Response(null, { status: 303, headers });
+  return new Response(null, { status: 302, headers });
 }
 
 export async function GET(request: Request) {

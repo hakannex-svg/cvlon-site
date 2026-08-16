@@ -193,11 +193,12 @@ test("information request requires controlled state data and does not claim deli
 });
 
 test("admin source boundary uses server OIDC sessions, strict origin checks, no public analytics, and no public bootstrap variable", async () => {
-  const [auth, login, callback, logout, oidc, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
+  const [auth, login, callback, logout, urlCleaner, oidc, netlify, sitemap, analytics, detailPage, routes] = await Promise.all([
     readFile("lib/price-check/admin/auth.ts", "utf8"),
     readFile("components/admin/AdminLogin.tsx", "utf8"),
     readFile("app/api/admin/auth/google/callback/route.ts", "utf8"),
     readFile("app/api/admin/auth/logout/route.ts", "utf8"),
+    readFile("components/admin/AdminAuthUrlCleaner.tsx", "utf8"),
     readFile("lib/price-check/admin/oidc.ts", "utf8"),
     readFile("netlify.toml", "utf8"),
     readFile("app/sitemap.ts", "utf8"),
@@ -218,6 +219,9 @@ test("admin source boundary uses server OIDC sessions, strict origin checks, no 
   assert.match(callback, /exchangeGoogleAuthorizationCode/);
   assert.match(callback, /isBootstrapAdmin/);
   assert.match(callback, /\/admin\/price-checks/);
+  assert.match(callback, /Referrer-Policy/);
+  assert.match(urlCleaner, /params\.has\("code"\) && params\.has\("state"\)/);
+  assert.match(urlCleaner, /history\.replaceState/);
   assert.match(logout, /revokeAdminSession/);
   assert.match(oidc, /openid email profile/);
   assert.match(oidc, /code_challenge_method/);
