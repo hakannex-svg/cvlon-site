@@ -30,6 +30,10 @@ export async function getPriceCheckAdminAccess(): Promise<AdminAccess> {
     confirmed: Boolean(identityUser.confirmedAt),
     hasSiteId: Boolean(process.env.SITE_ID),
     exactEmailAllowed: isBootstrapAdmin(identityUser.email ?? ""),
+    accountProvider: identityUser.provider ?? "missing",
+    linkedProviders: Array.isArray(identityUser.appMetadata?.providers)
+      ? identityUser.appMetadata.providers.filter((provider): provider is string => typeof provider === "string")
+      : [],
   })}`);
   const identity = verifiedStaffIdentity(identityUser);
   if (!identity) return { status: "forbidden" };
