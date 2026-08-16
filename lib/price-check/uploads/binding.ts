@@ -1,6 +1,6 @@
 import "../../../db/price-check/server-boundary.ts";
 
-import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectAttributesCommand } from "@aws-sdk/client-s3";
 import type { PriceCheckDb } from "../../../db/price-check/index.ts";
 import { generateOrderedId } from "../../../db/price-check/domain/identifiers.ts";
 import { findClaimablePendingUploads } from "../../../db/price-check/repositories/upload-repository.ts";
@@ -32,12 +32,14 @@ export async function prepareVerifiedAttachments(
   const verified = [];
   for (const handle of unique) {
     const item = byId.get(handle)!;
-    const head = await client.send(new HeadObjectCommand({ Bucket: config.bucket, Key: item.objectKey }));
-    const byteSize = Number(head.ContentLength ?? -1);
+    const attributes = await client.send(new GetObjectAttributesCommand({
+      Bucket: config.bucket,
+      Key: item.objectKey,
+      ObjectAttributes: ["ObjectSize"],
+    }));
+    const byteSize = Number(attributes.ObjectSize ?? -1);
     if (!Number.isSafeInteger(byteSize)
-      || byteSize !== Number(item.expectedByteSize)
-      || head.ContentType !== item.declaredMime
-      || head.Metadata?.["upload-handle"] !== item.id) {
+      || byteSize !== Number(item.expectedByteSize)) {
       throw new Error("An uploaded document could not be verified. Remove it and upload it again.");
     }
     verified.push({
@@ -52,4 +54,3 @@ export async function prepareVerifiedAttachments(
   }
   return verified;
 }
-

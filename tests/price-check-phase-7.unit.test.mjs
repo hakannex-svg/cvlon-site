@@ -152,4 +152,12 @@ test("infrastructure and application enforce private quarantine without OpenAI",
     "../components/PriceCheckForm.tsx",
   ].map((path) => fs.readFileSync(new URL(path, import.meta.url), "utf8")).join("\n");
   assert.doesNotMatch(phase7Files, /OpenAI|OCR|chat completion|responses API/i);
+  const publicPage = fs.readFileSync(new URL("../app/price-check/page.tsx", import.meta.url), "utf8");
+  assert.match(publicPage, /Optional private supporting-document upload/);
+  assert.doesNotMatch(publicPage, /No document upload in this phase/);
+  const authorizeRoute = fs.readFileSync(new URL("../app/api/price-check/uploads/authorize/route.ts", import.meta.url), "utf8");
+  assert.match(authorizeRoute, /document type\|PDF\|JPG\|PNG\|WebP/);
+  const binding = fs.readFileSync(new URL("../lib/price-check/uploads/binding.ts", import.meta.url), "utf8");
+  assert.match(binding, /GetObjectAttributesCommand/);
+  assert.doesNotMatch(binding, /HeadObjectCommand|GetObjectCommand/);
 });

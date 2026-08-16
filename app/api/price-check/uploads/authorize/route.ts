@@ -69,7 +69,7 @@ export async function POST(request: Request) {
     }, 201, { "Set-Cookie": uploadSessionCookie(authorized.token) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "The upload could not be authorized.";
-    const clientError = /supported|filename|maximum|10 MB|document type/i.test(message);
+    const clientError = /supported|filename|maximum|10 MB|document type|PDF|JPG|PNG|WebP/i.test(message);
     return response({ ok: false, error: clientError ? message : "Upload is temporarily unavailable. You can continue without a document." }, clientError ? 400 : 503);
   }
 }
@@ -78,4 +78,3 @@ export function GET() { return response({ ok: false, error: "Method not allowed.
 export const PUT = GET;
 export const PATCH = GET;
 export const DELETE = GET;
-
