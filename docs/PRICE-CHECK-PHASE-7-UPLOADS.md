@@ -103,9 +103,9 @@ The implementation records sanitized events including `UPLOAD_AUTHORIZED`, `UPLO
 
 Preview branch values:
 
-- `AWS_REGION=us-east-1`
-- `AWS_ACCESS_KEY_ID` (secret)
-- `AWS_SECRET_ACCESS_KEY` (secret)
+- `PRICE_CHECK_UPLOAD_AWS_REGION=us-east-1` (`AWS_REGION` remains a supported non-Netlify fallback)
+- `PRICE_CHECK_UPLOAD_AWS_ACCESS_KEY_ID` (secret)
+- `PRICE_CHECK_UPLOAD_AWS_SECRET_ACCESS_KEY` (secret)
 - `PRICE_CHECK_UPLOAD_BUCKET=pc-doc-preview-20260816-40c6398ff2e7`
 
 None use a `NEXT_PUBLIC_` prefix. Values are scoped to the Phase 7 preview branch in Netlify. Production remains unset and disabled.

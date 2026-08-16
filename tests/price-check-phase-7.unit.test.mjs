@@ -15,6 +15,7 @@ import {
 import { roleCan } from "../lib/price-check/admin/policy.ts";
 import { validatePriceCheckSubmission } from "../lib/price-check/validation.ts";
 import { guardDutyScanDecision } from "../lib/price-check/uploads/reconciliation.ts";
+import { getUploadStorageConfig } from "../lib/price-check/uploads/config.ts";
 
 function validSubmission(overrides = {}) {
   return {
@@ -106,6 +107,38 @@ test("GuardDuty scan decisions fail closed", () => {
   assert.equal(guardDutyScanDecision("THREATS_FOUND"), "REJECTED");
   for (const status of [undefined, "UNSUPPORTED", "ACCESS_DENIED", "FAILED", "UNKNOWN"]) {
     assert.notEqual(guardDutyScanDecision(status), "CLEAN");
+  }
+});
+
+test("upload storage accepts Netlify-safe server credentials and rejects partial configuration", () => {
+  const names = [
+    "PRICE_CHECK_UPLOAD_AWS_REGION",
+    "PRICE_CHECK_UPLOAD_AWS_ACCESS_KEY_ID",
+    "PRICE_CHECK_UPLOAD_AWS_SECRET_ACCESS_KEY",
+    "PRICE_CHECK_UPLOAD_BUCKET",
+    "AWS_REGION",
+  ];
+  const previous = Object.fromEntries(names.map((name) => [name, process.env[name]]));
+  try {
+    process.env.PRICE_CHECK_UPLOAD_AWS_REGION = "us-east-1";
+    process.env.PRICE_CHECK_UPLOAD_AWS_ACCESS_KEY_ID = "TESTACCESSKEY";
+    process.env.PRICE_CHECK_UPLOAD_AWS_SECRET_ACCESS_KEY = "test-secret-value";
+    process.env.PRICE_CHECK_UPLOAD_BUCKET = "phase7-test-bucket";
+    process.env.AWS_REGION = "us-west-2";
+    assert.deepEqual(getUploadStorageConfig(), {
+      region: "us-east-1",
+      bucket: "phase7-test-bucket",
+      accessKeyId: "TESTACCESSKEY",
+      secretAccessKey: "test-secret-value",
+    });
+
+    delete process.env.PRICE_CHECK_UPLOAD_AWS_SECRET_ACCESS_KEY;
+    assert.throws(() => getUploadStorageConfig(), /credentials are incomplete/);
+  } finally {
+    for (const name of names) {
+      if (previous[name] === undefined) delete process.env[name];
+      else process.env[name] = previous[name];
+    }
   }
 });
 
