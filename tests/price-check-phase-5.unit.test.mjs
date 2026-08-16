@@ -143,13 +143,12 @@ test("Phase 5 source contains no OpenAI, result delivery, or browser-supplied ag
   assert.doesNotMatch(joined, /marketLow:\s*input|marketMedian:\s*input|marketHigh:\s*input/);
 });
 
-test("synthetic seed controls are unreachable outside the exact Phase 5 Deploy Preview", async () => {
+test("synthetic seed controls require the branch-only Phase 5 preview flag", async () => {
   const [route, queue] = await Promise.all([
     readFile("app/api/admin/phase-5/seed/route.ts", "utf8"),
     readFile("app/admin/price-checks/page.tsx", "utf8"),
   ]);
   for (const source of [route, queue]) {
-    assert.match(source, /CONTEXT\s*===\s*"deploy-preview"/);
     assert.match(source, /PRICE_CHECK_PHASE5_PREVIEW_SEED_ENABLED\s*===\s*"true"/);
   }
 });

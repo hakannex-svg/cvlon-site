@@ -56,7 +56,7 @@ export default async function PriceCheckQueuePage({ searchParams }: { searchPara
         <label><span>Age</span><select name="age" defaultValue={filters.age ?? ""}><option value="">Any age</option><option value="day">Last 24 hours</option><option value="week">Last 7 days</option><option value="older">Older than 7 days</option></select></label>
         <div className="admin-filter-actions"><button type="submit">Apply filters</button><Link href="/admin/price-checks">Clear</Link></div>
       </form>
-      {!records.length && access.user.role === "ADMIN" && process.env.CONTEXT === "deploy-preview" && process.env.PRICE_CHECK_PHASE5_PREVIEW_SEED_ENABLED === "true" && <AdminPhase5SeedButton />}
+      {!records.length && access.user.role === "ADMIN" && process.env.PRICE_CHECK_PHASE5_PREVIEW_SEED_ENABLED === "true" && <AdminPhase5SeedButton />}
       <div className="admin-table-wrap">
         <table className="admin-queue-table">
           <caption className="sr-only">Civilon Price Check review queue</caption>
