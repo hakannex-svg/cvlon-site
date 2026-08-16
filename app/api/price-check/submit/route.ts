@@ -8,6 +8,7 @@ import {
   rateLimitKey,
 } from "@/lib/price-check/rate-limit";
 import { validatePriceCheckSubmission } from "@/lib/price-check/validation";
+import { readUploadCookie } from "@/lib/price-check/uploads/session";
 
 export const runtime = "nodejs";
 
@@ -71,9 +72,22 @@ export async function POST(request: Request) {
       import("@/db/price-check"),
       import("@/lib/price-check/submission-service"),
     ]);
-    const result = await submitPriceCheck(priceCheckDb, validation.data);
+    const result = await submitPriceCheck(priceCheckDb, validation.data, undefined, {
+      uploadSessionToken: readUploadCookie(request.headers.get("cookie")),
+    });
     return json({ ok: true, reference: result.reference }, result.created ? 201 : 200);
-  } catch {
+  } catch (error) {
+    const failure = error && typeof error === "object"
+      ? error as { name?: unknown; code?: unknown; $metadata?: { httpStatusCode?: unknown } }
+      : {};
+    console.error(JSON.stringify({
+      event: "PRICE_CHECK_SUBMISSION_FAILED",
+      errorName: typeof failure.name === "string" ? failure.name : "UnknownError",
+      errorCode: typeof failure.code === "string" ? failure.code : null,
+      upstreamStatus: typeof failure.$metadata?.httpStatusCode === "number"
+        ? failure.$metadata.httpStatusCode
+        : null,
+    }));
     return json({
       ok: false,
       error: "Price Check submission is temporarily unavailable. Please try again later.",

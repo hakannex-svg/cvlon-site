@@ -25,7 +25,7 @@ const allowedFields = new Set([
   "description", "aircraftModel", "coreCharge", "coreDisposition",
   "exchangeFee", "freight", "transactionDate", "warrantyValue",
   "warrantyUnit", "warrantyText", "documentationCodes", "documentationOther",
-  "notes", "firstName", "lastName", "companyName", "businessEmail", "phone",
+  "attachmentHandles", "notes", "firstName", "lastName", "companyName", "businessEmail", "phone",
   "role", "country", "serviceAcknowledged", "sourcePage", "landingPage",
   "referrer", "utmSource", "utmMedium", "utmCampaign", "utmContent",
   "utmTerm", "website",
@@ -137,6 +137,15 @@ export function validatePriceCheckSubmission(raw: unknown): ValidationResult {
   if (selectedDocumentation.includes("OTHER") && !documentationOther) {
     errors.documentationOther = "Describe the other documentation requirement.";
   }
+  const attachmentHandles = Array.isArray(value.attachmentHandles)
+    ? [...new Set(value.attachmentHandles.filter((entry): entry is string => typeof entry === "string"))]
+    : [];
+  if (value.attachmentHandles !== undefined && (!Array.isArray(value.attachmentHandles)
+    || attachmentHandles.length !== value.attachmentHandles.length
+    || attachmentHandles.length > 3
+    || attachmentHandles.some((handle) => !/^[0-9A-HJKMNP-TV-Z]{26}$/.test(handle)))) {
+    errors.attachmentHandles = "Remove the affected upload and try again.";
+  }
 
   const firstName = clean(value.firstName, 120, true);
   const lastName = clean(value.lastName, 120, true);
@@ -188,7 +197,7 @@ export function validatePriceCheckSubmission(raw: unknown): ValidationResult {
     warrantyValue: warrantyValueText || null, warrantyUnit,
     warrantyText: warrantyText || null,
     documentationCodes: selectedDocumentation as PriceCheckSubmission["documentationCodes"],
-    documentationOther: documentationOther || null, notes: notes || null,
+    documentationOther: documentationOther || null, attachmentHandles, notes: notes || null,
     firstName, lastName, companyName, businessEmail, phone: phone || null,
     role: role || null, country: country?.toUpperCase() || null,
     serviceAcknowledged: true, sourcePage: PRICE_CHECK_SOURCE_PAGE,

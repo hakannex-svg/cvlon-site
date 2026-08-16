@@ -205,6 +205,13 @@ export const outboxStateEnum = pgEnum("notification_outbox_state", [
   "failed",
   "dead_letter",
 ]);
+export const uploadStateEnum = pgEnum("price_check_upload_state", [
+  "AUTHORIZED",
+  "UPLOADED",
+  "BOUND",
+  "REJECTED",
+  "EXPIRED",
+]);
 export const resultStateEnum = pgEnum("price_check_result_state", [
   "DRAFT",
   "APPROVED",
@@ -404,6 +411,56 @@ export const priceCheckDocumentRequirements = pgTable(
   ],
 );
 
+export const uploadSessions = pgTable(
+  "price_check_upload_sessions",
+  {
+    id: id().primaryKey(),
+    tokenHash: varchar("token_hash", { length: 128 }).notNull(),
+    authorizedCount: integer("authorized_count").notNull().default(0),
+    expectedByteSize: numeric("expected_byte_size", { precision: 20, scale: 0 })
+      .notNull()
+      .default("0"),
+    expiresAt: utcTimestamp("expires_at").notNull(),
+    createdAt: utcTimestamp("created_at").notNull().defaultNow(),
+    updatedAt: utcTimestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("price_check_upload_sessions_token_hash_uidx").on(table.tokenHash),
+    index("price_check_upload_sessions_expiry_idx").on(table.expiresAt),
+    check("price_check_upload_sessions_count_chk", sql`${table.authorizedCount} between 0 and 3`),
+    check("price_check_upload_sessions_bytes_chk", sql`${table.expectedByteSize} between 0 and 31457280`),
+    check("price_check_upload_sessions_expiry_chk", sql`${table.expiresAt} > ${table.createdAt}`),
+  ],
+);
+
+export const pendingUploads = pgTable(
+  "price_check_pending_uploads",
+  {
+    id: id().primaryKey(),
+    uploadSessionId: id("upload_session_id")
+      .notNull()
+      .references(() => uploadSessions.id, { onDelete: "cascade" }),
+    objectKey: varchar("object_key", { length: 700 }).notNull(),
+    displayFilename: varchar("display_filename", { length: 255 }).notNull(),
+    declaredMime: varchar("declared_mime", { length: 255 }).notNull(),
+    expectedByteSize: numeric("expected_byte_size", { precision: 20, scale: 0 }).notNull(),
+    state: uploadStateEnum("state").notNull().default("AUTHORIZED"),
+    claimedPriceCheckId: id("claimed_price_check_id").references(() => priceChecks.id, {
+      onDelete: "restrict",
+    }),
+    expiresAt: utcTimestamp("expires_at").notNull(),
+    createdAt: utcTimestamp("created_at").notNull().defaultNow(),
+    updatedAt: utcTimestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("price_check_pending_uploads_object_key_uidx").on(table.objectKey),
+    index("price_check_pending_uploads_session_idx").on(table.uploadSessionId),
+    index("price_check_pending_uploads_expiry_idx").on(table.expiresAt),
+    index("price_check_pending_uploads_claim_idx").on(table.claimedPriceCheckId),
+    check("price_check_pending_uploads_bytes_chk", sql`${table.expectedByteSize} between 1 and 10485760`),
+  ],
+);
+
 export const attachments = pgTable(
   "attachments",
   {
@@ -418,7 +475,7 @@ export const attachments = pgTable(
     declaredMime: varchar("declared_mime", { length: 255 }),
     detectedMime: varchar("detected_mime", { length: 255 }),
     byteSize: numeric("byte_size", { precision: 20, scale: 0 }).notNull(),
-    contentDigest: varchar("content_digest", { length: 128 }).notNull(),
+    contentDigest: varchar("content_digest", { length: 128 }),
     scanState: scanStateEnum("scan_state").notNull().default("PENDING"),
     retentionClass: retentionClassEnum("retention_class").notNull(),
     deletionDueAt: utcTimestamp("deletion_due_at"),

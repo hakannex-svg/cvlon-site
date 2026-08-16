@@ -1,10 +1,12 @@
 import "../server-boundary.ts";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 
 import type { PriceCheckDb } from "../index.ts";
 import {
   auditEvents,
+  attachments,
+  pendingUploads,
   priceCheckDocumentRequirements,
   priceCheckRevisions,
   priceChecks,
@@ -77,6 +79,15 @@ export type CreatePriceCheckRequestInput = {
     notes?: string | null;
   };
   documentation?: Array<{ code: DocumentationCode; otherText?: string | null }>;
+  attachments?: Array<{
+    id: string;
+    pendingUploadId: string;
+    uploadSessionId: string;
+    displayFilename: string;
+    objectKey: string;
+    declaredMime: string;
+    byteSize: number;
+  }>;
   attribution: {
     sourcePage: string;
     landingPage?: string | null;
@@ -174,6 +185,38 @@ export async function createPriceCheckRequest(
       await tx.insert(priceCheckDocumentRequirements).values(requirements);
     }
 
+    const attachmentInput = input.attachments ?? [];
+    for (const attachment of attachmentInput) {
+      const [claimed] = await tx.update(pendingUploads).set({
+        state: "BOUND",
+        claimedPriceCheckId: priceCheckId,
+        updatedAt: submittedAt,
+      }).where(and(
+        eq(pendingUploads.id, attachment.pendingUploadId),
+        eq(pendingUploads.uploadSessionId, attachment.uploadSessionId),
+        inArray(pendingUploads.state, ["AUTHORIZED", "UPLOADED"]),
+        isNull(pendingUploads.claimedPriceCheckId),
+      )).returning({ id: pendingUploads.id });
+      if (!claimed) throw new Error("An attachment handle was already used or expired.");
+    }
+    if (attachmentInput.length > 0) {
+      await tx.insert(attachments).values(attachmentInput.map((attachment) => ({
+        id: attachment.id,
+        priceCheckId,
+        uploadedByType: "REQUESTER" as const,
+        displayFilename: attachment.displayFilename,
+        objectKey: attachment.objectKey,
+        storageProvider: "AWS_S3",
+        declaredMime: attachment.declaredMime,
+        detectedMime: null,
+        byteSize: String(attachment.byteSize),
+        contentDigest: null,
+        scanState: "PENDING" as const,
+        retentionClass: "PRICE_CHECK_EVIDENCE" as const,
+        deletionDueAt: new Date(submittedAt.valueOf() + 30 * 24 * 60 * 60 * 1000),
+      })));
+    }
+
     const initialSnapshot = {
       originalPartNumber: input.transaction.originalPartNumber.trim(),
       normalizedPartNumber,
@@ -205,6 +248,34 @@ export async function createPriceCheckRequest(
       correlationId: input.correlationId,
       sanitizedMetadata: { sourcePage: input.attribution.sourcePage },
     });
+    if (attachmentInput.length > 0) {
+      await tx.insert(auditEvents).values(attachmentInput.flatMap((attachment) => [
+        {
+          id: generateOrderedId(), aggregateType: "price_check", aggregateId: priceCheckId,
+          actorType: "REQUESTER" as const, actorId: requesterId, action: "UPLOAD_COMPLETED",
+          correlationId: input.correlationId,
+          sanitizedMetadata: { attachmentId: attachment.id },
+        },
+        {
+          id: generateOrderedId(), aggregateType: "price_check", aggregateId: priceCheckId,
+          actorType: "REQUESTER" as const, actorId: requesterId, action: "ATTACHMENT_BOUND",
+          correlationId: input.correlationId,
+          sanitizedMetadata: { attachmentId: attachment.id },
+        },
+        {
+          id: generateOrderedId(), aggregateType: "price_check", aggregateId: priceCheckId,
+          actorType: "SYSTEM" as const, actorId: null, action: "ATTACHMENT_SCAN_PENDING",
+          correlationId: input.correlationId,
+          sanitizedMetadata: { attachmentId: attachment.id },
+        },
+        {
+          id: generateOrderedId(), aggregateType: "price_check", aggregateId: priceCheckId,
+          actorType: "SYSTEM" as const, actorId: null, action: "ATTACHMENT_DELETION_SCHEDULED",
+          correlationId: input.correlationId,
+          sanitizedMetadata: { attachmentId: attachment.id, retentionClass: "PRICE_CHECK_EVIDENCE" },
+        },
+      ]));
+    }
 
     return { priceCheckId, requesterId, revisionId, publicReference };
   });

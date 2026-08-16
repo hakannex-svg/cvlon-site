@@ -4,6 +4,7 @@ import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
 import type { PriceCheckDb } from "../index.ts";
 import {
   adminUsers,
+  attachments,
   auditEvents,
   priceCheckDocumentRequirements,
   priceCheckRevisions,
@@ -234,14 +235,15 @@ export async function getAdminPriceCheckDetail(db: PriceCheckDb, priceCheckId: s
     .limit(1);
   if (!record) return null;
 
-  const [documentation, revisions, audit, jobs, admins] = await Promise.all([
+  const [documentation, revisions, audit, jobs, admins, uploadedDocuments] = await Promise.all([
     db.select().from(priceCheckDocumentRequirements).where(eq(priceCheckDocumentRequirements.priceCheckId, priceCheckId)).orderBy(asc(priceCheckDocumentRequirements.requirementCode)),
     db.select().from(priceCheckRevisions).where(eq(priceCheckRevisions.priceCheckId, priceCheckId)).orderBy(desc(priceCheckRevisions.version)),
     db.select().from(auditEvents).where(and(eq(auditEvents.aggregateType, "price_check"), eq(auditEvents.aggregateId, priceCheckId))).orderBy(asc(auditEvents.createdAt)),
     db.select().from(processingJobs).where(eq(processingJobs.aggregateId, priceCheckId)).orderBy(desc(processingJobs.createdAt)),
     listActiveAdmins(db),
+    db.select().from(attachments).where(and(eq(attachments.priceCheckId, priceCheckId), sql`${attachments.deletedAt} is null`)).orderBy(asc(attachments.createdAt)),
   ]);
-  return { ...record, documentation, revisions, audit, jobs, admins };
+  return { ...record, documentation, revisions, audit, jobs, admins, attachments: uploadedDocuments };
 }
 
 export async function assignPriceCheck(

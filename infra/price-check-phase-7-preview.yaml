@@ -1,0 +1,275 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Non-production private S3 quarantine, GuardDuty Malware Protection, and
+  least-privilege application identity for Civilon Price Check Phase 7.
+
+Parameters:
+  BucketName:
+    Type: String
+    AllowedPattern: "^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$"
+    Description: Globally unique non-production bucket name without customer data.
+  PreviewOrigin:
+    Type: String
+    Default: ""
+    AllowedPattern: "^$|^https://[a-z0-9-]+--cvlon\\.netlify\\.app$"
+    Description: Exact Netlify Deploy Preview origin. Leave blank until the PR preview exists.
+  QuarantineExpiryDays:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 7
+  BoundPreviewExpiryDays:
+    Type: Number
+    Default: 30
+    MinValue: 2
+    MaxValue: 90
+
+Conditions:
+  HasPreviewOrigin: !Not [!Equals [!Ref PreviewOrigin, ""]]
+
+Resources:
+  UploadBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Ref BucketName
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration: !If
+        - HasPreviewOrigin
+        - CorsRules:
+            - AllowedHeaders:
+                - "*"
+              AllowedMethods:
+                - POST
+              AllowedOrigins:
+                - !Ref PreviewOrigin
+              ExposedHeaders:
+                - ETag
+              MaxAge: 600
+        - !Ref AWS::NoValue
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteAbandonedQuarantine
+            Status: Enabled
+            Prefix: quarantine/
+            ExpirationInDays: !Ref QuarantineExpiryDays
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+          - Id: DeleteBoundPreviewEvidence
+            Status: Enabled
+            Prefix: bound/
+            ExpirationInDays: !Ref BoundPreviewExpiryDays
+      NotificationConfiguration:
+        EventBridgeConfiguration:
+          EventBridgeEnabled: true
+      Tags:
+        - Key: Environment
+          Value: non-production
+        - Key: Workload
+          Value: price-check-phase-7
+        - Key: DataClassification
+          Value: commercially-sensitive
+
+  GuardDutyScanRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: price-check-phase7-preview-guardduty
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: malware-protection-plan.guardduty.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GuardDutyMalwareProtectionForPreviewBucket
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AllowManagedRuleToSendS3EventsToGuardDuty
+                Effect: Allow
+                Action:
+                  - events:PutRule
+                  - events:DeleteRule
+                  - events:PutTargets
+                  - events:RemoveTargets
+                Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*
+                Condition:
+                  StringLike:
+                    events:ManagedBy: malware-protection-plan.guardduty.amazonaws.com
+              - Sid: AllowGuardDutyToMonitorEventBridgeManagedRule
+                Effect: Allow
+                Action:
+                  - events:DescribeRule
+                  - events:ListTargetsByRule
+                Resource: !Sub arn:${AWS::Partition}:events:${AWS::Region}:${AWS::AccountId}:rule/DO-NOT-DELETE-AmazonGuardDutyMalwareProtectionS3*
+              - Sid: AllowPostScanTag
+                Effect: Allow
+                Action:
+                  - s3:PutObjectTagging
+                  - s3:GetObjectTagging
+                  - s3:PutObjectVersionTagging
+                  - s3:GetObjectVersionTagging
+                Resource: !Sub ${UploadBucket.Arn}/quarantine/*
+              - Sid: AllowEnableS3EventBridgeEvents
+                Effect: Allow
+                Action:
+                  - s3:PutBucketNotification
+                  - s3:GetBucketNotification
+                Resource: !GetAtt UploadBucket.Arn
+              - Sid: AllowPutValidationObject
+                Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${UploadBucket.Arn}/malware-protection-resource-validation-object
+              - Sid: AllowCheckBucketOwnershipAndPrefix
+                Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt UploadBucket.Arn
+              - Sid: AllowMalwareScan
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                Resource: !Sub ${UploadBucket.Arn}/quarantine/*
+
+  ApplicationUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: price-check-phase7-preview-app
+      Tags:
+        - Key: Environment
+          Value: non-production
+        - Key: Workload
+          Value: price-check-phase-7
+      Policies:
+        - PolicyName: PriceCheckPreviewObjectAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: AuthorizeExactQuarantineUploads
+                Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${UploadBucket.Arn}/quarantine/*
+              - Sid: InspectExactObjectMetadataAndScanTag
+                Effect: Allow
+                Action:
+                  - s3:GetObjectAttributes
+                  - s3:GetObjectTagging
+                Resource:
+                  - !Sub ${UploadBucket.Arn}/quarantine/*
+                  - !Sub ${UploadBucket.Arn}/bound/*
+              - Sid: ReadOnlyObjectsThatGuardDutyTaggedClean
+                Effect: Allow
+                Action: s3:GetObject
+                Resource:
+                  - !Sub ${UploadBucket.Arn}/quarantine/*
+                  - !Sub ${UploadBucket.Arn}/bound/*
+                Condition:
+                  StringEquals:
+                    s3:ExistingObjectTag/GuardDutyMalwareScanStatus: NO_THREATS_FOUND
+              - Sid: PromoteValidatedCleanObject
+                Effect: Allow
+                Action: s3:PutObject
+                Resource: !Sub ${UploadBucket.Arn}/bound/*
+                Condition:
+                  StringLike:
+                    s3:x-amz-copy-source: !Sub ${BucketName}/quarantine/*
+              - Sid: PreserveCleanScanTagOnPromotedObject
+                Effect: Allow
+                Action: s3:PutObjectTagging
+                Resource: !Sub ${UploadBucket.Arn}/bound/*
+              - Sid: RemoveOwnedPreviewObjects
+                Effect: Allow
+                Action: s3:DeleteObject
+                Resource:
+                  - !Sub ${UploadBucket.Arn}/quarantine/*
+                  - !Sub ${UploadBucket.Arn}/bound/*
+
+  UploadBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref UploadBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: "*"
+            Action: s3:*
+            Resource:
+              - !GetAtt UploadBucket.Arn
+              - !Sub ${UploadBucket.Arn}/*
+            Condition:
+              Bool:
+                aws:SecureTransport: "false"
+          - Sid: NoReadUnlessGuardDutyTaggedClean
+            Effect: Deny
+            NotPrincipal:
+              AWS:
+                - !GetAtt GuardDutyScanRole.Arn
+                - !Sub arn:${AWS::Partition}:sts::${AWS::AccountId}:assumed-role/${GuardDutyScanRole}/GuardDutyMalwareProtection
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+            Resource: !Sub ${UploadBucket.Arn}/*
+            Condition:
+              StringNotEquals:
+                s3:ExistingObjectTag/GuardDutyMalwareScanStatus: NO_THREATS_FOUND
+          - Sid: OnlyGuardDutyCanWriteScanStatus
+            Effect: Deny
+            NotPrincipal:
+              AWS:
+                - !GetAtt GuardDutyScanRole.Arn
+                - !Sub arn:${AWS::Partition}:sts::${AWS::AccountId}:assumed-role/${GuardDutyScanRole}/GuardDutyMalwareProtection
+            Action:
+              - s3:PutObjectTagging
+              - s3:PutObjectVersionTagging
+            Resource: !Sub ${UploadBucket.Arn}/quarantine/*
+            Condition:
+              ForAnyValue:StringEquals:
+                s3:RequestObjectTagKeys: GuardDutyMalwareScanStatus
+
+  MalwareProtectionPlan:
+    Type: AWS::GuardDuty::MalwareProtectionPlan
+    DependsOn:
+      - UploadBucketPolicy
+    Properties:
+      Role: !GetAtt GuardDutyScanRole.Arn
+      ProtectedResource:
+        S3Bucket:
+          BucketName: !Ref UploadBucket
+          ObjectPrefixes:
+            - quarantine/
+      Actions:
+        Tagging:
+          Status: ENABLED
+      Tags:
+        - Key: Environment
+          Value: non-production
+        - Key: Workload
+          Value: price-check-phase-7
+
+Outputs:
+  UploadBucketName:
+    Value: !Ref UploadBucket
+  ApplicationUserName:
+    Value: !Ref ApplicationUser
+  GuardDutyRoleName:
+    Value: !Ref GuardDutyScanRole
+  MalwareProtectionPlanId:
+    Value: !GetAtt MalwareProtectionPlan.MalwareProtectionPlanId
+  MalwareProtectionPlanStatus:
+    Value: !GetAtt MalwareProtectionPlan.Status
