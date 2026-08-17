@@ -195,7 +195,10 @@ footer { background:#041221; color:#92a6b7; padding:72px 0 24px; }
 .footer-grid>div:not(:first-child) { display:flex; flex-direction:column; gap:13px; font-size:13px; line-height:1.5; }
 .footer-grid strong { color:#fff; font:10px var(--font-geist-mono),monospace; letter-spacing:.12em; margin-bottom:10px; text-transform:uppercase; }
 .footer-grid a:hover { color:var(--sky); }
+.footer-privacy-button{border:0;background:transparent;color:inherit;padding:0;text-align:left;font:inherit;cursor:pointer}.footer-privacy-button:hover{color:var(--sky)}
 .footer-quote { color:#fff!important; font-weight:750; }
+.consent-banner{position:fixed;z-index:1000;left:20px;right:20px;bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:28px;max-width:1120px;margin:auto;padding:22px 24px;border:1px solid #385a74;border-radius:4px;background:#061827;color:#fff;box-shadow:0 18px 55px rgba(0,0,0,.35)}.consent-banner h2{margin:0 0 7px;font-size:20px}.consent-banner p{max-width:760px;margin:0;color:#c4d5e2;font-size:13px;line-height:1.55}.consent-banner a{color:#8dccff;text-decoration:underline}.consent-actions{display:flex;gap:10px;flex:0 0 auto}.consent-actions button{min-height:43px;border:1px solid #81b9e6;border-radius:3px;background:transparent;color:#fff;padding:0 16px;font-weight:750;cursor:pointer}.consent-actions button:first-child{background:#1765c1;border-color:#1765c1}.consent-actions button:focus-visible,.footer-privacy-button:focus-visible{outline:3px solid #8dccff;outline-offset:3px}
+@media (max-width:720px){.consent-banner{bottom:12px;left:12px;right:12px;display:grid;gap:17px}.consent-actions{display:grid;grid-template-columns:1fr 1fr}.consent-actions button{padding:0 10px}}
 .footer-bottom { margin-top:60px; padding-top:20px; border-top:1px solid #183048; display:flex; justify-content:space-between; font:9px var(--font-geist-mono),monospace; letter-spacing:.08em; }
 .mobile-urgent { display:none; }
 
