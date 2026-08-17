@@ -50,7 +50,8 @@ test("Phase 10 analytics remains consent-gated, excludes private routes, and exc
     readFile("components/PriceCheckForm.tsx", "utf8"),
     readFile("components/price-check/ResultSourcingAction.tsx", "utf8"),
   ]);
-  for (const event of ["price_check_view", "price_check_start", "price_check_submit", "price_check_upload_started", "price_check_upload_completed", "price_check_result_view", "price_check_quote_request", "whatsapp_click", "contact_submit"]) assert.match(analytics, new RegExp(`"${event}"`));
+  for (const event of ["price_check_view", "price_check_start", "price_check_submit", "price_check_upload_started", "price_check_upload_completed", "whatsapp_click", "contact_submit"]) assert.match(analytics, new RegExp(`"${event}"`));
+  assert.doesNotMatch(analytics, /"price_check_result_view"|"price_check_quote_request"/);
   assert.match(bootstrap, /NEXT_PUBLIC_ANALYTICS_MODE/);
   assert.match(bootstrap, /civilon:analytics-consent/);
   assert.match(bootstrap, /granted/);
