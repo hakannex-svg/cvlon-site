@@ -26,7 +26,7 @@ const allowedFields = new Set([
   "exchangeFee", "freight", "transactionDate", "warrantyValue",
   "warrantyUnit", "warrantyText", "documentationCodes", "documentationOther",
   "attachmentHandles", "notes", "firstName", "lastName", "companyName", "businessEmail", "phone",
-  "role", "country", "serviceAcknowledged", "sourcePage", "landingPage",
+  "role", "country", "serviceAcknowledged", "legalAcknowledged", "sourcePage", "landingPage",
   "referrer", "utmSource", "utmMedium", "utmCampaign", "utmContent",
   "utmTerm", "website",
 ]);
@@ -163,6 +163,7 @@ export function validatePriceCheckSubmission(raw: unknown): ValidationResult {
   const country = clean(value.country, 2);
   if (country && !/^[A-Za-z]{2}$/.test(country)) errors.country = "Use a two-letter country code.";
   if (value.serviceAcknowledged !== true) errors.serviceAcknowledged = "Acknowledge the service-processing disclosure.";
+  if (value.legalAcknowledged !== true) errors.legalAcknowledged = "Acknowledge the Privacy Policy and Terms of Use.";
   if (value.sourcePage !== PRICE_CHECK_SOURCE_PAGE) errors.sourcePage = "The source page is invalid.";
 
   const description = clean(value.description, 500);
@@ -200,7 +201,7 @@ export function validatePriceCheckSubmission(raw: unknown): ValidationResult {
     documentationOther: documentationOther || null, attachmentHandles, notes: notes || null,
     firstName, lastName, companyName, businessEmail, phone: phone || null,
     role: role || null, country: country?.toUpperCase() || null,
-    serviceAcknowledged: true, sourcePage: PRICE_CHECK_SOURCE_PAGE,
+    serviceAcknowledged: true, legalAcknowledged: true, sourcePage: PRICE_CHECK_SOURCE_PAGE,
     landingPage: attribution.landingPage, referrer: attribution.referrerOrigin,
     utmSource: attribution.utmSource, utmMedium: attribution.utmMedium,
     utmCampaign: attribution.utmCampaign, utmContent: attribution.utmContent,

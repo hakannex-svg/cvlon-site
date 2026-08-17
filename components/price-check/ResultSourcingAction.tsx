@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { trackCivilonEvent } from "@/lib/analytics";
 
 export function ResultSourcingAction({ alreadyRequested = false }: { alreadyRequested?: boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "done" | "error">(alreadyRequested ? "done" : "idle");
   async function submit() {
     setState("busy");
+    trackCivilonEvent("price_check_quote_request", { source_page: "/price-check/result" });
     const response = await fetch("/api/price-check/result/sourcing", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
     setState(response.ok ? "done" : "error");
   }

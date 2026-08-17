@@ -87,6 +87,7 @@ export type PriceCheckSubmission = {
   role: string | null;
   country: string | null;
   serviceAcknowledged: true;
+  legalAcknowledged: true;
   sourcePage: typeof PRICE_CHECK_SOURCE_PAGE;
   landingPage: string | null;
   referrer: string | null;

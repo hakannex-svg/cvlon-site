@@ -39,6 +39,7 @@ const rawSubmission = (overrides = {}) => ({
   role: "Buyer",
   country: "US",
   serviceAcknowledged: true,
+  legalAcknowledged: true,
   sourcePage: "/price-check",
   landingPage: "https://cvlon.com/price-check",
   referrer: "https://example.test/source",
@@ -104,7 +105,11 @@ test("Phase 3 submission atomically creates the accepted aggregate and retries i
       db.select({ count: sql`count(*)::int` }).from(schema.priceCheckDocumentRequirements),
       db.select({ count: sql`count(*)::int` }).from(schema.auditEvents),
     ]);
-    assert.deepEqual(counts.map(([row]) => row.count), [1, 1, 1, 2, 1]);
+    assert.deepEqual(counts.map(([row]) => row.count), [1, 1, 1, 2, 2]);
+    const acknowledgements = await db.select().from(schema.auditEvents).where(eq(schema.auditEvents.action, "price_check.legal_acknowledged"));
+    assert.equal(acknowledgements.length, 1);
+    assert.equal(acknowledgements[0].sanitizedMetadata.privacyVersion, "privacy-policy-draft-2026-08-16");
+    assert.equal(acknowledgements[0].sanitizedMetadata.termsVersion, "terms-of-use-draft-2026-08-16");
   });
 });
 

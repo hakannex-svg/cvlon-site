@@ -77,6 +77,7 @@ test("preview configuration fails closed for production, wrong branches and miss
   assert.throws(() => getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "main", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }), /OPENAI_PREVIEW_BRANCH_REJECTED/);
   assert.throws(() => getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-8" }), /OPENAI_EXTRACTION_NOT_CONFIGURED/);
   assert.equal(getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-8", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }).model, "m");
+  assert.equal(getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-10", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }).model, "m");
 });
 
 test("extraction RBAC permits staff workflow and keeps auditor read-only", () => {

@@ -28,7 +28,7 @@ export const siteConfig = {
   aogAvailability: "Monitored by a live person 24/7/365",
 } as const;
 
-export const routes = ["/", "/parts", "/parts/avionics-instruments", "/parts/wheels-brakes-landing-gear", "/parts/engine-airframe-accessories", "/aircraft", "/aircraft/beechcraft", "/aircraft/cessna-citation", "/aircraft/bombardier", "/aircraft/dassault-falcon", "/aircraft/embraer", "/aog-services", "/repair-management", "/quality-assurance", "/about-us", "/contact-us"] as const;
+export const routes = ["/", "/parts", "/parts/avionics-instruments", "/parts/wheels-brakes-landing-gear", "/parts/engine-airframe-accessories", "/aircraft", "/aircraft/beechcraft", "/aircraft/cessna-citation", "/aircraft/bombardier", "/aircraft/dassault-falcon", "/aircraft/embraer", "/aog-services", "/repair-management", "/quality-assurance", "/about-us", "/contact-us", "/privacy-policy", "/terms-of-use"] as const;
 
 export const navigation = [
   { label: "Services", items: [{ label: "Parts sourcing", href: "/parts" }, { label: "AOG support", href: "/aog-services" }, { label: "Repair management", href: "/repair-management" }] },

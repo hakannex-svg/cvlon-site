@@ -48,6 +48,7 @@ const validPayload = (overrides = {}) => ({
   role: "Buyer",
   country: "us",
   serviceAcknowledged: true,
+  legalAcknowledged: true,
   sourcePage: "/price-check",
   landingPage: "https://cvlon.com/price-check?email=private@example.com",
   referrer: "https://search.example/path?q=private",
@@ -115,6 +116,7 @@ test("authoritative validation rejects every required Phase 3 error class", () =
     ["oversized notes", { notes: "x".repeat(2001) }, "notes"],
     ["invalid date", { transactionDate: "2026-02-31" }, "transactionDate"],
     ["missing privacy acknowledgment", { serviceAcknowledged: false }, "serviceAcknowledged"],
+    ["missing legal acknowledgment", { legalAcknowledged: false }, "legalAcknowledged"],
     ["invalid documentation", { documentationCodes: ["FAA_8130_3", "INVENTED"] }, "documentationCodes"],
     ["Other without explanation", { documentationCodes: ["OTHER"] }, "documentationOther"],
   ];
@@ -220,11 +222,11 @@ test("metadata, sitemap, and navigation keep Price Check feature-gated", async (
   assert.match(page, /isPriceCheckEnabled\(\).*notFound/);
   assert.match(page, /"Aircraft Part Price Check"/);
   assert.match(page, /"\/price-check"/);
-  assert.match(page, /Before you approve the PO, check the market\./);
+  assert.match(page, /Before you approve the PO, check the transaction context\./);
   assert.match(sitemap, /isPriceCheckEnabled/);
   assert.doesNotMatch(siteConfig, /price-check/);
-  assert.doesNotMatch(header, /price-check/i);
-  assert.doesNotMatch(home, /price-check/i);
+  assert.match(header, /isPriceCheckEnabled/);
+  assert.match(home, /PriceCheckPromotion/);
   assert.match(css, /\.price-check-progress li\{color:#52687a\}/);
   assert.match(css, /\.pc-aog-notice \.button-primary\{background:#0e56a9;color:#fff\}/);
 });

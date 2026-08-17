@@ -25,7 +25,7 @@ export function WhatsAppAogAction({ className, children = "WhatsApp AOG", messag
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`Message the AOG desk on WhatsApp at ${AOG_PHONE_DISPLAY}`}
-      onClick={() => trackCivilonEvent("aog_whatsapp_click", context)}
+      onClick={() => trackCivilonEvent("whatsapp_click", context)}
     >
       {children}
     </a>

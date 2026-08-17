@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- vinext site uses pre-optimized responsive assets and picture sources. */
 import { CallAogAction, WhatsAppAogAction } from "@/components/AogActions";
 import { RfqForm } from "@/components/RfqForm";
+import { PriceCheckPromotion } from "@/components/PriceCheckPromotion";
 
 const services = [
   {
@@ -104,6 +105,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <PriceCheckPromotion />
 
       <section className="section quality" id="quality">
         <div className="shell quality-layout">
