@@ -19,7 +19,8 @@ test("Phase 10 legal pages, acknowledgement and promotion remain controlled", as
     readFile("app/sitemap.ts", "utf8"),
   ]);
   for (const page of [privacy, terms]) {
-    assert.match(page, /PENDING COUNSEL REVIEW|Draft for counsel review/i);
+    assert.doesNotMatch(page, /PENDING COUNSEL REVIEW|Draft for counsel review/i);
+    assert.match(page, /Last updated August 16, 2026/);
     assert.match(page, /Civilon LLC/);
     assert.match(page, /375 Sylvan Ave, Suite 23/);
   }
