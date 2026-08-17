@@ -107,3 +107,11 @@ test("Phase 10 preview result delivery is explicitly allowed and fails closed el
     PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
   }, "cvlon.com"), false);
 });
+
+test("production result delivery runs only from the scheduled production worker after Price Check is enabled", async () => {
+  const worker = await readFile("netlify/functions/process-price-check-notifications.ts", "utf8");
+  assert.match(worker, /CONTEXT !== "production"/);
+  assert.match(worker, /NEXT_PUBLIC_PRICE_CHECK_ENABLED !== "true"/);
+  assert.match(worker, /processOneResultNotification/);
+  assert.match(worker, /schedule: "\* \* \* \* \*"/);
+});

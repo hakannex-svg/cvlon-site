@@ -12,8 +12,8 @@ export type OpenAIExplanationConfig = {
 const allowedPreviewBranches = new Set(["codex/civilon-price-check-phase-9", "codex/civilon-price-check-phase-10"]);
 
 export function getOpenAIExplanationConfig(env: NodeJS.ProcessEnv = process.env): OpenAIExplanationConfig {
-  if (env.CONTEXT === "production") throw new Error("OPENAI_EXPLANATION_PRODUCTION_DISABLED");
-  if (env.CONTEXT && env.CONTEXT !== "dev" && !allowedPreviewBranches.has(env.BRANCH ?? "")) throw new Error("OPENAI_EXPLANATION_PREVIEW_BRANCH_REJECTED");
+  if (env.CONTEXT === "production" && env.NEXT_PUBLIC_PRICE_CHECK_ENABLED !== "true") throw new Error("OPENAI_EXPLANATION_PRODUCTION_DISABLED");
+  if (env.CONTEXT && !["dev", "production"].includes(env.CONTEXT) && !allowedPreviewBranches.has(env.BRANCH ?? "")) throw new Error("OPENAI_EXPLANATION_PREVIEW_BRANCH_REJECTED");
   const apiKey = env.OPENAI_API_KEY?.trim();
   const model = env.OPENAI_EXPLANATION_MODEL?.trim();
   if (!apiKey || !model) throw new Error("OPENAI_EXPLANATION_NOT_CONFIGURED");

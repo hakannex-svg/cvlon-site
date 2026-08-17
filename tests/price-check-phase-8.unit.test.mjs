@@ -74,6 +74,7 @@ test("adapter categorizes refusal, rate limit, unavailable and invalid output wi
 
 test("preview configuration fails closed for production, wrong branches and missing secrets", () => {
   assert.throws(() => getOpenAIExtractionConfig({ CONTEXT: "production", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }), /OPENAI_PRODUCTION_DISABLED/);
+  assert.equal(getOpenAIExtractionConfig({ CONTEXT: "production", NEXT_PUBLIC_PRICE_CHECK_ENABLED: "true", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }).model, "m");
   assert.throws(() => getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "main", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }), /OPENAI_PREVIEW_BRANCH_REJECTED/);
   assert.throws(() => getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-8" }), /OPENAI_EXTRACTION_NOT_CONFIGURED/);
   assert.equal(getOpenAIExtractionConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-8", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "m" }).model, "m");
