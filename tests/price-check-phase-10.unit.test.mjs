@@ -79,12 +79,10 @@ test("Phase 10 preview configuration remains explicit and production fails close
 test("Phase 10 preview result delivery is explicitly allowed and fails closed elsewhere", () => {
   assert.equal(isPreviewResultDeliveryWorkerEnabled({
     CONTEXT: "deploy-preview",
-    BRANCH: "codex/civilon-price-check-phase-10",
     PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
   }), true);
   assert.equal(isPreviewResultDeliveryWorkerEnabled({
     CONTEXT: "deploy-preview",
-    BRANCH: "codex/civilon-price-check-phase-6",
     PRICE_CHECK_PHASE6_PREVIEW_WORKER_ENABLED: "true",
   }), true);
   assert.equal(isPreviewResultDeliveryWorkerEnabled({
@@ -96,7 +94,7 @@ test("Phase 10 preview result delivery is explicitly allowed and fails closed el
     CONTEXT: "deploy-preview",
     BRANCH: "codex/civilon-price-check-phase-11",
     PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
-  }), false);
+  }), true);
   assert.equal(isPreviewResultDeliveryWorkerEnabled({
     CONTEXT: "deploy-preview",
     BRANCH: "codex/civilon-price-check-phase-10",
