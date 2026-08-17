@@ -43,13 +43,12 @@ test("Phase 10 legal pages, acknowledgement and promotion remain controlled", as
   assert.match(sitemap, /terms-of-use/);
 });
 
-test("Phase 10 analytics remains consent-gated and excludes sensitive form data", async () => {
-  const [analytics, bootstrap, form, resultAction, resultView] = await Promise.all([
+test("Phase 10 analytics remains consent-gated, excludes private routes, and excludes sensitive form data", async () => {
+  const [analytics, bootstrap, form, resultAction] = await Promise.all([
     readFile("lib/analytics.ts", "utf8"),
     readFile("components/AnalyticsBootstrap.tsx", "utf8"),
     readFile("components/PriceCheckForm.tsx", "utf8"),
     readFile("components/price-check/ResultSourcingAction.tsx", "utf8"),
-    readFile("components/price-check/ResultViewAnalytics.tsx", "utf8"),
   ]);
   for (const event of ["price_check_view", "price_check_start", "price_check_submit", "price_check_upload_started", "price_check_upload_completed", "price_check_result_view", "price_check_quote_request", "whatsapp_click", "contact_submit"]) assert.match(analytics, new RegExp(`"${event}"`));
   assert.match(bootstrap, /NEXT_PUBLIC_ANALYTICS_MODE/);
@@ -58,8 +57,9 @@ test("Phase 10 analytics remains consent-gated and excludes sensitive form data"
   assert.doesNotMatch(analytics, /part_number|unit_price|business_email|phone_number|tail_number|result_token/);
   assert.match(form, /price_check_upload_started/);
   assert.match(form, /price_check_upload_completed/);
-  assert.match(resultAction, /price_check_quote_request/);
-  assert.match(resultView, /price_check_result_view/);
+  assert.doesNotMatch(resultAction, /trackCivilonEvent|price_check_quote_request/);
+  assert.match(bootstrap, /\/price-check\/result/);
+  assert.match(bootstrap, /\/admin\//);
 });
 
 test("Phase 10 preview configuration remains explicit and production fails closed", async () => {

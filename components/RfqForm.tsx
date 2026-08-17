@@ -53,7 +53,7 @@ export function RfqForm({
   const [status, setStatus] = useState<SubmissionState>("idle");
   const [whatsAppData, setWhatsAppData] = useState<AogMessageData>({});
   const fieldId = (name: string) => idPrefix ? `${idPrefix}-${name}` : name;
-  const analyticsContext = { source_page: sourcePage, aircraft_brand: aircraftBrand, part_category: partCategory };
+  const analyticsContext = { source_page: sourcePage, cta_location: idPrefix || "primary_form" };
   const requiredBy = composeRequiredBy(neededByMode, neededByDate, neededByHour, neededByMinute, neededByPeriod);
 
   function setAogField(name: keyof AogValues, value: string) {
@@ -110,8 +110,6 @@ export function RfqForm({
     };
     setWhatsAppData(messageData);
     setStatus("submitting");
-    trackCivilonEvent(sourcePage === "/contact-us" ? "contact_submit" : "rfq_submit", analyticsContext);
-
     const isConfirmedEndpoint = isApprovedSubmissionHost(window.location.hostname);
     if (!isConfirmedEndpoint) {
       setStatus("preview");
@@ -125,6 +123,7 @@ export function RfqForm({
         body: new URLSearchParams(Array.from(formData.entries()).map(([key, value]) => [key, String(value)])).toString(),
       });
       setStatus(response.ok ? "success" : "error");
+      if (response.ok) trackCivilonEvent(sourcePage === "/contact-us" ? "contact_submit" : "rfq_submit", analyticsContext);
     } catch {
       setStatus("error");
     }
