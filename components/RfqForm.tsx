@@ -110,7 +110,7 @@ export function RfqForm({
     };
     setWhatsAppData(messageData);
     setStatus("submitting");
-    trackCivilonEvent(isAog ? "aog_rfq_submit" : "rfq_submit", analyticsContext);
+    trackCivilonEvent(sourcePage === "/contact-us" ? "contact_submit" : "rfq_submit", analyticsContext);
 
     const isConfirmedEndpoint = isApprovedSubmissionHost(window.location.hostname);
     if (!isConfirmedEndpoint) {

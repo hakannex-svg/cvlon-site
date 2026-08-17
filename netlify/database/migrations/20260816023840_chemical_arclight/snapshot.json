@@ -1,0 +1,5911 @@
+{
+  "version": "8",
+  "dialect": "postgres",
+  "id": "6182c294-7423-4c73-af29-08e355ec71a2",
+  "prevIds": [
+    "00000000-0000-0000-0000-000000000000"
+  ],
+  "ddl": [
+    {
+      "values": [
+        "REQUESTER",
+        "ADMIN",
+        "SYSTEM",
+        "WORKER"
+      ],
+      "name": "price_check_actor_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "ANALYST",
+        "REVIEWER",
+        "ADMIN",
+        "AUDITOR"
+      ],
+      "name": "admin_role",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PENDING",
+        "VALID",
+        "INVALID",
+        "FAILED"
+      ],
+      "name": "ai_validation_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "INSUFFICIENT_DATA"
+      ],
+      "name": "analysis_confidence",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "DRAFT",
+        "HUMAN_REVIEW",
+        "APPROVED",
+        "REJECTED",
+        "SUPERSEDED"
+      ],
+      "name": "analysis_review_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "NE",
+        "NS",
+        "OH",
+        "SV",
+        "AR",
+        "NOT_SURE"
+      ],
+      "name": "price_check_condition_code",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "REFUNDABLE",
+        "FORFEITED",
+        "UNCLEAR",
+        "NOT_APPLICABLE"
+      ],
+      "name": "core_disposition",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "IDENTIFIED",
+        "PSEUDONYMIZED",
+        "DEIDENTIFIED"
+      ],
+      "name": "deidentification_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "FAA_8130_3",
+        "EASA_FORM_1",
+        "DUAL_RELEASE",
+        "OEM_MANUFACTURER_COC",
+        "MATERIAL_CERTIFICATION",
+        "REMOVAL_RECORDS",
+        "TEARDOWN_EVALUATION_REPORT",
+        "TEST_REPORT",
+        "OTHER",
+        "NOT_SURE"
+      ],
+      "name": "documentation_code",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PENDING",
+        "ACCEPTED",
+        "PARTIALLY_ACCEPTED",
+        "REJECTED"
+      ],
+      "name": "extraction_acceptance_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PENDING",
+        "PROCESSING",
+        "SUCCEEDED",
+        "FAILED"
+      ],
+      "name": "extraction_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "dead_letter"
+      ],
+      "name": "processing_job_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "pending",
+        "running",
+        "succeeded",
+        "failed",
+        "dead_letter"
+      ],
+      "name": "notification_outbox_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "EXACT",
+        "SUPERSEDES",
+        "SUPERSEDED_BY",
+        "INTERCHANGEABLE",
+        "RELATED_APPLICATION"
+      ],
+      "name": "part_relationship_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PENDING",
+        "INTERNAL_ANALYSIS",
+        "AGGREGATE_ONLY",
+        "PROHIBITED"
+      ],
+      "name": "permitted_use_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "submitted",
+        "upload_processing",
+        "extraction_review",
+        "processing_failed",
+        "needs_information",
+        "ready_for_analysis",
+        "analysis_ready",
+        "human_review",
+        "approved",
+        "sent",
+        "quote_requested",
+        "converted",
+        "closed",
+        "spam",
+        "withdrawn"
+      ],
+      "name": "price_check_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "ATTACHMENT_LIFECYCLE",
+        "EXTRACTION",
+        "ANALYSIS",
+        "NOTIFICATION_DELIVERY",
+        "MAINTENANCE"
+      ],
+      "name": "processing_job_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "CIVILON_SUPPLIER_QUOTE",
+        "CIVILON_PURCHASE",
+        "CIVILON_SALE",
+        "CUSTOMER_SUPPLIER_QUOTE",
+        "CUSTOMER_COMPLETED_PURCHASE",
+        "ANALYST_OBSERVATION",
+        "LICENSED_MARKET_DATA",
+        "OTHER_AUTHORIZED"
+      ],
+      "name": "observation_provenance_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "quote",
+        "purchased"
+      ],
+      "name": "quote_or_purchased",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "HIGH",
+        "MEDIUM",
+        "LOW",
+        "UNKNOWN"
+      ],
+      "name": "source_reliability",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PRICE_CHECK_EVIDENCE",
+        "TEMPORARY_PROCESSING",
+        "LEGAL_HOLD"
+      ],
+      "name": "attachment_retention_class",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "PENDING",
+        "QUARANTINED",
+        "CLEAN",
+        "REJECTED",
+        "FAILED"
+      ],
+      "name": "attachment_scan_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "requested",
+        "assigned",
+        "contacted",
+        "quoted",
+        "converted",
+        "closed",
+        "cancelled"
+      ],
+      "name": "sourcing_opportunity_status",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "outright",
+        "exchange",
+        "repair",
+        "not_sure"
+      ],
+      "name": "price_check_transaction_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "REQUESTER",
+        "ADMIN",
+        "SYSTEM"
+      ],
+      "name": "attachment_uploaded_by_type",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "UNVERIFIED",
+        "PENDING",
+        "VERIFIED",
+        "REJECTED"
+      ],
+      "name": "verification_state",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "values": [
+        "DAYS",
+        "MONTHS",
+        "YEARS",
+        "HOURS",
+        "CYCLES",
+        "OTHER"
+      ],
+      "name": "warranty_unit",
+      "entityType": "enums",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "admin_users",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "ai_artifacts",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "attachment_extractions",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "attachments",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "audit_events",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "notification_outbox",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "observation_documentation",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "part_relationships",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_check_analyses",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_check_comparables",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_check_document_requirements",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_check_results",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_check_revisions",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_checks",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "price_observations",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "processing_jobs",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "requesters",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "result_access_tokens",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "sourcing_opportunities",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "identity_provider_issuer",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "identity_provider_subject",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "varchar(320)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "display_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "admin_role",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "true",
+      "generated": null,
+      "identity": null,
+      "name": "active",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_login_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deactivated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "artifact_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "related_extraction_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "related_analysis_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provider",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(200)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "configured_model_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "prompt_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "schema_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "redaction_policy_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "request_digest",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "structured_response",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "ai_validation_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "validation_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token_metadata",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "latency_metadata",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sanitized_error_category",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "attachment_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provider",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(200)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "configured_model_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "schema_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "prompt_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "structured_proposal",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_locations",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "uncertainty_warnings",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "extraction_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "processing_status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "validation_errors",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewed_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "extraction_acceptance_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PENDING'",
+      "generated": null,
+      "identity": null,
+      "name": "acceptance_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price_check_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "attachment_uploaded_by_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "uploaded_by_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "display_filename",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(700)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "object_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "storage_provider",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "declared_mime",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "detected_mime",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "numeric(20,0)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "byte_size",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "content_digest",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "attachment_scan_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'PENDING'",
+      "generated": null,
+      "identity": null,
+      "name": "scan_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "attachment_retention_class",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "retention_class",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deletion_due_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aggregate_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aggregate_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "price_check_actor_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(140)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "action",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "before_version_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "after_version_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "correlation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sanitized_metadata",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(100)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "message_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aggregate_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aggregate_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "recipient_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "template_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(200)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "idempotency_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "notification_outbox_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'pending'",
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "attempt_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "lease_owner",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "lease_expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provider_message_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "next_attempt_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sanitized_failure_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sent_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "observation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "type": "documentation_code",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "documentation_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "other_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "from_normalized_part_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "to_normalized_part_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "part_relationship_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "relationship_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_provenance",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "verification_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verification_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewed_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "effective_from",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "effective_to",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "notes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price_check_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "input_revision_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "engine_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "policy_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_transaction_components",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalized_transaction_components",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "market_low",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "market_median",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "market_high",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(3)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "currency_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "evidence_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "analysis_confidence",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "confidence",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "classification",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "insufficiency_reasons",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "factor_codes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deterministic_calculation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deterministic_calculation_digest",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "ai_draft_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "analyst_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewer_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "analysis_review_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'DRAFT'",
+      "generated": null,
+      "identity": null,
+      "name": "review_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "analysis_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "observation_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "included",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reason_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "analyst_note",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "comparable_snapshot",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalization_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sequence",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price_check_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "type": "documentation_code",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "requirement_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "other_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price_check_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "analysis_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "approved_classification",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "display_range",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "display_evidence_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "approved_factor_list",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "approved_explanation",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "disclaimer_version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "approved_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "approved_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sent_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "superseded_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "rendered_content_digest",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price_check_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "version",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalized_snapshot",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "change_reason",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "price_check_actor_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "actor_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_extraction_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(16)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "public_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "requester_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "price_check_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'submitted'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigned_admin_user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "original_part_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalized_part_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "description",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "numeric(12,3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "quantity",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "quote_or_purchased",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "quote_or_purchased",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "price_check_transaction_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "transaction_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "price_check_condition_code",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "condition_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "unit_price",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "currency_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "core_charge",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "core_disposition",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "core_disposition",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "exchange_fee",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "freight",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "transaction_date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "transaction_date_uncertain",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aircraft_model",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "aog",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "numeric(12,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "warranty_value",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "warranty_unit",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "warranty_unit",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "warranty_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "notes",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_page",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(500)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "landing_page",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(255)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "referrer_origin",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "utm_source",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "utm_medium",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "utm_campaign",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "utm_content",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "utm_term",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "idempotency_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "current_analysis_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "current_result_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "submitted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "closed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "observation_provenance_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "provenance_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "internal_source_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "original_part_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalized_part_number",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "price_check_condition_code",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "condition_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "price_check_transaction_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "transaction_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "numeric(12,3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "quantity",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "unit_price",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(3)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "currency_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "core_charge",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "core_disposition",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "core_disposition",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "exchange_fee",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "numeric(18,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "freight",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "date",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "observation_date",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "numeric(12,2)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "warranty_value",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "warranty_unit",
+      "typeSchema": "public",
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "warranty_unit",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "warranty_text",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "boolean",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "false",
+      "generated": null,
+      "identity": null,
+      "name": "aog",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(240)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aircraft_application",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "region_context",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "availability_evidence",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "availability_observed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "source_reliability",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_reliability",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "verification_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "verification_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "permitted_use_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "permitted_use_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "deidentification_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deidentification_state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "created_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewed_by",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "reviewed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "processing_job_type",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "job_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aggregate_type",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "aggregate_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "varchar(200)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "idempotency_key",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "processing_job_state",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'pending'",
+      "generated": null,
+      "identity": null,
+      "name": "state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "attempt_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "lease_owner",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "lease_expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "next_attempt_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sanitized_error_code",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "started_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "completed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "first_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(200)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "company_name",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(320)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "business_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(320)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalized_email",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(80)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "phone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(32)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "normalized_phone",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(120)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "role",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(2)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "country",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "service_processing_acknowledged_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "marketing_consent_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deletion_requested_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "deleted_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "result_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "varchar(128)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "keyed_token_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "issued_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "revoked_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_viewed_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "view_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "max_use_count",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "price_check_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "requester_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "varchar(26)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "source_result_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "sourcing_opportunity_status",
+      "typeSchema": "public",
+      "notNull": true,
+      "dimensions": 0,
+      "default": "'requested'",
+      "generated": null,
+      "identity": null,
+      "name": "status",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "varchar(160)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "assigned_owner",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "varchar(200)",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "crm_reference",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "updated_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "identity_provider_issuer",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "identity_provider_subject",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "admin_users_identity_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "active",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "admin_users_active_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "admin_users"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "request_digest",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "ai_artifacts_request_digest_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "attachment_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "version",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "attachment_extractions_version_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "object_key",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "attachments_object_key_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "price_check_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "attachments_price_check_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "price_check_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"deleted_at\" is null",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "attachments_not_deleted_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "aggregate_type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "aggregate_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "audit_events_aggregate_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "correlation_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "audit_events_correlation_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "audit_events"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "idempotency_key",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "notification_outbox_idempotency_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "next_attempt_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"state\" in ('pending', 'failed')",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "notification_outbox_runnable_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "from_normalized_part_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "to_normalized_part_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "relationship_type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "part_relationships_definition_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "from_normalized_part_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "part_relationships_from_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "to_normalized_part_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "part_relationships_to_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "price_check_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "version",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_check_analyses_version_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "analysis_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "sequence",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_check_comparables_sequence_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "price_check_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "version",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_check_results_version_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "rendered_content_digest",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_check_results_digest_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "price_check_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "version",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_check_revisions_version_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "public_reference",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_checks_public_reference_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "idempotency_hash",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_checks_idempotency_hash_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "status",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_checks_status_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "assigned_admin_user_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_checks_assignee_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "submitted_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_checks_submitted_at_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "normalized_part_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_checks_normalized_part_number_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "normalized_part_number",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_observations_part_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "condition_code",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_observations_condition_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "transaction_type",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_observations_transaction_type_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "observation_date",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_observations_date_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "permitted_use_state",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_observations_permitted_use_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "verification_state",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "price_observations_verification_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "idempotency_key",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "processing_jobs_idempotency_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "next_attempt_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "created_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"state\" in ('pending', 'failed')",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "processing_jobs_runnable_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "normalized_email",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "requesters_normalized_email_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "normalized_phone",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "requesters_normalized_phone_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "keyed_token_hash",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "result_access_tokens_hash_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "expires_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "result_access_tokens_expiry_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "price_check_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sourcing_opportunities_price_check_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "source_result_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sourcing_opportunities_result_uidx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "related_extraction_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "attachment_extractions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "ai_artifacts_8dUEvOA4xsOT_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "related_analysis_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_analyses",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "ai_artifacts_related_analysis_id_price_check_analyses_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "ai_artifacts"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "attachment_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "attachments",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "attachment_extractions_attachment_id_attachments_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "reviewed_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "attachment_extractions_reviewed_by_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "price_check_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_checks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "attachments_price_check_id_price_checks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "observation_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_observations",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "observation_documentation_LyGg8Pnk16Qa_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "reviewed_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "part_relationships_reviewed_by_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "price_check_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_checks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_analyses_price_check_id_price_checks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "input_revision_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_revisions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_analyses_UiR773iOkFUu_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "ai_draft_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "ai_artifacts",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_check_analyses_ai_draft_id_ai_artifacts_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "analyst_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_check_analyses_analyst_id_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "reviewer_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_check_analyses_reviewer_id_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "analysis_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_analyses",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_comparables_xufUuyMYmVOX_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "observation_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_observations",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_comparables_S30kLHte4V7P_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "price_check_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_checks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "price_check_document_requirements_ZsLnKIVXF0oI_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "price_check_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_checks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_results_price_check_id_price_checks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "analysis_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_analyses",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_results_analysis_id_price_check_analyses_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "approved_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_results_approved_by_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "price_check_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_checks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_check_revisions_price_check_id_price_checks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "source_extraction_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "attachment_extractions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_check_revisions_5CgSavwMfEiS_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "requester_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "requesters",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "price_checks_requester_id_requesters_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "assigned_admin_user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_checks_assigned_admin_user_id_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "current_analysis_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_analyses",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_checks_current_analysis_id_price_check_analyses_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "current_result_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_results",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_checks_current_result_id_price_check_results_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "created_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_observations_created_by_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "reviewed_by"
+      ],
+      "schemaTo": "public",
+      "tableTo": "admin_users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "SET NULL",
+      "name": "price_observations_reviewed_by_admin_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "result_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_results",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "result_access_tokens_result_id_price_check_results_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "price_check_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_checks",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "sourcing_opportunities_price_check_id_price_checks_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "requester_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "requesters",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "sourcing_opportunities_requester_id_requesters_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "source_result_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "price_check_results",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "RESTRICT",
+      "name": "sourcing_opportunities_sXXrpGfrfwQW_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sourcing_opportunities"
+    },
+    {
+      "columns": [
+        "observation_id",
+        "documentation_code"
+      ],
+      "nameExplicit": true,
+      "name": "observation_documentation_pk",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "columns": [
+        "analysis_id",
+        "observation_id"
+      ],
+      "nameExplicit": true,
+      "name": "price_check_comparables_pk",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "columns": [
+        "price_check_id",
+        "requirement_code"
+      ],
+      "nameExplicit": true,
+      "name": "price_check_document_requirements_pk",
+      "entityType": "pks",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "admin_users_pkey",
+      "schema": "public",
+      "table": "admin_users",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "ai_artifacts_pkey",
+      "schema": "public",
+      "table": "ai_artifacts",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "attachment_extractions_pkey",
+      "schema": "public",
+      "table": "attachment_extractions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "attachments_pkey",
+      "schema": "public",
+      "table": "attachments",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "audit_events_pkey",
+      "schema": "public",
+      "table": "audit_events",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "notification_outbox_pkey",
+      "schema": "public",
+      "table": "notification_outbox",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "part_relationships_pkey",
+      "schema": "public",
+      "table": "part_relationships",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "price_check_analyses_pkey",
+      "schema": "public",
+      "table": "price_check_analyses",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "price_check_results_pkey",
+      "schema": "public",
+      "table": "price_check_results",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "price_check_revisions_pkey",
+      "schema": "public",
+      "table": "price_check_revisions",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "price_checks_pkey",
+      "schema": "public",
+      "table": "price_checks",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "price_observations_pkey",
+      "schema": "public",
+      "table": "price_observations",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "processing_jobs_pkey",
+      "schema": "public",
+      "table": "processing_jobs",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "requesters_pkey",
+      "schema": "public",
+      "table": "requesters",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "result_access_tokens_pkey",
+      "schema": "public",
+      "table": "result_access_tokens",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "sourcing_opportunities_pkey",
+      "schema": "public",
+      "table": "sourcing_opportunities",
+      "entityType": "pks"
+    },
+    {
+      "value": "\"version\" > 0",
+      "name": "attachment_extractions_version_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "attachment_extractions"
+    },
+    {
+      "value": "\"byte_size\" >= 0",
+      "name": "attachments_byte_size_nonnegative_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "attachments"
+    },
+    {
+      "value": "\"attempt_count\" >= 0",
+      "name": "notification_outbox_attempt_count_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "notification_outbox"
+    },
+    {
+      "value": "(\"documentation_code\" = 'OTHER' and nullif(btrim(\"other_text\"), '') is not null) or (\"documentation_code\" <> 'OTHER' and \"other_text\" is null)",
+      "name": "observation_documentation_other_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "observation_documentation"
+    },
+    {
+      "value": "\"from_normalized_part_number\" <> \"to_normalized_part_number\" or \"relationship_type\" = 'EXACT'",
+      "name": "part_relationships_distinct_parts_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "part_relationships"
+    },
+    {
+      "value": "\"version\" > 0",
+      "name": "price_check_analyses_version_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "value": "\"evidence_count\" >= 0",
+      "name": "price_check_analyses_evidence_nonnegative_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "value": "\"currency_code\" is null or \"currency_code\" in ('AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'JPY', 'USD')",
+      "name": "price_check_analyses_currency_iso4217_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "value": "\"market_low\" is null or \"market_median\" is null or \"market_high\" is null or (\"market_low\" <= \"market_median\" and \"market_median\" <= \"market_high\")",
+      "name": "price_check_analyses_range_order_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_analyses"
+    },
+    {
+      "value": "\"sequence\" > 0",
+      "name": "price_check_comparables_sequence_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_comparables"
+    },
+    {
+      "value": "(\"requirement_code\" = 'OTHER' and nullif(btrim(\"other_text\"), '') is not null) or (\"requirement_code\" <> 'OTHER' and \"other_text\" is null)",
+      "name": "price_check_document_requirements_other_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_document_requirements"
+    },
+    {
+      "value": "\"version\" > 0",
+      "name": "price_check_results_version_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_results"
+    },
+    {
+      "value": "\"version\" > 0",
+      "name": "price_check_revisions_version_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_check_revisions"
+    },
+    {
+      "value": "\"quantity\" > 0",
+      "name": "price_checks_quantity_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "value": "\"unit_price\" > 0",
+      "name": "price_checks_unit_price_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "value": "\"currency_code\" in ('AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'JPY', 'USD')",
+      "name": "price_checks_currency_iso4217_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "value": "\"public_reference\" ~ '^PC-[0-9A-HJKMNP-TV-Z]{10}$'",
+      "name": "price_checks_public_reference_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "value": "coalesce(\"core_charge\", 0) >= 0 and coalesce(\"exchange_fee\", 0) >= 0 and coalesce(\"freight\", 0) >= 0",
+      "name": "price_checks_money_nonnegative_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_checks"
+    },
+    {
+      "value": "\"quantity\" > 0",
+      "name": "price_observations_quantity_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "value": "\"unit_price\" > 0",
+      "name": "price_observations_unit_price_positive_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "value": "\"currency_code\" in ('AUD', 'CAD', 'CHF', 'EUR', 'GBP', 'JPY', 'USD')",
+      "name": "price_observations_currency_iso4217_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "price_observations"
+    },
+    {
+      "value": "\"attempt_count\" >= 0",
+      "name": "processing_jobs_attempt_count_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "processing_jobs"
+    },
+    {
+      "value": "\"country\" ~ '^[A-Z]{2}$'",
+      "name": "requesters_country_iso2_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "requesters"
+    },
+    {
+      "value": "\"view_count\" >= 0",
+      "name": "result_access_tokens_view_count_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "value": "\"max_use_count\" is null or \"max_use_count\" > 0",
+      "name": "result_access_tokens_max_use_count_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "result_access_tokens"
+    },
+    {
+      "value": "\"expires_at\" > \"issued_at\"",
+      "name": "result_access_tokens_expiry_chk",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "result_access_tokens"
+    }
+  ],
+  "renames": []
+}

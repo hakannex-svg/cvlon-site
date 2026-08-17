@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
 import { navigation, siteConfig } from "@/lib/site-config";
+import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 
 export function SiteHeader() {
@@ -41,6 +42,10 @@ export function SiteHeader() {
     };
   }, [mobile]);
 
+  const visibleNavigation = navigation.map((group) => group.label === "Services" && isPriceCheckEnabled()
+    ? { ...group, items: [...group.items, { label: "Aircraft Part Price Check", href: "/price-check" }] }
+    : group);
+
   return <header>
     <div className="topbar">
       <div className="shell topbar-inner">
@@ -64,7 +69,7 @@ export function SiteHeader() {
       <div className="shell nav-inner">
         <a className="brand" href="/" aria-label="Civilon home"><img src="/civilon-logo.svg" alt="Civilon" /></a>
         <div id="mobile-navigation" ref={panelRef} className={`nav-links ${mobile ? "mobile-open" : ""}`}>
-          {navigation.map((group) => <div className="nav-group" key={group.label}>
+          {visibleNavigation.map((group) => <div className="nav-group" key={group.label}>
             <button type="button" aria-expanded={open === group.label} onClick={() => setOpen(open === group.label ? null : group.label)}>{group.label}<span aria-hidden="true">⌄</span></button>
             <div className={`nav-menu ${open === group.label ? "is-open" : ""}`}>{group.items.map((item) => <a href={item.href} key={item.href} onClick={() => closeMobile(false)}>{item.label}</a>)}</div>
           </div>)}

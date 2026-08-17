@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "admin_users_display_email_uidx" ON "admin_users" ("display_email");
