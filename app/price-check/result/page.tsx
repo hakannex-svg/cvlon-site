@@ -4,7 +4,6 @@ import { cookies } from "next/headers";
 import { CustomerResultView } from "@/components/price-check/CustomerResultView";
 import { CleanResultUrl } from "@/components/price-check/CleanResultUrl";
 import { ResultSourcingAction } from "@/components/price-check/ResultSourcingAction";
-import { ResultViewAnalytics } from "@/components/price-check/ResultViewAnalytics";
 import { formatDateTime, formatMoney } from "@/lib/price-check/admin/display";
 import { RESULT_SESSION_COOKIE, resultTokenKey, verifyResultSession } from "@/lib/price-check/result-session";
 
@@ -38,5 +37,5 @@ export default async function CustomerResultPage() {
     explanation: result.approvedExplanation,
     limitation: result.limitedEvidenceStatement,
   };
-  return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><ResultViewAnalytics /><CustomerResultView model={model} action={<ResultSourcingAction alreadyRequested={customer.sourcingRequested} />} /></main>;
+  return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><CustomerResultView model={model} action={<ResultSourcingAction alreadyRequested={customer.sourcingRequested} />} /></main>;
 }
