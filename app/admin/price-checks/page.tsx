@@ -62,7 +62,7 @@ export default async function PriceCheckQueuePage({ searchParams }: { searchPara
           <caption className="sr-only">Civilon Price Check review queue</caption>
           <thead><tr><th>Reference</th><th>Submitted</th><th>AOG</th><th>Company</th><th>Requester</th><th>Part number</th><th>Condition</th><th>Transaction</th><th>Unit price</th><th>Status</th><th>Assignee</th><th>Age</th></tr></thead>
           <tbody>{records.map(record => <tr key={record.id} className={record.aog ? "is-aog" : ""}>
-            <td data-label="Reference"><Link href={`/admin/price-checks/${record.id}`}>{record.publicReference}</Link></td>
+            <td data-label="Reference"><a href={`/admin/price-checks/${record.id}`}>{record.publicReference}</a></td>
             <td data-label="Submitted"><time dateTime={new Date(record.submittedAt).toISOString()}>{formatDateTime(record.submittedAt)}</time></td>
             <td data-label="AOG">{record.aog ? <span className="admin-aog-badge">AOG</span> : "—"}</td>
             <td data-label="Company">{record.companyName}</td>
