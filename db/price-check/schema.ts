@@ -29,6 +29,11 @@ export const adminRoleEnum = pgEnum("admin_role", [
   "ADMIN",
   "AUDITOR",
 ]);
+export const adminStaffInvitationStatusEnum = pgEnum("admin_staff_invitation_status", [
+  "PENDING",
+  "ACCEPTED",
+  "REVOKED",
+]);
 export const priceCheckStatusEnum = pgEnum("price_check_status", [
   "submitted",
   "upload_processing",
@@ -303,6 +308,40 @@ export const adminSessions = pgTable(
     index("admin_sessions_admin_user_idx").on(table.adminUserId),
     index("admin_sessions_expiry_idx").on(table.expiresAt),
     check("admin_sessions_expiry_chk", sql`${table.expiresAt} > ${table.createdAt}`),
+  ],
+);
+
+export const adminStaffInvitations = pgTable(
+  "admin_staff_invitations",
+  {
+    id: id().primaryKey(),
+    normalizedEmail: varchar("normalized_email", { length: 320 }).notNull(),
+    displayEmail: varchar("display_email", { length: 320 }).notNull(),
+    role: adminRoleEnum("role").notNull(),
+    status: adminStaffInvitationStatusEnum("status").notNull().default("PENDING"),
+    invitedByAdminUserId: id("invited_by_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
+    acceptedAdminUserId: id("accepted_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
+    createdAt: utcTimestamp("created_at").notNull().defaultNow(),
+    updatedAt: utcTimestamp("updated_at").notNull().defaultNow(),
+    acceptedAt: utcTimestamp("accepted_at"),
+    revokedAt: utcTimestamp("revoked_at"),
+  },
+  (table) => [
+    uniqueIndex("admin_staff_invitations_pending_email_uidx")
+      .on(table.normalizedEmail)
+      .where(sql`${table.status} = 'PENDING'`),
+    index("admin_staff_invitations_status_idx").on(table.status, table.createdAt),
+    index("admin_staff_invitations_accepted_user_idx").on(table.acceptedAdminUserId),
+    check(
+      "admin_staff_invitations_state_chk",
+      sql`(${table.status} = 'PENDING' and ${table.acceptedAt} is null and ${table.revokedAt} is null) or (${table.status} = 'ACCEPTED' and ${table.acceptedAt} is not null and ${table.revokedAt} is null) or (${table.status} = 'REVOKED' and ${table.revokedAt} is not null and ${table.acceptedAt} is null)`,
+    ),
   ],
 );
 
