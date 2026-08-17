@@ -1,9 +1,11 @@
 import "../server-boundary.ts";
 
 import { and, asc, desc, eq, ilike, or, sql } from "drizzle-orm";
+import { randomBytes } from "node:crypto";
 import type { PriceCheckDb } from "../index.ts";
 import {
   adminUsers,
+  adminSessions,
   attachmentExtractions,
   attachments,
   auditEvents,
@@ -20,10 +22,13 @@ import {
   canTransitionPriceCheck,
   type PriceCheckStatus,
 } from "../domain/status-policy.ts";
-import type { VerifiedStaffIdentity } from "../../../lib/price-check/admin/identity.ts";
+import { PENDING_STAFF_ISSUER, normalizeBootstrapEmail, type VerifiedStaffIdentity } from "../../../lib/price-check/admin/identity.ts";
 
 export type LocalAdminUser = typeof adminUsers.$inferSelect;
 export type AdminActor = Pick<LocalAdminUser, "id" | "role">;
+
+export const staffRoles = ["ADMIN", "REVIEWER", "ANALYST", "AUDITOR"] as const;
+export type StaffRole = (typeof staffRoles)[number];
 
 function correlationId(prefix: string) {
   return `${prefix}:${crypto.randomUUID()}`;
@@ -93,6 +98,19 @@ export async function bindOrAuthorizeAdmin(
     const [emailBinding] = await tx.select().from(adminUsers).where(eq(adminUsers.displayEmail, identity.email)).limit(1);
     if (emailBinding) {
       if (!emailBinding.active) return { status: "inactive" as const };
+      if (emailBinding.identityProviderIssuer === PENDING_STAFF_ISSUER) {
+        const now = new Date();
+        const [bound] = await tx.update(adminUsers).set({
+          identityProviderIssuer: identity.issuer,
+          identityProviderSubject: identity.subject,
+          lastLoginAt: now,
+          updatedAt: now,
+        }).where(and(eq(adminUsers.id, emailBinding.id), eq(adminUsers.identityProviderIssuer, PENDING_STAFF_ISSUER))).returning();
+        if (!bound) return { status: "binding_conflict" as const };
+        await appendAudit(tx, { aggregateType: "admin_user", aggregateId: bound.id, actorId: bound.id, action: "STAFF_IDENTITY_BOUND", metadata: { provider: identity.provider } });
+        await appendAudit(tx, { aggregateType: "admin_user", aggregateId: bound.id, actorId: bound.id, action: "ADMIN_LOGIN", metadata: { provider: identity.provider, authenticationMethods: identity.authenticationMethods } });
+        return { status: "bound" as const, user: bound };
+      }
       const isApprovedIdentityMigration = bootstrapAllowed &&
         identity.provider === "google-oidc" &&
         identity.issuer === "https://accounts.google.com" &&
@@ -162,6 +180,87 @@ export async function bindOrAuthorizeAdmin(
       },
     });
     return { status: "bound" as const, user: created };
+  });
+}
+
+export async function listStaff(db: PriceCheckDb) {
+  return db.select({
+    id: adminUsers.id,
+    displayEmail: adminUsers.displayEmail,
+    role: adminUsers.role,
+    active: adminUsers.active,
+    identityProviderIssuer: adminUsers.identityProviderIssuer,
+    identityProviderSubject: adminUsers.identityProviderSubject,
+    createdAt: adminUsers.createdAt,
+    updatedAt: adminUsers.updatedAt,
+    lastLoginAt: adminUsers.lastLoginAt,
+    deactivatedAt: adminUsers.deactivatedAt,
+  }).from(adminUsers).orderBy(asc(adminUsers.displayEmail));
+}
+
+function assertStaffRole(role: string): asserts role is StaffRole {
+  if (!staffRoles.includes(role as StaffRole)) throw new Error("Choose a valid staff role.");
+}
+
+export async function createPendingStaff(db: PriceCheckDb, input: { email: string; role: StaffRole; actor: AdminActor }) {
+  const email = normalizeBootstrapEmail(input.email);
+  if (!email || email.length > 320 || !email.includes("@")) throw new Error("Enter a valid login email.");
+  assertStaffRole(input.role);
+  return db.transaction(async (tx) => {
+    const [existing] = await tx.select({ id: adminUsers.id }).from(adminUsers).where(eq(adminUsers.displayEmail, email)).limit(1);
+    if (existing) throw new Error("A staff record already exists for that email.");
+    const id = generateOrderedId();
+    const [created] = await tx.insert(adminUsers).values({
+      id,
+      identityProviderIssuer: PENDING_STAFF_ISSUER,
+      identityProviderSubject: randomBytes(32).toString("base64url"),
+      displayEmail: email,
+      role: input.role,
+      active: true,
+    }).returning();
+    await appendAudit(tx, { aggregateType: "admin_user", aggregateId: id, actorId: input.actor.id, action: "STAFF_CREATED_PENDING", metadata: { role: input.role, email } });
+    return created;
+  });
+}
+
+async function assertNotFinalAdmin(tx: PriceCheckDb, targetId: string, nextRole: StaffRole, nextActive: boolean) {
+  const [target] = await tx.select({ role: adminUsers.role, active: adminUsers.active }).from(adminUsers).where(eq(adminUsers.id, targetId)).limit(1);
+  if (!target) throw new Error("Staff member was not found.");
+  if (target.role === "ADMIN" && target.active && (nextRole !== "ADMIN" || !nextActive)) {
+    const [{ count }] = await tx.select({ count: sql<number>`count(*)::int` }).from(adminUsers).where(and(eq(adminUsers.role, "ADMIN"), eq(adminUsers.active, true)));
+    if (Number(count) <= 1) throw new Error("At least one active Civilon administrator is required.");
+  }
+}
+
+async function revokeUserSessions(tx: PriceCheckDb, userId: string, now = new Date()) {
+  await tx.update(adminSessions).set({ revokedAt: now }).where(and(eq(adminSessions.adminUserId, userId), sql`${adminSessions.revokedAt} is null`));
+}
+
+export async function updateStaff(db: PriceCheckDb, input: { id: string; action: "role" | "disable" | "enable" | "revoke"; role?: StaffRole; actor: AdminActor }) {
+  return db.transaction(async (tx) => {
+    const [current] = await tx.select().from(adminUsers).where(eq(adminUsers.id, input.id)).limit(1);
+    if (!current) throw new Error("Staff member was not found.");
+    const now = new Date();
+    if (input.action === "revoke") {
+      await revokeUserSessions(tx, current.id, now);
+      await appendAudit(tx, { aggregateType: "admin_user", aggregateId: current.id, actorId: input.actor.id, action: "STAFF_SESSIONS_REVOKED" });
+      return current;
+    }
+    if (input.action === "role") {
+      if (!input.role) throw new Error("Choose a role.");
+      assertStaffRole(input.role);
+      await assertNotFinalAdmin(tx, current.id, input.role, current.active);
+      const [updated] = await tx.update(adminUsers).set({ role: input.role, updatedAt: now }).where(eq(adminUsers.id, current.id)).returning();
+      await revokeUserSessions(tx, current.id, now);
+      await appendAudit(tx, { aggregateType: "admin_user", aggregateId: current.id, actorId: input.actor.id, action: "STAFF_ROLE_CHANGED", metadata: { from: current.role, to: input.role } });
+      return updated;
+    }
+    const active = input.action === "enable";
+    await assertNotFinalAdmin(tx, current.id, current.role, active);
+    const [updated] = await tx.update(adminUsers).set({ active, deactivatedAt: active ? null : now, updatedAt: now }).where(eq(adminUsers.id, current.id)).returning();
+    if (!active) await revokeUserSessions(tx, current.id, now);
+    await appendAudit(tx, { aggregateType: "admin_user", aggregateId: current.id, actorId: input.actor.id, action: active ? "STAFF_REENABLED" : "STAFF_DISABLED" });
+    return updated;
   });
 }
 

@@ -19,6 +19,9 @@ export type VerifiedStaffIdentity = {
   authenticationMethods: string[];
 };
 
+/** Marker used only for local, approved-but-not-yet-bound staff records. */
+export const PENDING_STAFF_ISSUER = "pending:civilon-google-oidc";
+
 type GoogleIdentityClaims = {
   iss?: unknown;
   sub?: unknown;

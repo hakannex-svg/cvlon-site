@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     stage = "google_token_exchange";
     const identity = await exchangeGoogleAuthorizationCode(code, transaction, config);
     stage = "bootstrap_authorization";
-    if (!isBootstrapAdmin(identity.email)) return failed();
+    const bootstrapAllowed = isBootstrapAdmin(identity.email);
 
     stage = "database_binding";
     const [database, adminRepository, sessionRepository] = await Promise.all([
@@ -78,7 +78,7 @@ export async function GET(request: Request) {
     const authorization = await adminRepository.bindOrAuthorizeAdmin(
       database.priceCheckDb,
       identity,
-      true,
+      bootstrapAllowed,
     );
     if (
       authorization.status !== "authorized" &&

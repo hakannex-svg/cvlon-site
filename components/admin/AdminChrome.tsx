@@ -7,7 +7,7 @@ export function AdminChrome({ user, children }: { user: PriceCheckAdmin; childre
   return <main className="admin-app">
     <header className="admin-topbar">
       <Link href="/admin/price-checks" className="admin-wordmark">CIVILON <span>OPERATIONS</span></Link>
-      <nav aria-label="Administration"><Link href="/admin/price-checks">Price Checks</Link></nav>
+      <nav aria-label="Administration"><Link href="/admin/price-checks">Price Checks</Link>{user.role === "ADMIN" && <Link href="/admin/staff">Staff</Link>}</nav>
       <div className="admin-session"><span>{user.email}</span><b>{user.role}</b><AdminSignOut /></div>
     </header>
     {children}
