@@ -14,7 +14,7 @@ function boundedText(value: unknown, label: string, minimum: number, maximum: nu
 
 export function parseResultDraftInput(value: unknown) {
   const input = object(value);
-  const allowed = new Set(["analysisId", "explanation", "factorCodes", "displayRange", "displayEvidenceCount", "limitedEvidenceStatement"]);
+  const allowed = new Set(["analysisId", "explanation", "factorCodes", "displayRange", "displayEvidenceCount", "limitedEvidenceStatement", "sourceAiArtifactId"]);
   if (Object.keys(input).some((key) => !allowed.has(key))) throw new Error("Unexpected result field.");
   if (typeof input.analysisId !== "string" || !/^[0-9A-HJKMNP-TV-Z]{26}$/.test(input.analysisId)) throw new Error("Analysis reference is invalid.");
   if (!Array.isArray(input.factorCodes) || input.factorCodes.length > 20 || input.factorCodes.some((item) => typeof item !== "string" || !(item in factorLabels))) throw new Error("Visible factors are invalid.");
@@ -29,5 +29,10 @@ export function parseResultDraftInput(value: unknown) {
     displayRange: input.displayRange,
     displayEvidenceCount: input.displayEvidenceCount,
     limitedEvidenceStatement: limitation,
+    sourceAiArtifactId: input.sourceAiArtifactId === null || input.sourceAiArtifactId === "" || input.sourceAiArtifactId === undefined
+      ? null
+      : typeof input.sourceAiArtifactId === "string" && /^[0-9A-HJKMNP-TV-Z]{26}$/.test(input.sourceAiArtifactId)
+        ? input.sourceAiArtifactId
+        : (() => { throw new Error("AI draft provenance is invalid."); })(),
   };
 }

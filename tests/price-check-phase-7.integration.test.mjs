@@ -33,7 +33,7 @@ function requestInput(attachments, suffix = "A") {
 
 test("pre-submission ownership binds atomically and a handle cannot be reused", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
-    assert.equal(applied.length, 7);
+    assert.equal(applied.length, 8);
     const { eq } = await import("drizzle-orm");
     const { authorizePendingUpload, findClaimablePendingUploads } = await import("../db/price-check/repositories/upload-repository.ts");
     const { createPriceCheckRequest } = await import("../db/price-check/repositories/request-repository.ts");

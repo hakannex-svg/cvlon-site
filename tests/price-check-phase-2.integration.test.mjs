@@ -38,7 +38,7 @@ async function withPriceCheckDatabase(run) {
 
 test("Price Check migrations build an empty 22-table database and replay as a no-op", async () => {
   await withPriceCheckDatabase(async ({ server, applied }) => {
-    assert.equal(applied.length, 7);
+    assert.equal(applied.length, 8);
     assert.deepEqual(await server.applyMigrations(migrationsDirectory), []);
     const { rows } = await server.query(
       "select count(*)::int as count from information_schema.tables where table_schema = 'public'",

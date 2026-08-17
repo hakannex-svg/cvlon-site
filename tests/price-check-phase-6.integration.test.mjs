@@ -44,7 +44,7 @@ async function seedReadyAnalysis(db) {
 
 test("draft, approval, secure delivery, redemption, and sourcing conversion are versioned and private", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
-    assert.equal(applied.length, 7);
+    assert.equal(applied.length, 8);
     const { eq } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/result-delivery-repository.ts");
     const { processOneResultNotification } = await import("../lib/price-check/email/worker.ts");

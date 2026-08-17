@@ -12,6 +12,7 @@ export type AdminCapability =
   | "create_observation"
   | "manage_relationships"
   | "draft_result"
+  | "draft_ai_explanation"
   | "approve_result"
   | "send_result"
   | "exceptional_transition"
@@ -23,8 +24,8 @@ export type AdminCapability =
   | "apply_extraction";
 
 const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
-  ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "download_attachment", "extract_attachment", "apply_extraction"],
-  REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "approve_result", "send_result", "download_attachment", "extract_attachment", "apply_extraction"],
+  ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "draft_ai_explanation", "download_attachment", "extract_attachment", "apply_extraction"],
+  REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "draft_ai_explanation", "approve_result", "send_result", "download_attachment", "extract_attachment", "apply_extraction"],
   ADMIN: [
     "view",
     "self_assign",
@@ -36,6 +37,7 @@ const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
     "create_observation",
     "manage_relationships",
     "draft_result",
+    "draft_ai_explanation",
     "approve_result",
     "send_result",
     "exceptional_transition",

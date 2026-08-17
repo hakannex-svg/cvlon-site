@@ -86,6 +86,7 @@ export async function createCustomerResultDraft(db: PriceCheckDb, input: {
   displayRange: boolean;
   displayEvidenceCount: boolean;
   limitedEvidenceStatement: string | null;
+  sourceAiArtifactId?: string | null;
 }) {
   return db.transaction(async (tx) => {
     const [[priceCheck], [analysis]] = await Promise.all([
@@ -95,6 +96,10 @@ export async function createCustomerResultDraft(db: PriceCheckDb, input: {
     if (!priceCheck || !analysis || priceCheck.currentAnalysisId !== analysis.id) throw new Error("The selected analysis is not the current analysis for this Price Check.");
     if (!["analysis_ready", "human_review", "approved"].includes(priceCheck.status)) throw new Error("Price Check must be analysis ready before a result can be drafted.");
     await assertAnalysisEvidence(tx, analysis.id);
+    if (input.sourceAiArtifactId) {
+      const { validateResultAiProvenance } = await import("./explanation-repository.ts");
+      await validateResultAiProvenance(tx as PriceCheckDb, { priceCheckId: input.priceCheckId, analysisId: analysis.id, artifactId: input.sourceAiArtifactId });
+    }
     const availableFactors = new Set([...(analysis.factorCodes ?? []), ...(analysis.insufficiencyReasons ?? [])].filter((code) => code in factorLabels));
     if (input.factorCodes.some((code) => !availableFactors.has(code))) throw new Error("A visible factor is not present in the persisted analysis.");
     const insufficient = analysis.confidence === "INSUFFICIENT_DATA" || analysis.evidenceCount < 2;
@@ -131,6 +136,7 @@ export async function createCustomerResultDraft(db: PriceCheckDb, input: {
       displayEvidenceCount: input.displayEvidenceCount,
       approvedFactorList: input.factorCodes,
       approvedExplanation: input.explanation,
+      sourceAiArtifactId: input.sourceAiArtifactId ?? null,
       limitedEvidenceStatement: input.limitedEvidenceStatement,
       disclaimerVersion: RESULT_DISCLAIMER_VERSION,
       draftedBy: input.actor.id,

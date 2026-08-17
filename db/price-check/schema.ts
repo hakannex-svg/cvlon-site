@@ -194,6 +194,7 @@ export const jobStateEnum = pgEnum("processing_job_state", [
 export const processingJobTypeEnum = pgEnum("processing_job_type", [
   "ATTACHMENT_LIFECYCLE",
   "EXTRACTION",
+  "EXPLANATION_DRAFT",
   "ANALYSIS",
   "NOTIFICATION_DELIVERY",
   "MAINTENANCE",
@@ -679,6 +680,10 @@ export const aiArtifacts = pgTable(
   {
     id: id().primaryKey(),
     artifactType: varchar("artifact_type", { length: 80 }).notNull(),
+    relatedPriceCheckId: id("related_price_check_id").references(
+      () => priceChecks.id,
+      { onDelete: "set null" },
+    ),
     relatedExtractionId: id("related_extraction_id").references(
       () => attachmentExtractions.id,
       { onDelete: "set null" },
@@ -705,7 +710,11 @@ export const aiArtifacts = pgTable(
     sanitizedErrorCategory: varchar("sanitized_error_category", { length: 120 }),
     createdAt: utcTimestamp("created_at").notNull().defaultNow(),
   },
-  (table) => [index("ai_artifacts_request_digest_idx").on(table.requestDigest)],
+  (table) => [
+    index("ai_artifacts_request_digest_idx").on(table.requestDigest),
+    index("ai_artifacts_price_check_idx").on(table.relatedPriceCheckId),
+    index("ai_artifacts_analysis_idx").on(table.relatedAnalysisId),
+  ],
 );
 
 export const priceCheckAnalyses = pgTable(
@@ -831,6 +840,10 @@ export const priceCheckResults = pgTable(
       .default(false),
     approvedFactorList: jsonb("approved_factor_list").$type<string[]>().notNull(),
     approvedExplanation: text("approved_explanation").notNull(),
+    sourceAiArtifactId: id("source_ai_artifact_id").references(
+      () => aiArtifacts.id,
+      { onDelete: "set null" },
+    ),
     limitedEvidenceStatement: text("limited_evidence_statement"),
     disclaimerVersion: varchar("disclaimer_version", { length: 80 }).notNull(),
     draftedBy: id("drafted_by")

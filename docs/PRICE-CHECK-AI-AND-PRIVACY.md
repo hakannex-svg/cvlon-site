@@ -43,29 +43,23 @@ Extraction does not:
 
 ## 3. Pass 2 — explanation drafting
 
-The explanation model receives only:
-
-- normalized transaction facts approved for the analysis;
-- deterministic selected-evidence count and publishable range;
-- categorical confidence and approved limitation reasons;
-- factor codes that actually affected the result;
-- approved result-language vocabulary and disclaimer.
+The Phase 9 explanation model receives only controlled enums and booleans generated from the persisted analysis: classification, confidence, condition, transaction type, factor codes, warning codes, an evidence band, core/AOG/documentation/warranty states, and whether a governed part relationship was used. It receives no prices, percentages, exact counts, part number, document bytes or text, requester or supplier identity, raw observations, admin identity, notes, or secure tokens.
 
 It does not receive raw observations, supplier identity, requester identity, analyst private notes, or unapproved ranges. The response schema contains classification restatement, concise explanation, factor explanations, and limitations. Server validation rejects new numbers, unsupported claims, accusatory language, supplier references, or output that does not agree with deterministic fields.
 
-The analyst can edit or discard the draft. Approval stores the final text independently from the AI artifact.
+The analyst can edit or discard the draft. Civilon staff review automated output before customer delivery, and automated output does not determine the market analysis. Approval stores the final text independently while an internal artifact reference may preserve provenance.
 
 ## 4. Data-minimization matrix
 
 | Data | Store in Civilon system | Send for extraction | Send for explanation |
 |---|---:|---:|---:|
 | Requester name, email, phone, company | Yes, protected | No | No |
-| Part number and transaction facts | Yes | When needed | Approved normalized values only |
+| Part number and transaction facts | Yes | When needed | Controlled condition/transaction context only; no part number |
 | Supplier identity/contact details | Only if operationally necessary | Redact | No |
 | Raw clean document | Private object store | Minimum necessary pages only | No |
 | Bank/account/tax details, signatures, addresses | Avoid or redact | No | No |
 | Aircraft tail number | Only if operationally needed | Redact unless essential | No |
-| Civilon comparable records | Yes, restricted | No | Only aggregate deterministic facts |
+| Civilon comparable records | Yes, restricted | No | Controlled classification, factor, warning, and evidence-band states only |
 | Analyst private notes | Yes, restricted | No | No |
 | Result token | Keyed hash only | No | No |
 
