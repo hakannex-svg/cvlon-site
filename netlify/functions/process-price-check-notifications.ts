@@ -2,7 +2,10 @@ import { processOneResultNotification } from "../../lib/price-check/email/worker
 import { priceCheckDb } from "../../db/price-check/index.ts";
 
 export default async function processPriceCheckNotifications() {
-  if (process.env.CONTEXT !== "production" || process.env.NEXT_PUBLIC_PRICE_CHECK_ENABLED !== "true") {
+  // Scheduled functions only run from the published deploy, but Netlify can omit
+  // CONTEXT from that runtime. Reject explicit non-production contexts while
+  // allowing the protected production schedule when CONTEXT is absent.
+  if ((process.env.CONTEXT && process.env.CONTEXT !== "production") || process.env.NEXT_PUBLIC_PRICE_CHECK_ENABLED !== "true") {
     return new Response(null, { status: 204 });
   }
 
