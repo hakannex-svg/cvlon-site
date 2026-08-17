@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
@@ -22,6 +23,7 @@ function value(value: unknown) {
 }
 
 export default async function PriceCheckDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const hostname = (await headers()).get("host")?.split(":", 1)[0] ?? null;
   const access = await getPriceCheckAdminAccess();
   if (access.status === "disabled") notFound();
   if (access.status === "unauthenticated") redirect("/admin/login");
@@ -262,7 +264,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             canDraftAi={roleCan(access.user.role, "draft_ai_explanation") && ["analysis_ready", "human_review", "approved"].includes(priceCheck.status)}
             canApprove={roleCan(access.user.role, "approve_result")}
             canSend={roleCan(access.user.role, "send_result")}
-            previewWorkerEnabled={isPreviewResultDeliveryWorkerEnabled()}
+            previewWorkerEnabled={isPreviewResultDeliveryWorkerEnabled(process.env, hostname)}
             aiWorkspace={{
               status: aiExplanationData.status,
               current: aiExplanationData.current ? { ...aiExplanationData.current, createdAt: aiExplanationData.current.createdAt.toISOString() } : null,

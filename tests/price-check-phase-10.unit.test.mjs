@@ -99,4 +99,10 @@ test("Phase 10 preview result delivery is explicitly allowed and fails closed el
     CONTEXT: "deploy-preview",
     BRANCH: "codex/civilon-price-check-phase-10",
   }), false);
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
+  }, "deploy-preview-10--cvlon.netlify.app"), true);
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
+  }, "cvlon.com"), false);
 });
