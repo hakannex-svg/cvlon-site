@@ -89,8 +89,8 @@ export function AdminExtractionReview({ priceCheckId, extractions, transaction, 
   }
 
   return <section className="admin-panel admin-extraction-review" aria-labelledby="extraction-review-heading">
-    <div className="admin-panel-heading"><div><p className="admin-eyebrow">Human confirmation required</p><h2 id="extraction-review-heading">Document extraction review</h2></div>{selected && <span>Version {selected.version}</span>}</div>
-    <p className="admin-muted">Document content is untrusted evidence. Proposals never create market observations, change pricing, or revise a Price Check until staff confirms selected fields.</p>
+    <div className="admin-panel-heading"><div><p className="admin-eyebrow">AI extraction review</p><h2 id="extraction-review-heading">Document extraction review</h2><p>AI proposes fields from the document; it does not decide which values are correct. Review every proposed field before applying it.</p></div><a className="admin-guide-link" href="/admin/help#extraction">What is this?</a>{selected && <span>Version {selected.version}</span>}</div>
+    <p className="admin-muted">Document content is untrusted evidence. Confirmed fields create a reviewed revision; they never create market observations or decide pricing.</p>
     {extractions.length > 0 && <details className="admin-extraction-history"><summary>Extraction history ({extractions.length})</summary><ol>{extractions.map((item) => <li key={item.id}><button type="button" disabled={item.processingStatus !== "SUCCEEDED"} onClick={() => { setSelectedExtractionId(item.id); setLineIndex(0); setDecisions({}); }}><span>{item.filename} · v{item.version}</span><b>{item.processingStatus.replaceAll("_", " ")}</b><time dateTime={item.createdAt}>{new Date(item.createdAt).toLocaleString()}</time></button></li>)}</ol></details>}
     {!selected && <div className="admin-empty-state"><strong>No extraction proposal is ready.</strong><p>Manual review remains fully available.</p></div>}
     {selected && proposal && <>

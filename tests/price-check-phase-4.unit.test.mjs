@@ -212,7 +212,7 @@ test("admin source boundary uses server OIDC sessions, strict origin checks, no 
   assert.doesNotMatch(analytics, /price_check_admin|requester|assignee/);
   assert.match(queuePage, /<a href=\{`\/admin\/price-checks\/\$\{record\.id\}`\}>\{record\.publicReference\}<\/a>/);
   assert.doesNotMatch(queuePage, /<Link href=\{`\/admin\/price-checks\/\$\{record\.id\}`\}>/);
-  assert.match(detailPage, /<section className="admin-detail-aside" aria-label="Administration actions">/);
+  assert.match(detailPage, /<section id="actions" className="admin-detail-aside" aria-label="Administration actions">/);
   assert.doesNotMatch(detailPage, /<aside className="admin-detail-aside">/);
   for (const route of routes) {
     assert.match(route, /requireAdminApi/);

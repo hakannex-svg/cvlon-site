@@ -66,9 +66,11 @@ export function AdminDetailActions({
     </section>
 
     {canMutate && nextStatuses.length > 0 && <section className="admin-panel admin-action-panel" aria-labelledby="status-actions-title">
-      <div className="admin-panel-heading"><div><p className="admin-eyebrow">Workflow</p><h2 id="status-actions-title">Valid next actions</h2></div></div>
+      <div className="admin-panel-heading"><div><p className="admin-eyebrow">Workflow actions</p><h2 id="status-actions-title">Valid next actions</h2><p>Only transitions allowed from the persisted status are shown.</p></div></div>
       <div className="admin-status-actions">{nextStatuses.map(status => <button key={status} type="button" disabled={busy} onClick={() => run(() => post(`/api/admin/price-checks/${priceCheckId}/status`, { to: status }), `Status changed to ${status.replaceAll("_", " ")}.`)}>{status.replaceAll("_", " ")}</button>)}</div>
     </section>}
+
+    {canMutate && nextStatuses.length === 0 && <section className="admin-panel admin-action-panel"><p className="admin-eyebrow">Workflow actions</p><h2>No generic status action</h2><p className="admin-muted">This state has no generic transition available for your role. Use the dedicated analysis, result, delivery, or sourcing controls when the page presents them.</p></section>}
 
     {canMutate && canRequestInformation && <details className="admin-panel admin-details-action">
       <summary><span><b>Request more information</b><small>Workflow state only—no customer email is sent.</small></span></summary>

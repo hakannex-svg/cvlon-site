@@ -20,5 +20,5 @@ export default async function StaffPage() {
   } catch {
     return <AdminAccessDenied unavailable />;
   }
-  return <AdminChrome user={access.user}><StaffManagement initialStaff={staff} /></AdminChrome>;
+  return <AdminChrome user={access.user} active="staff"><StaffManagement initialStaff={staff} /></AdminChrome>;
 }
