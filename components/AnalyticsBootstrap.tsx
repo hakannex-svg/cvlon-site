@@ -6,6 +6,7 @@ declare global {
   interface Window {
     civilonAnalyticsLoaded?: boolean;
     civilonAnalyticsConsentGranted?: boolean;
+    civilonPendingAnalyticsEvents?: Array<Record<string, unknown>>;
     dataLayer?: Array<Record<string, unknown>>;
     [key: `ga-disable-${string}`]: boolean | undefined;
   }
@@ -48,6 +49,7 @@ export function AnalyticsBootstrap() {
       window.civilonAnalyticsConsentGranted = detail?.granted === true;
       window["ga-disable-G-73R0FEVSN2"] = detail?.granted !== true;
       if (!detail?.granted) {
+        window.civilonPendingAnalyticsEvents = [];
         if (window.civilonAnalyticsLoaded) setGoogleConsent(false);
         return;
       }
@@ -55,6 +57,8 @@ export function AnalyticsBootstrap() {
       if (window.civilonAnalyticsLoaded) return;
       window.civilonAnalyticsLoaded = true;
       window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+      window.dataLayer.push(...(window.civilonPendingAnalyticsEvents ?? []));
+      window.civilonPendingAnalyticsEvents = [];
       loadScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`, "civilon-gtm");
     };
 
