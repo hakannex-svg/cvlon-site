@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { isPreviewResultDeliveryWorkerEnabled } from "../lib/price-check/email/preview-worker.ts";
+
 test("Phase 10 legal pages, acknowledgement and promotion remain controlled", async () => {
   const [privacy, terms, form, validation, repository, header, footer, home, parts, category, sitemap] = await Promise.all([
     readFile("app/privacy-policy/page.tsx", "utf8"),
@@ -72,4 +74,31 @@ test("Phase 10 preview configuration remains explicit and production fails close
   assert.match(explanation, /OPENAI_EXPLANATION_PRODUCTION_DISABLED/);
   assert.match(runbook, /Price Check still false/);
   assert.match(legal, /OWNER\/COUNSEL DECISION REQUIRED/);
+});
+
+test("Phase 10 preview result delivery is explicitly allowed and fails closed elsewhere", () => {
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    CONTEXT: "deploy-preview",
+    BRANCH: "codex/civilon-price-check-phase-10",
+    PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
+  }), true);
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    CONTEXT: "deploy-preview",
+    BRANCH: "codex/civilon-price-check-phase-6",
+    PRICE_CHECK_PHASE6_PREVIEW_WORKER_ENABLED: "true",
+  }), true);
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    CONTEXT: "production",
+    BRANCH: "main",
+    PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
+  }), false);
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    CONTEXT: "deploy-preview",
+    BRANCH: "codex/civilon-price-check-phase-11",
+    PRICE_CHECK_PHASE10_PREVIEW_WORKER_ENABLED: "true",
+  }), false);
+  assert.equal(isPreviewResultDeliveryWorkerEnabled({
+    CONTEXT: "deploy-preview",
+    BRANCH: "codex/civilon-price-check-phase-10",
+  }), false);
 });

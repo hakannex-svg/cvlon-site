@@ -13,6 +13,7 @@ import { allowedOperationalStatuses, roleCan } from "@/lib/price-check/admin/pol
 import { canTransitionPriceCheck } from "@/db/price-check/domain/status-policy";
 import { AOG_TEL_URL, buildAogWhatsAppUrl } from "@/lib/aog";
 import { factorLabels } from "@/lib/price-check/result-copy";
+import { isPreviewResultDeliveryWorkerEnabled } from "@/lib/price-check/email/preview-worker";
 
 function value(value: unknown) {
   if (value === null || value === undefined || value === "") return "—";
@@ -261,7 +262,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
             canDraftAi={roleCan(access.user.role, "draft_ai_explanation") && ["analysis_ready", "human_review", "approved"].includes(priceCheck.status)}
             canApprove={roleCan(access.user.role, "approve_result")}
             canSend={roleCan(access.user.role, "send_result")}
-            previewWorkerEnabled={process.env.CONTEXT === "deploy-preview" && process.env.BRANCH === "codex/civilon-price-check-phase-6" && process.env.PRICE_CHECK_PHASE6_PREVIEW_WORKER_ENABLED === "true"}
+            previewWorkerEnabled={isPreviewResultDeliveryWorkerEnabled()}
             aiWorkspace={{
               status: aiExplanationData.status,
               current: aiExplanationData.current ? { ...aiExplanationData.current, createdAt: aiExplanationData.current.createdAt.toISOString() } : null,
