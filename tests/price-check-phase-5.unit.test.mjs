@@ -131,6 +131,11 @@ test("observation input uses controlled schema and analyst RBAC cannot manage re
   assert.ok(allowedOperationalStatuses("ADMIN").includes("analysis_ready"));
 });
 
+test("governed observation permitted-use options submit the strict enum values", async () => {
+  const workspace = await readFile("components/admin/AdminComparableWorkspace.tsx", "utf8");
+  assert.match(workspace, /<option key=\{value\} value=\{value\}>\{value\.replaceAll\("_", " "\)\}<\/option>/);
+});
+
 test("Phase 5 source contains no OpenAI, result delivery, or browser-supplied aggregate path", async () => {
   const sources = await Promise.all([
     readFile("db/price-check/domain/comparable-analysis.ts", "utf8"),
