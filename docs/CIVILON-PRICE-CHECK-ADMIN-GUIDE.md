@@ -2,7 +2,7 @@
 
 **Audience:** Civilon analysts, reviewers, administrators, and auditors
 
-**Operating status:** Use only in an owner-approved environment. Production enablement and legal/privacy approval are separate gates.
+**Operating status:** Production is live as of August 2026. Use only through the owner-approved Civilon admin environment and current legal/privacy controls.
 
 **Companion guides:** [Quick Start](CIVILON-PRICE-CHECK-QUICK-START.md) · [Roles](CIVILON-PRICE-CHECK-ROLES.md) · [Troubleshooting](CIVILON-PRICE-CHECK-TROUBLESHOOTING.md) · [Sample Responses](CIVILON-PRICE-CHECK-SAMPLE-RESPONSES.md)
 
@@ -30,9 +30,28 @@ The `/admin/price-checks` queue shows status, AOG flag, assignee, condition, tra
 
 ![Synthetic admin queue](admin-guide/screenshots/02-admin-queue.png)
 
-Open the internal request ID to see the original submission, current revision, requester details, attachments, analysis, result workflow, jobs, and append-only audit timeline. Treat the ID as routing context, not a credential.
+Click the blue Price Check reference (for example `PC-XXXXXXXXXX`) in the **Review Queue** to open the request. Staff do not need to know the internal database ID.
 
 ![Synthetic request detail](admin-guide/screenshots/03-detail-overview.png)
+
+## Understanding the Price Check screen
+
+The live request page now follows the same five phases used throughout this guide. Start with the status header, read the **Recommended next action**, and use the sticky section links instead of scrolling without a plan.
+
+![Current Price Check detail page for PC-PV54S77SQC](admin-guide/screenshots/20-current-detail-page-map.jpg)
+
+| Number | Section | What it does | What staff does here | When you are done |
+| --- | --- | --- | --- | --- |
+| 1 | Status / request header | Identifies the reference, persisted status, urgency, owner, and age | Confirm you opened the intended request and read the workflow map | The status and recommended action are understood |
+| 2 | Customer & original submission | Shows who submitted the request and the immutable customer-entered transaction | Verify contact context and read the submission without editing it | The original facts and any gaps are understood |
+| 3 | Documents | Shows requirements, uploaded files, and safety/scan state | Open or extract only files marked **Clean** | Relevant clean documents have been reviewed |
+| 4 | AI extraction / reviewed transaction | Compares AI-proposed fields with the current record and preserves confirmed revisions | Confirm each field; apply only supported corrections with a reason | The reviewed transaction is the version Civilon should analyze |
+| 5 | Comparable evidence | Shows governed candidates and include/exclude controls | Select only relevant evidence and explain every decision | The decision set is complete |
+| 6 | Analysis & confidence | Runs deterministic calculations and records human confidence | Save analysis and explain confidence from evidence quality and limitations | An immutable current analysis exists |
+| 7 | Explanation / customer result | Holds optional AI drafting, human editing, preview, approval, and send controls | Verify all customer-facing content; approve and send as separate actions | Delivery is queued or confirmed |
+| 8 | Assignment / next actions | Shows role- and status-permitted operational controls | Assign ownership and use only the displayed valid actions | A clear owner and next workflow state are recorded |
+| 9 | Delivery / jobs | Shows secure-delivery and background processing state | Monitor failures; leave successful technical history collapsed unless needed | Delivery succeeds or a safe recovery path is recorded |
+| 10 | Audit history | Preserves append-only operational events | Expand only when reviewing history or troubleshooting | The relevant event trail has been confirmed |
 
 ## 2. Assign ownership
 
@@ -57,9 +76,28 @@ Analysts and reviewers may self-assign. Administrators may assign any active sta
 | Quote requested | Customer selected Get a Civilon Quote | Follow sourcing opportunity |
 | Converted | Sourcing opportunity converted | Close when complete |
 | Closed | Completed terminal state | No further workflow action |
-| Spam / Withdrawn | Terminal exception/customer withdrawal | No further workflow action |
+| Spam | Terminal exception | No further Price Check action |
+| Withdrawn | Customer withdrawal | No further Price Check action |
 
 Only valid state-machine transitions appear. Admin-only exceptional actions include `processing_failed`, `spam`, and `closed` where the domain permits them. Never force a status merely to unlock a screen.
+
+### What do I do next?
+
+The request page displays a status-derived **Recommended next action**. It is help text only: it never changes status or performs an operation. Follow the visible phase, then use the right-side controls that are permitted for your role.
+
+### Three common workflows
+
+**A. Customer entered everything manually**
+
+Review the immutable submission → create a documented revision only if required → select comparables → save deterministic analysis → prepare and review the result.
+
+**B. Customer uploaded a quote**
+
+Wait for **Clean** → trigger extraction only if useful → verify every proposed field → apply supported fields as a revision → select comparables → analyze and prepare the result.
+
+**C. Customer requested a Civilon quote**
+
+Open the linked sourcing opportunity → contact the customer through the approved channel → begin sourcing follow-up → close only when the operational work is complete.
 
 ## 4. Request more information
 
@@ -244,17 +282,20 @@ Processing jobs show type, `pending`, `running`, `succeeded`, `failed`, or `dead
 
 ![Synthetic job visibility](admin-guide/screenshots/19-job-visibility.png)
 
-## 14. Staff Management — Pending Deployment
+## 14. Staff Management — Live
 
-> [!WARNING]
-> **NOT YET LIVE — awaiting Netlify platform resolution.** PR #11 is parked. Do not tell staff that `/admin/staff` works in production and do not use this guide as deployment authorization.
+**STAFF MANAGEMENT — LIVE** at `https://cvlon.com/admin/staff`. Access is restricted to an authenticated active `ADMIN`.
 
-The planned workflow is: an Admin invites an **exact email**, selects `ADMIN`, `REVIEWER`, `ANALYST`, or `AUDITOR`, and the record remains **Awaiting Google login** until the invited person signs in. The first authorized login binds the external immutable identity to the local record. Admins will then be able to change role, disable/re-enable access, and revoke active sessions. Identity binding must not silently move to a different subject merely because an email matches.
+1. Open **Staff** and enter the employee's exact Google email.
+2. Choose `ADMIN`, `REVIEWER`, `ANALYST`, or `AUDITOR`, then select **Add staff**.
+3. The record shows **Awaiting first login** until the employee signs in at `https://cvlon.com/admin/login` using that exact verified Google account.
+4. The first authorized login binds the immutable Google identity and changes the identity state to **Bound**.
+5. An Admin may change the role, disable or re-enable access, and revoke active sessions. Role changes revoke existing sessions. Re-enabling does not revive old sessions.
 
-Until PR #11 is separately resolved, reviewed, deployed, and announced, follow the current owner-approved access process. Do not modify credentials, DNS, Netlify configuration, or production as a workaround.
+Disabled staff cannot enter the admin workspace. Identity binding must never silently move to a different Google subject merely because an email matches. Civilon must always retain at least one active `ADMIN`; the final active Admin cannot be demoted or disabled.
 
 ## 15. Troubleshooting and escalation
 
 Use [Civilon Price Check Troubleshooting](CIVILON-PRICE-CHECK-TROUBLESHOOTING.md) for symptom-based recovery. Preserve audit history and fail closed. Escalate when identity binding conflicts, GuardDuty/reconciliation repeatedly fails, governed evidence appears incorrect, deterministic outputs do not match the selected snapshots, approval provenance is stale, delivery enters `dead_letter`, or a privacy/security concern exists.
 
-When escalating, provide the internal request ID, UTC/local timestamp, visible status, job type/state, sanitized error code, and steps attempted. Never include documents, raw comparable data, PII beyond the minimum authorized channel, secrets, cookies, provider tokens, or secure result links.
+When escalating, provide the blue Price Check reference, UTC/local timestamp, visible status, job type/state, sanitized error code, and steps attempted. Never include documents, raw comparable data, PII beyond the minimum authorized channel, secrets, cookies, provider tokens, or secure result links.

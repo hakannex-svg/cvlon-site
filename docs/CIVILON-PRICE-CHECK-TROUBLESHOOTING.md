@@ -1,6 +1,6 @@
 # Civilon Price Check Troubleshooting
 
-Fail closed, preserve immutable history, and use the manual path when optional AI is unavailable. Do not change production, credentials, DNS, Netlify configuration, or PR #11 to resolve an operator issue.
+Fail closed, preserve immutable history, and use the manual path when optional AI is unavailable. Do not change production, credentials, DNS, or Netlify configuration to resolve an operator issue.
 
 | Symptom | Check | Safe action |
 | --- | --- | --- |

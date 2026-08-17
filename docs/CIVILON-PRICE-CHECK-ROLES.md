@@ -30,6 +30,6 @@ This matrix reflects the implemented policy in `lib/price-check/admin/policy.ts`
 
 Analyst/Reviewer ordinary status choices are Needs information, Ready for analysis, Analysis ready, and Withdrawn when the state machine permits them. Admin additionally has Processing failed, Spam, and Closed choices where permitted. Human review, approval, sent, quote requested, and converted are normally produced by their dedicated domain actions—not by forcing a generic transition.
 
-## Staff Management — Pending Deployment
+## Staff Management — Live
 
-**NOT YET LIVE — awaiting Netlify platform resolution.** PR #11 remains parked. The planned `/admin/staff` workflow would let an Admin invite an exact email with a chosen role, wait for Google login and immutable identity binding, change roles, disable/re-enable access, and revoke sessions. Do not imply this currently works in production or change Netlify/credentials as a workaround.
+**STAFF MANAGEMENT — LIVE** at `https://cvlon.com/admin/staff`. An active `ADMIN` may add an exact Google email with an `ADMIN`, `REVIEWER`, `ANALYST`, or `AUDITOR` role. New records remain **Awaiting first login** until the employee uses that exact verified Google account at `https://cvlon.com/admin/login`; the first authorized login binds the immutable Google identity and displays **Bound**. Admins may change roles, disable/re-enable access, and revoke sessions. Role changes revoke current sessions, re-enabling does not revive old sessions, and the final active Admin cannot be demoted or disabled.

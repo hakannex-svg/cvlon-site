@@ -12,6 +12,7 @@ export function AdminChrome({ user, active, children }: { user: PriceCheckAdmin;
   ];
   return <main className="admin-app">
     <header className="admin-topbar">
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate plain anchor for resilient admin navigation */}
       <a href="/admin/price-checks" className="admin-wordmark">CIVILON <span>OPERATIONS</span></a>
       <nav className="admin-desktop-nav" aria-label="Administration">{links.map(link => <a key={link.key} href={link.href} aria-current={active === link.key ? "page" : undefined}>{link.label}</a>)}<a href="https://cvlon.com" target="_blank" rel="noreferrer">Open Civilon ↗</a></nav>
       <div className="admin-session"><span>{user.email}</span><b>{user.role}</b><AdminSignOut /></div>

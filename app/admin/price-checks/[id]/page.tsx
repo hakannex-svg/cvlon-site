@@ -163,6 +163,7 @@ export default async function PriceCheckDetailPage({ params }: { params: Promise
 
   return <AdminChrome user={access.user} active="queue">
     <section className="admin-page admin-detail-page">
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate plain anchor back to the queue */}
       <a className="admin-back" href="/admin/price-checks">← Review Queue</a>
       <header className={`admin-triage-header ${priceCheck.aog ? "is-aog" : ""}`}>
         <div><p className="admin-eyebrow">Price Check reference</p><h1>{priceCheck.publicReference}</h1><p>Submitted <time dateTime={priceCheck.submittedAt.toISOString()}>{formatDateTime(priceCheck.submittedAt)}</time></p></div>
