@@ -55,7 +55,7 @@ test("AI explanation jobs are idempotent, versioned, review-only, and stale-prot
   await withDatabase(async ({ db, schema, applied }) => {
     const { eq } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/explanation-repository.ts");
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, 9);
     const seeded = await seedAnalysis(db, schema);
     const config = { model: "test-explanation-model", schemaVersion: "phase9-v1", promptVersion: "phase9-v1" };
     const queued = await repository.queueExplanationDraft(db, { priceCheckId: seeded.priceCheckId, analysisId: seeded.first.analysis.id, actor: seeded.actor, config, regenerate: false });
