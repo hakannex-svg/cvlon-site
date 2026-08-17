@@ -222,7 +222,7 @@ test("metadata, sitemap, and navigation keep Price Check feature-gated", async (
   assert.match(page, /isPriceCheckEnabled\(\).*notFound/);
   assert.match(page, /"Aircraft Part Price Check"/);
   assert.match(page, /"\/price-check"/);
-  assert.match(page, /Before you approve the PO, check the transaction context\./);
+  assert.match(page, /Before you approve the PO, check the market\./);
   assert.match(sitemap, /isPriceCheckEnabled/);
   assert.doesNotMatch(siteConfig, /price-check/);
   assert.match(header, /isPriceCheckEnabled/);
