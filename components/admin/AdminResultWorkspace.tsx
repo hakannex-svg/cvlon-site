@@ -117,7 +117,7 @@ export function AdminResultWorkspace(props: {
         {message && <p ref={feedbackRef} tabIndex={-1} className="admin-result-message" role="status">{message}</p>}
       </section>
 
-      <aside className="admin-panel admin-delivery-status" aria-labelledby="delivery-title"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Delivery</p><h3 id="delivery-title">Secure access status</h3></div></div>{props.delivery.length ? <ul>{props.delivery.map((item, index) => <li key={index}><strong>{item.state === "succeeded" ? "Delivery successful - sandbox" : item.state === "failed" ? "Delivery failed - retry available" : item.state === "pending" ? "Approved - delivery pending" : item.state.replaceAll("_", " ")}</strong><span>Attempts: {item.attemptCount}</span>{item.failureCode && <small>{item.failureCode}</small>}</li>)}</ul> : <p className="admin-muted">No delivery has been queued.</p>}</aside>
+      <section className="admin-panel admin-delivery-status" aria-labelledby="delivery-title"><div className="admin-panel-heading"><div><p className="admin-eyebrow">Delivery</p><h3 id="delivery-title">Secure access status</h3></div></div>{props.delivery.length ? <ul>{props.delivery.map((item, index) => <li key={index}><strong>{item.state === "succeeded" ? "Delivery successful - sandbox" : item.state === "failed" ? "Delivery failed - retry available" : item.state === "pending" ? "Approved - delivery pending" : item.state.replaceAll("_", " ")}</strong><span>Attempts: {item.attemptCount}</span>{item.failureCode && <small>{item.failureCode}</small>}</li>)}</ul> : <p className="admin-muted">No delivery has been queued.</p>}</section>
     </div>
 
     <section className="admin-panel admin-ai-explanation" aria-labelledby="ai-explanation-title">

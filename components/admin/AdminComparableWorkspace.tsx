@@ -201,7 +201,7 @@ export function AdminComparableWorkspace({
 
     <section className="admin-panel admin-candidate-panel" aria-labelledby="candidate-title">
       <div className="admin-panel-heading"><div><p className="admin-eyebrow">Governed evidence</p><h3 id="candidate-title">Candidate observations</h3><p>{candidates.length} candidates · exact PN first · verified relationships only</p></div></div>
-      <div className="admin-candidate-filters" aria-label="Candidate observation filters">
+      <div className="admin-candidate-filters" role="group" aria-label="Candidate observation filters">
         <label><span>Part relationship</span><select value={filters.scope} onChange={(event) => setFilters({ ...filters, scope: event.target.value })}><option value="all">Exact + governed related</option><option value="exact">Exact PN only</option><option value="related">Governed related only</option></select></label>
         <label><span>Condition</span><select value={filters.condition} onChange={(event) => setFilters({ ...filters, condition: event.target.value })}><option value="">All conditions</option>{["NE","NS","OH","SV","AR","NOT_SURE"].map((value) => <option key={value}>{value}</option>)}</select></label>
         <label><span>Transaction</span><select value={filters.transaction} onChange={(event) => setFilters({ ...filters, transaction: event.target.value })}><option value="">All types</option>{["outright","exchange","repair","not_sure"].map((value) => <option key={value}>{value}</option>)}</select></label>
