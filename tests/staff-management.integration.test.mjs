@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { NetlifyDB } from "@netlify/database-dev";
 
-const migrationsDirectory = new URL("../netlify/database/migrations/", import.meta.url).pathname.replace(/^\/(\w:)/, "$1");
+const migrationsDirectory = new URL(
+  "../db/price-check/migrations-netlify-archive/",
+  import.meta.url,
+).pathname.replace(/^\/(\w:)/, "$1");
 const identity = (email, subject) => ({ issuer: "https://accounts.google.com", subject, email, provider: "google-oidc", authenticationMethods: ["pwd", "mfa"] });
 
 async function withDatabase(run) {

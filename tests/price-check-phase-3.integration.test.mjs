@@ -4,7 +4,7 @@ import test from "node:test";
 import { NetlifyDB } from "@netlify/database-dev";
 
 const migrationsDirectory = new URL(
-  "../netlify/database/migrations/",
+  "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
 ).pathname.replace(/^\/(\w:)/, "$1");
 

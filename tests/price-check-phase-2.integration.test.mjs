@@ -12,7 +12,7 @@ import { priceCheckFixtures } from "./fixtures/price-check-phase-2.mjs";
 
 const execFileAsync = promisify(execFile);
 const migrationsDirectory = new URL(
-  "../netlify/database/migrations/",
+  "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
 ).pathname.replace(/^\/(\w:)/, "$1");
 

@@ -3,7 +3,10 @@ import test from "node:test";
 
 import { NetlifyDB } from "@netlify/database-dev";
 
-const migrationsDirectory = new URL("../netlify/database/migrations/", import.meta.url).pathname.replace(/^\/(\w:)/, "$1");
+const migrationsDirectory = new URL(
+  "../db/price-check/migrations-netlify-archive/",
+  import.meta.url,
+).pathname.replace(/^\/(\w:)/, "$1");
 
 async function withDatabase(run) {
   const server = new NetlifyDB({ logger: () => undefined });
