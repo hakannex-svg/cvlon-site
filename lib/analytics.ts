@@ -7,9 +7,7 @@ export type AnalyticsEventName =
   | "price_check_start"
   | "price_check_submit"
   | "price_check_upload_started"
-  | "price_check_upload_completed"
-  | "price_check_result_view"
-  | "price_check_quote_request";
+  | "price_check_upload_completed";
 
 export type AnalyticsContext = {
   source_page?: string;
@@ -19,18 +17,24 @@ export type AnalyticsContext = {
 declare global {
   interface Window {
     civilonAnalyticsConsentGranted?: boolean;
+    civilonPendingAnalyticsEvents?: Array<Record<string, unknown>>;
     dataLayer?: Array<Record<string, unknown>>;
   }
 }
 
 export function trackCivilonEvent(name: AnalyticsEventName, context: AnalyticsContext = {}) {
-  if (typeof window === "undefined" || window.civilonAnalyticsConsentGranted !== true) return;
-
+  if (typeof window === "undefined") return;
   const detail = {
     event: name,
     ...(context.source_page ? { source_page: context.source_page } : {}),
     ...(context.cta_location ? { cta_location: context.cta_location } : {}),
   };
+
+  if (window.civilonAnalyticsConsentGranted === false) return;
+  if (window.civilonAnalyticsConsentGranted !== true) {
+    window.civilonPendingAnalyticsEvents = [...(window.civilonPendingAnalyticsEvents ?? []), detail];
+    return;
+  }
 
   window.dataLayer?.push(detail);
   window.dispatchEvent(new CustomEvent("civilon:analytics", { detail }));

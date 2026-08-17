@@ -4,13 +4,15 @@ import test from "node:test";
 
 test("analytics bridge exposes approved non-sensitive events and context only", async () => {
   const source = await readFile(new URL("../lib/analytics.ts", import.meta.url), "utf8");
-  for (const event of ["aog_call_click", "whatsapp_click", "rfq_submit", "contact_submit", "price_check_view", "price_check_start", "price_check_submit", "price_check_upload_started", "price_check_upload_completed", "price_check_result_view", "price_check_quote_request"]) {
+  for (const event of ["aog_call_click", "whatsapp_click", "rfq_submit", "contact_submit", "price_check_view", "price_check_start", "price_check_submit", "price_check_upload_started", "price_check_upload_completed"]) {
     assert.match(source, new RegExp(`"${event}"`));
   }
   for (const context of ["source_page", "cta_location"]) {
     assert.match(source, new RegExp(context));
   }
-  assert.match(source, /civilonAnalyticsConsentGranted !== true/);
+  assert.match(source, /civilonPendingAnalyticsEvents/);
+  assert.match(source, /civilonAnalyticsConsentGranted === false/);
+  assert.doesNotMatch(source, /price_check_result_view|price_check_quote_request/);
   assert.doesNotMatch(source, /part_number|email|telephone|tail_number|message_content|aircraft_brand|part_category/);
 });
 
