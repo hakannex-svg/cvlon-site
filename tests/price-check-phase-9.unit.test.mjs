@@ -88,6 +88,7 @@ test("preview explanation configuration is independent and production disabled",
   assert.throws(() => getOpenAIExplanationConfig({ CONTEXT: "deploy-preview", BRANCH: "main", OPENAI_API_KEY: "x", OPENAI_EXPLANATION_MODEL: "m" }), /PREVIEW_BRANCH_REJECTED/);
   assert.throws(() => getOpenAIExplanationConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-9", OPENAI_API_KEY: "x", OPENAI_EXTRACTION_MODEL: "extraction-only" }), /NOT_CONFIGURED/);
   assert.equal(getOpenAIExplanationConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-9", OPENAI_API_KEY: "x", OPENAI_EXPLANATION_MODEL: "explanation-only" }).model, "explanation-only");
+  assert.equal(getOpenAIExplanationConfig({ CONTEXT: "deploy-preview", BRANCH: "codex/civilon-price-check-phase-10", OPENAI_API_KEY: "x", OPENAI_EXPLANATION_MODEL: "explanation-only" }).model, "explanation-only");
 });
 
 test("AI drafting RBAC is staff-triggered and auditor remains read only", () => {

@@ -12,7 +12,7 @@ export type OpenAIExtractionConfig = {
 
 export function getOpenAIExtractionConfig(env: NodeJS.ProcessEnv = process.env): OpenAIExtractionConfig {
   if (env.CONTEXT === "production") throw new Error("OPENAI_PRODUCTION_DISABLED");
-  if (env.CONTEXT && env.CONTEXT !== "dev" && !["codex/civilon-price-check-phase-8", "codex/civilon-price-check-phase-9"].includes(env.BRANCH ?? "")) {
+  if (env.CONTEXT && env.CONTEXT !== "dev" && !["codex/civilon-price-check-phase-8", "codex/civilon-price-check-phase-9", "codex/civilon-price-check-phase-10"].includes(env.BRANCH ?? "")) {
     throw new Error("OPENAI_PREVIEW_BRANCH_REJECTED");
   }
   const apiKey = env.OPENAI_API_KEY?.trim();

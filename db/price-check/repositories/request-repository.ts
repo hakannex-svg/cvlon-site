@@ -98,6 +98,11 @@ export type CreatePriceCheckRequestInput = {
     utmContent?: string | null;
     utmTerm?: string | null;
   };
+  legalAcknowledgment?: {
+    acknowledgedAt: Date;
+    privacyVersion: string;
+    termsVersion: string;
+  };
   idempotencyHash: string;
   correlationId: string;
   publicReference?: string;
@@ -248,6 +253,22 @@ export async function createPriceCheckRequest(
       correlationId: input.correlationId,
       sanitizedMetadata: { sourcePage: input.attribution.sourcePage },
     });
+    if (input.legalAcknowledgment) {
+      await tx.insert(auditEvents).values({
+        id: generateOrderedId(),
+        aggregateType: "price_check",
+        aggregateId: priceCheckId,
+        actorType: "REQUESTER",
+        actorId: requesterId,
+        action: "price_check.legal_acknowledged",
+        correlationId: input.correlationId,
+        createdAt: input.legalAcknowledgment.acknowledgedAt,
+        sanitizedMetadata: {
+          privacyVersion: input.legalAcknowledgment.privacyVersion,
+          termsVersion: input.legalAcknowledgment.termsVersion,
+        },
+      });
+    }
     if (attachmentInput.length > 0) {
       await tx.insert(auditEvents).values(attachmentInput.flatMap((attachment) => [
         {

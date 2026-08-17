@@ -9,6 +9,7 @@ import {
   type CreatePriceCheckRequestInput,
 } from "../../db/price-check/repositories/request-repository.ts";
 import type { PriceCheckSubmission } from "./contract.ts";
+import { LEGAL_DOCUMENT_VERSIONS } from "../legal.ts";
 
 type SubmissionDependencies = {
   create: typeof createPriceCheckRequest;
@@ -91,6 +92,11 @@ function requestInput(
       utmCampaign: submission.utmCampaign,
       utmContent: submission.utmContent,
       utmTerm: submission.utmTerm,
+    },
+    legalAcknowledgment: {
+      acknowledgedAt: new Date(),
+      privacyVersion: LEGAL_DOCUMENT_VERSIONS.privacy,
+      termsVersion: LEGAL_DOCUMENT_VERSIONS.terms,
     },
     idempotencyHash: hash,
     correlationId: generateOrderedId(),

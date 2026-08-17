@@ -9,7 +9,7 @@ export type OpenAIExplanationConfig = {
   timeoutMs: number;
 };
 
-const allowedPreviewBranches = new Set(["codex/civilon-price-check-phase-9"]);
+const allowedPreviewBranches = new Set(["codex/civilon-price-check-phase-9", "codex/civilon-price-check-phase-10"]);
 
 export function getOpenAIExplanationConfig(env: NodeJS.ProcessEnv = process.env): OpenAIExplanationConfig {
   if (env.CONTEXT === "production") throw new Error("OPENAI_EXPLANATION_PRODUCTION_DISABLED");

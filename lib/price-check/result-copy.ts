@@ -1,4 +1,4 @@
-export const RESULT_DISCLAIMER = "This Price Check is informational and reflects the comparable observations and transaction details available to Civilon at the time of review. It is not an appraisal, valuation certificate, guarantee of fair market value, or statement about a supplier's cost or margin. Availability, condition, documentation, warranty, exchange terms, core obligations, timing, and delivery requirements can materially affect price.";
+export const RESULT_DISCLAIMER = "This Price Check is informational and reflects the comparable observations and transaction details available to Civilon at the time of review. It is not an appraisal, valuation certificate, price guarantee, or statement about a supplier's cost or margin. Availability, condition, documentation, warranty, exchange terms, core obligations, timing, and delivery requirements can materially affect price.";
 
 export const factorLabels: Record<string, string> = {
   CONDITION_MIXED: "Condition",

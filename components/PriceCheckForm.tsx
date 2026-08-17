@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 import { FieldLabel } from "./FieldLabel";
 import { trackCivilonEvent } from "@/lib/analytics";
@@ -56,7 +56,7 @@ type FormValues = {
   warrantyText: string; documentationCodes: string[]; documentationOther: string;
   notes: string; firstName: string; lastName: string; companyName: string;
   businessEmail: string; phone: string; role: string; country: string;
-  serviceAcknowledged: boolean; website: string;
+  serviceAcknowledged: boolean; legalAcknowledged: boolean; website: string;
 };
 
 const initialValues: FormValues = {
@@ -66,7 +66,7 @@ const initialValues: FormValues = {
   exchangeFee: "", freight: "", transactionDate: "", warrantyValue: "",
   warrantyUnit: "MONTHS", warrantyText: "", documentationCodes: [],
   documentationOther: "", notes: "", firstName: "", lastName: "", companyName: "",
-  businessEmail: "", phone: "", role: "", country: "", serviceAcknowledged: false,
+  businessEmail: "", phone: "", role: "", country: "", serviceAcknowledged: false, legalAcknowledged: false,
   website: "",
 };
 
@@ -107,12 +107,15 @@ export function PriceCheckForm() {
   const started = useRef(false);
   const activeUploads = useRef(new Map<string, XMLHttpRequest>());
 
+  useEffect(() => { trackCivilonEvent("price_check_view", { source_page: "/price-check" }); }, []);
+
   function updateUpload(id: string, update: Partial<UploadItem>) {
     setUploads((current) => current.map((item) => item.id === id ? { ...item, ...update } : item));
   }
 
   async function uploadFile(item: UploadItem) {
     try {
+      trackCivilonEvent("price_check_upload_started", { source_page: "/price-check" });
       const authorization = await fetch("/api/price-check/uploads/authorize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,6 +151,7 @@ export function PriceCheckForm() {
         request.send(body);
       });
       updateUpload(item.id, { status: "pending", progress: 100 });
+      trackCivilonEvent("price_check_upload_completed", { source_page: "/price-check" });
     } catch (error) {
       activeUploads.current.delete(item.id);
       updateUpload(item.id, {
@@ -186,7 +190,7 @@ export function PriceCheckForm() {
     setErrors((current) => ({ ...current, [field]: "", _form: "" }));
     if (!started.current) {
       started.current = true;
-      trackCivilonEvent("price_check_started", { source_page: "/price-check" });
+      trackCivilonEvent("price_check_start", { source_page: "/price-check" });
     }
   }
 
@@ -220,7 +224,6 @@ export function PriceCheckForm() {
     if (values.warrantyValue && !moneyValid(values.warrantyValue)) next.warrantyValue = "Enter a valid warranty value.";
     setErrors(next);
     if (Object.keys(next).length) { focusFirst(next); return false; }
-    trackCivilonEvent("price_check_transaction_completed", { source_page: "/price-check" });
     return true;
   }
 
@@ -233,9 +236,9 @@ export function PriceCheckForm() {
     if (values.aog && values.phone.replace(/\D/g, "").length < 7) next.phone = "Enter a phone number for this AOG Price Check.";
     if (values.country && !/^[A-Za-z]{2}$/.test(values.country)) next.country = "Use a two-letter country code.";
     if (!values.serviceAcknowledged) next.serviceAcknowledged = "Acknowledge how Civilon will use the submitted information.";
+    if (!values.legalAcknowledged) next.legalAcknowledged = "Acknowledge the Privacy Policy and Terms of Use.";
     setErrors(next);
     if (Object.keys(next).length) { focusFirst(next); return false; }
-    trackCivilonEvent("price_check_contact_completed", { source_page: "/price-check" });
     return true;
   }
 
@@ -276,7 +279,7 @@ export function PriceCheckForm() {
       const result = await response.json() as PriceCheckSubmitResponse;
       if (result.ok) {
         setReference(result.reference);
-        trackCivilonEvent("price_check_submitted", { source_page: "/price-check" });
+        trackCivilonEvent("price_check_submit", { source_page: "/price-check" });
       } else {
         presentServerErrors({ ...(result.fieldErrors ?? {}), _form: result.error });
       }
@@ -319,7 +322,7 @@ export function PriceCheckForm() {
       })}
     </ol>
     <form className="price-check-form" noValidate onSubmit={submit} onChange={() => {
-      if (!started.current) { started.current = true; trackCivilonEvent("price_check_started", { source_page: "/price-check" }); }
+      if (!started.current) { started.current = true; trackCivilonEvent("price_check_start", { source_page: "/price-check" }); }
     }}>
       {errorSummary.length > 0 && <div className="price-check-errors" role="alert" aria-labelledby="price-check-error-title" tabIndex={-1}>
         <strong id="price-check-error-title">Please review these details</strong>
@@ -387,6 +390,8 @@ export function PriceCheckForm() {
         {/* TODO(legal): final counsel approval is required before production exposure. */}
         <div className="pc-acknowledgment"><input id="price-check-serviceAcknowledged" type="checkbox" checked={values.serviceAcknowledged} onChange={(e) => update("serviceAcknowledged", e.target.checked)} {...errorProps("serviceAcknowledged")} /><label htmlFor="price-check-serviceAcknowledged"><strong>I understand how this request will be processed.</strong><small>Civilon will use the submitted contact and transaction information to provide the requested Price Check. This implementation copy is pending final legal/privacy approval.</small></label></div>
         {errors.serviceAcknowledged && <small className="field-error pc-ack-error" id="price-check-serviceAcknowledged-error">{errors.serviceAcknowledged}</small>}
+        <div className="pc-acknowledgment pc-legal-acknowledgment"><input id="price-check-legalAcknowledged" type="checkbox" checked={values.legalAcknowledged} onChange={(e) => update("legalAcknowledged", e.target.checked)} {...errorProps("legalAcknowledged")} /><label htmlFor="price-check-legalAcknowledged"><strong>I have read and agree to the Price Check terms.</strong><small>By submitting, you acknowledge the <a href="/privacy-policy" target="_blank" rel="noreferrer">Privacy Policy</a> and <a href="/terms-of-use" target="_blank" rel="noreferrer">Terms of Use</a>, including the informational, human-reviewed nature of the service.</small></label></div>
+        {errors.legalAcknowledged && <small className="field-error pc-ack-error" id="price-check-legalAcknowledged-error">{errors.legalAcknowledged}</small>}
         <div className="pc-final-note" role="note"><strong>Informational, human-reviewed service</strong><p>A Price Check is not an appraisal and does not determine supplier cost or margin. Actual transaction context matters, and some requests require additional review.</p></div>
         <div className="pc-step-actions two"><button type="button" className="pc-back" onClick={() => setStep(2)}>Back</button><button type="submit" className="pc-next" disabled={submitting}>{submitting ? "Submitting…" : "Submit Price Check"}<span aria-hidden="true">→</span></button></div>
       </section>}

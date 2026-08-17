@@ -28,7 +28,7 @@ function validSubmission(overrides = {}) {
     documentationCodes: [], documentationOther: "", attachmentHandles: [], notes: "",
     firstName: "Synthetic", lastName: "Requester", companyName: "Example Aviation",
     businessEmail: "phase7@example.com", phone: "", role: "Buyer", country: "US",
-    serviceAcknowledged: true, sourcePage: "/price-check", landingPage: null,
+    serviceAcknowledged: true, legalAcknowledged: true, sourcePage: "/price-check", landingPage: null,
     referrer: null, utmSource: null, utmMedium: null, utmCampaign: null,
     utmContent: null, utmTerm: null, website: "", ...overrides,
   };
