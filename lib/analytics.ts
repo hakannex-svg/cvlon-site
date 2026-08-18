@@ -24,7 +24,14 @@ export type AnalyticsEventName =
   // storage key, a category, a size, an upload identifier, a Civilon
   // reference, or anything read from inside a file.
   | "sell_evidence_request_opened"
-  | "sell_evidence_request_submitted";
+  | "sell_evidence_request_submitted"
+  // Bulk-inventory freshness. Page-level facts only: `source_page` and nothing
+  // else. Never the credential, never the Civilon reference, and deliberately
+  // never the seller's answer — which of the three a seller chose is a fact
+  // about their stock, and a per-answer event name would put it into an
+  // analytics stream Civilon does not control.
+  | "sell_inventory_freshness_opened"
+  | "sell_inventory_freshness_answered";
 
 export type AnalyticsContext = {
   source_page?: string;

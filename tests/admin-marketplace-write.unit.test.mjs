@@ -67,6 +67,7 @@ test("each handler uses its own capability and checks the origin before mutating
     createBusinessReviewRoute: "review_marketplace",
     createAttachmentReviewRoute: "review_marketplace",
     createEvidenceRequestRoute: "request_marketplace_evidence",
+    createInventoryFreshnessRequestRoute: "request_inventory_freshness",
   };
   /**
    * The repository module each factory imports. The evidence request is the one
@@ -76,6 +77,7 @@ test("each handler uses its own capability and checks the origin before mutating
    */
   const repositoryImport = {
     createEvidenceRequestRoute: "sell-evidence-request-service",
+    createInventoryFreshnessRequestRoute: "sell-inventory-freshness-request-service",
   };
   for (const [factory, capability] of Object.entries(handlers)) {
     const start = shared.indexOf(`export function ${factory}(`);
@@ -126,8 +128,8 @@ test("every client-visible error is generic and private", () => {
   // No provider, driver or record detail escapes.
   assert.doesNotMatch(shared, /error\.message|error\.name|String\(error\)|JSON\.stringify\(error\)|console\./);
   // One opaque catch per mutation handler: status, assignment, note, business
-  // review, attachment review, evidence request.
-  assert.equal((shared.match(/\} catch \{/g) ?? []).length, 6);
+  // review, attachment review, evidence request, inventory freshness.
+  assert.equal((shared.match(/\} catch \{/g) ?? []).length, 7);
   // Every response is privateJson or an access error, never a bare Response.
   const bare = shared.match(/return new Response\(/g) ?? [];
   assert.equal(bare.length, 1, "only the 405 helper constructs a Response directly");

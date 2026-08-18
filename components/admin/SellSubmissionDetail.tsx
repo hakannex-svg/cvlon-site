@@ -13,8 +13,17 @@ import {
   sellEvidenceRequestCategories,
   sellEvidenceRequestState,
 } from "@/db/price-check/domain/sell-evidence-request";
+import {
+  isSellInventoryFreshnessEligibleStatus,
+  isSellInventoryFreshnessResponse,
+  sellInventoryFreshnessDeliveryState,
+  sellInventoryFreshnessDueAt,
+  sellInventoryFreshnessRequestState,
+  sellInventoryFreshnessSubmissionState,
+} from "@/db/price-check/domain/sell-inventory-freshness";
 import { MarketplaceEvidenceReview } from "./MarketplaceEvidenceReview";
 import { SellEvidenceRequestPanel } from "./SellEvidenceRequestPanel";
+import { InventoryFreshnessPanel } from "./InventoryFreshnessPanel";
 import {
   AssignmentPanel,
   AttributionPanel,
@@ -156,6 +165,47 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
       : !contactVerified
         ? "The seller has not confirmed their email address, so there is no address to send a request to."
         : null;
+
+  // Bulk-inventory freshness. Everything below is computed on the server from
+  // the stored timestamps and the stored response code, for the same reason the
+  // evidence lifecycle is: a client-side clock would let a browser disagree with
+  // the row about whether a link is still live or a check is still current.
+  //
+  // `now` is read once and shared by both derivations, so the request state and
+  // the submission state cannot be computed either side of a tick and disagree.
+  const now = new Date();
+  const freshnessState = sellInventoryFreshnessSubmissionState(detail.inventoryFreshness, now);
+  const latestFreshness = detail.inventoryFreshness && {
+    state: sellInventoryFreshnessRequestState(detail.inventoryFreshness, now),
+    // A stored code this build does not recognise renders as "not answered"
+    // rather than as a blank badge or a crash.
+    response: isSellInventoryFreshnessResponse(detail.inventoryFreshness.response)
+      ? detail.inventoryFreshness.response
+      : null,
+    requestedByEmail: detail.inventoryFreshness.requestedByEmail,
+    issuedAt: formatDateTime(detail.inventoryFreshness.issuedAt),
+    expiresAt: formatDateTime(detail.inventoryFreshness.expiresAt),
+    respondedAt: detail.inventoryFreshness.respondedAt
+      ? formatDateTime(detail.inventoryFreshness.respondedAt)
+      : null,
+    dueAt: formatDateTime(sellInventoryFreshnessDueAt(detail.inventoryFreshness)),
+    // What the outbox actually says about the seller's e-mail. Recording a check
+    // and delivering one are different facts and the panel says so.
+    delivery: sellInventoryFreshnessDeliveryState(detail.inventoryFreshness.deliveryState),
+    deliveredAt: detail.inventoryFreshness.deliveredAt
+      ? formatDateTime(detail.inventoryFreshness.deliveredAt)
+      : null,
+  };
+  // The same three rules the route re-decides against the stored record. An
+  // ineligible record shows an honest reason and no button, rather than a
+  // control that would refuse.
+  const freshnessBlockedReason = !actions.canRequestInventoryFreshness
+    ? "You do not have permission to ask a seller about availability."
+    : !isSellInventoryFreshnessEligibleStatus(submission.status)
+      ? "Civilon only asks about availability while a submission is verified or under review."
+      : !contactVerified
+        ? "The seller has not confirmed their email address, so there is no address to send a check to."
+        : null;
   return <section className="admin-page">
     {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate plain anchor for resilient admin navigation */}
     <a className="admin-back" href="/admin/sell-submissions">← Sell Submissions</a>
@@ -250,6 +300,18 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
           canRequest={blockedReason === null}
           blockedReason={blockedReason}
         />
+
+        {/* Bulk records only. A single-part submission is one part, and asking
+            "is your inventory still available" of one part is a question with no
+            meaning — so the panel is not rendered rather than rendered disabled,
+            and a single-part detail page is byte-for-byte what it was before. */}
+        {bulk && <InventoryFreshnessPanel
+          submissionId={submission.id}
+          submissionState={freshnessState}
+          latest={latestFreshness}
+          canRequest={freshnessBlockedReason === null}
+          blockedReason={freshnessBlockedReason}
+        />}
 
         <MarketplaceContactPanel contact={detail.contact} />
         <MarketplaceNotesPanel notes={detail.notes} />

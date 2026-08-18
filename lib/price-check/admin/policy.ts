@@ -34,6 +34,14 @@ export type AdminCapability =
   // holds. Ordinary marketplace work: it changes nothing about the record and
   // asserts nothing about the parts, it only sends the seller a scoped link.
   | "request_marketplace_evidence"
+  // Asking a bulk-inventory seller whether what they offered is still
+  // available. Its own capability rather than a second use of
+  // `request_marketplace_evidence`: the two send different messages, to
+  // different records, for different reasons, and a role that may ask for a
+  // photo has not thereby been granted the right to re-contact every bulk seller
+  // Civilon holds. Overloading the evidence capability would also make a future
+  // narrowing of one of them silently narrow the other.
+  | "request_inventory_freshness"
   // Internal business/evidence review. A staff working status only — never a
   // certification, approval, or any customer-facing signal.
   | "review_marketplace"
@@ -72,6 +80,7 @@ export const marketplaceCapabilities = [
   "write_marketplace_note",
   "download_marketplace_evidence",
   "request_marketplace_evidence",
+  "request_inventory_freshness",
   "review_marketplace",
   "record_supplier_response",
   "manage_buyer_offer",
@@ -81,9 +90,9 @@ export const marketplaceCapabilities = [
 
 const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
   ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "draft_ai_explanation", "download_attachment", "extract_attachment", "apply_extraction",
-    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "request_marketplace_evidence", "review_marketplace", "record_supplier_response"],
+    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "request_marketplace_evidence", "request_inventory_freshness", "review_marketplace", "record_supplier_response"],
   REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "draft_ai_explanation", "approve_result", "send_result", "download_attachment", "extract_attachment", "apply_extraction",
-    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "request_marketplace_evidence", "review_marketplace", "record_supplier_response", "manage_buyer_offer"],
+    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "request_marketplace_evidence", "request_inventory_freshness", "review_marketplace", "record_supplier_response", "manage_buyer_offer"],
   ADMIN: [
     "view",
     "self_assign",
@@ -111,6 +120,7 @@ const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
     "write_marketplace_note",
     "download_marketplace_evidence",
     "request_marketplace_evidence",
+    "request_inventory_freshness",
     "review_marketplace",
     "record_supplier_response",
     "manage_buyer_offer",

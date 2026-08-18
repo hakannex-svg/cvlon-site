@@ -24,6 +24,10 @@ const ordinaryMarketplaceWork = [
   // Asking a seller for follow-up evidence changes nothing about the record and
   // asserts nothing about the parts, so it sits with ordinary staff work.
   "request_marketplace_evidence",
+  // Asking a bulk-inventory seller whether the inventory is still available is
+  // the same kind of work, and is deliberately its own capability rather than a
+  // second use of the evidence one.
+  "request_inventory_freshness",
   "review_marketplace",
   "record_supplier_response",
 ];

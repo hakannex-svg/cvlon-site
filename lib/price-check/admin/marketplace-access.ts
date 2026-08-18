@@ -48,6 +48,13 @@ export type MarketplaceActionContext = {
   canReview: boolean;
   /** Ordinary marketplace work: asks a seller for files Civilon does not have. */
   canRequestEvidence: boolean;
+  /**
+   * Ordinary marketplace work: asks a bulk-inventory seller whether what they
+   * offered is still available. A separate flag rather than a second reading of
+   * `canRequestEvidence`, so narrowing one authority never silently narrows the
+   * other and a panel cannot be shown on the strength of the wrong permission.
+   */
+  canRequestInventoryFreshness: boolean;
 };
 
 export function buildMarketplaceActionContext(input: {
@@ -66,5 +73,6 @@ export function buildMarketplaceActionContext(input: {
     canWriteNote: can(input.role, "write_marketplace_note"),
     canReview: can(input.role, "review_marketplace"),
     canRequestEvidence: can(input.role, "request_marketplace_evidence"),
+    canRequestInventoryFreshness: can(input.role, "request_inventory_freshness"),
   };
 }
