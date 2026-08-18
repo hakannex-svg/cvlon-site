@@ -909,7 +909,7 @@ test("the seller page erases the fragment and answers only on an explicit press"
   assert.match(publicPanel, /window\.history\.replaceState\(null, "", SELL_INVENTORY_FRESHNESS_PAGE_PATH\)/);
   // Erase happens before anything decides what to do with the value.
   assert.ok(
-    publicPanel.indexOf("window.history.replaceState") < publicPanel.indexOf('setStage(value ? "loading"'),
+    publicPanel.indexOf("window.history.replaceState") < publicPanel.indexOf("token.current = value"),
     "the fragment is erased before the credential is acted on",
   );
   // The credential is never rendered, never written back to the URL, never put
@@ -934,6 +934,14 @@ test("the seller page erases the fragment and answers only on an explicit press"
   assert.match(publicPanel, /<p className="field-error" role="alert">/);
   assert.match(publicPanel, /htmlFor=\{`inventory-freshness-\$\{response\}`\}/);
   assert.match(publicPanel, /id=\{`inventory-freshness-\$\{response\}`\}/);
+});
+
+test("a transient view failure keeps the erased credential retryable in memory", () => {
+  assert.match(publicPanel, /type Stage = [^;]*"load_error"/);
+  assert.match(publicPanel, /setStage\("load_error"\)/);
+  assert.match(publicPanel, /onClick=\{\(\) => void load\(token\.current\)\}/);
+  assert.match(publicPanel, /Your answer has not been sent/);
+  assert.doesNotMatch(publicPanel, /credential stays in memory and the seller can reload/);
 });
 
 test("the seller-facing copy states every required boundary", () => {

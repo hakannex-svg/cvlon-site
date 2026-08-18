@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-html-link-for-pages -- vinext navigation uses standard anchors. */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { trackCivilonEvent } from "@/lib/analytics";
 import {
   sellInventoryFreshnessResponseLabels,
@@ -40,7 +40,7 @@ import {
  * chosen answer is deliberately not among them, and there is no per-answer event
  * name either: which of the three a seller picked is a fact about their stock.
  */
-type Stage = "reading" | "loading" | "ready" | "sending" | "sent" | "unavailable";
+type Stage = "reading" | "loading" | "load_error" | "ready" | "sending" | "sent" | "unavailable";
 
 /**
  * The one refusal the seller ever sees, used for every reason a link cannot be
@@ -97,6 +97,40 @@ export function SellInventoryFreshness() {
   const token = useRef("");
   const initialized = useRef(false);
 
+  const load = useCallback(async (value: string) => {
+    if (!value) {
+      setStage("unavailable");
+      return;
+    }
+    setError("");
+    setStage("loading");
+    try {
+      const response = await fetch(SELL_INVENTORY_FRESHNESS_VIEW_API_PATH, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ token: value }),
+      });
+      const result = await response.json() as SellInventoryFreshnessViewResponse;
+      if (!result.ok) {
+        token.current = "";
+        setStage("unavailable");
+        return;
+      }
+      setCheck(result.check);
+      setStage("ready");
+      trackCivilonEvent("sell_inventory_freshness_opened", {
+        source_page: SELL_INVENTORY_FRESHNESS_PAGE_PATH,
+      });
+    } catch {
+      // The server did not answer, so the credential may still be live. Keep it
+      // only in memory and offer a retry instead of falsely calling the link
+      // expired. Reloading cannot help because the fragment was already erased.
+      setError("The secure link could not be checked. Check your connection and try again.");
+      setStage("load_error");
+    }
+  }, []);
+
   useEffect(() => {
     // Reading the fragment is destructive: the first run consumes it and erases
     // it from the URL. React may run a mount effect's setup twice against a
@@ -119,35 +153,8 @@ export function SellInventoryFreshness() {
       window.history.replaceState(null, "", SELL_INVENTORY_FRESHNESS_PAGE_PATH);
     }
     token.current = value;
-    setStage(value ? "loading" : "unavailable");
-    if (!value) return;
-
-    void (async () => {
-      try {
-        const response = await fetch(SELL_INVENTORY_FRESHNESS_VIEW_API_PATH, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "same-origin",
-          body: JSON.stringify({ token: value }),
-        });
-        const result = await response.json() as SellInventoryFreshnessViewResponse;
-        if (!result.ok) {
-          token.current = "";
-          setStage("unavailable");
-          return;
-        }
-        setCheck(result.check);
-        setStage("ready");
-        trackCivilonEvent("sell_inventory_freshness_opened", {
-          source_page: SELL_INVENTORY_FRESHNESS_PAGE_PATH,
-        });
-      } catch {
-        // No answer came back, so nothing was necessarily wrong with the link.
-        // The credential stays in memory and the seller can reload.
-        setStage("unavailable");
-      }
-    })();
-  }, []);
+    void load(value);
+  }, [load]);
 
   async function send() {
     if (!token.current || !chosen || stage === "sending") return;
@@ -187,6 +194,28 @@ export function SellInventoryFreshness() {
     return (
       <div className="marketplace-verify-panel" role="status">
         <p>Opening your secure link&hellip;</p>
+      </div>
+    );
+  }
+
+  if (stage === "load_error") {
+    return (
+      <div className="marketplace-verify-panel" role="status" aria-live="polite">
+        <span className="section-label">SECURE LINK / TRY AGAIN</span>
+        <h2>Civilon could not check this link.</h2>
+        <p className="field-error" role="alert">{error}</p>
+        <button
+          type="button"
+          className="pc-next"
+          onClick={() => void load(token.current)}
+        >
+          Try again
+          <span aria-hidden="true">→</span>
+        </button>
+        <small className="field-help">
+          Your answer has not been sent. The secure credential remains only in
+          this browser tab while you retry.
+        </small>
       </div>
     );
   }

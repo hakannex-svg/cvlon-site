@@ -71,7 +71,7 @@ export function sellInventoryFreshnessEmail(input: {
     "",
     `Reference: ${input.reference}`,
     "",
-    "Civilon is checking whether what you offered is still available. One tap answers it — there is nothing to upload and nothing to fill in.",
+    "Civilon is checking whether what you offered is still available. Open the secure link and choose one answer — there is nothing to upload and nothing to fill in.",
     "",
     `Answer here: ${input.availabilityUrl}`,
     "",
@@ -87,7 +87,7 @@ export function sellInventoryFreshnessEmail(input: {
   const htmlBoundaries = BOUNDARIES
     .map((line) => `<p style="color:#526b7d;font-size:14px">${escapeHtml(line)}</p>`)
     .join("");
-  const htmlBody = `<!doctype html><html><body style="margin:0;background:#eef3f7;color:#10283e;font-family:Arial,sans-serif"><div style="max-width:620px;margin:0 auto;padding:38px 22px"><div style="background:#0b2941;color:#fff;padding:26px 30px"><strong style="color:#8ecbff;letter-spacing:.08em">CIVILON PARTS</strong><h1 style="font-size:25px;margin:12px 0 0">Is this still available?</h1></div><div style="background:#fff;padding:30px"><p><b>Reference:</b> ${reference}</p><p>Civilon is checking whether what you offered is still available. One tap answers it — there is nothing to upload and nothing to fill in.</p><p style="margin:28px 0"><a href="${availabilityUrl}" style="display:inline-block;background:#145fae;color:#fff;text-decoration:none;padding:14px 20px;font-weight:bold">Answer securely</a></p><p>You can answer that everything is still available, that some items changed, or that it is no longer available.</p><p style="color:#526b7d;font-size:14px">This secure link expires ${escapeHtml(expiry)}. It does not create an account. This email intentionally excludes your submission details.</p>${htmlBoundaries}<hr style="border:0;border-top:1px solid #d7e2e9;margin:26px 0"><p style="font-size:13px">Civilon - sales@cvlon.com - +1 909 344 4444</p></div></div></body></html>`;
+  const htmlBody = `<!doctype html><html><body style="margin:0;background:#eef3f7;color:#10283e;font-family:Arial,sans-serif"><div style="max-width:620px;margin:0 auto;padding:38px 22px"><div style="background:#0b2941;color:#fff;padding:26px 30px"><strong style="color:#8ecbff;letter-spacing:.08em">CIVILON PARTS</strong><h1 style="font-size:25px;margin:12px 0 0">Is this still available?</h1></div><div style="background:#fff;padding:30px"><p><b>Reference:</b> ${reference}</p><p>Civilon is checking whether what you offered is still available. Open the secure link and choose one answer — there is nothing to upload and nothing to fill in.</p><p style="margin:28px 0"><a href="${availabilityUrl}" style="display:inline-block;background:#145fae;color:#fff;text-decoration:none;padding:14px 20px;font-weight:bold">Answer securely</a></p><p>You can answer that everything is still available, that some items changed, or that it is no longer available.</p><p style="color:#526b7d;font-size:14px">This secure link expires ${escapeHtml(expiry)}. It does not create an account. This email intentionally excludes your submission details.</p>${htmlBoundaries}<hr style="border:0;border-top:1px solid #d7e2e9;margin:26px 0"><p style="font-size:13px">Civilon - sales@cvlon.com - +1 909 344 4444</p></div></div></body></html>`;
 
   return {
     from: input.from,
