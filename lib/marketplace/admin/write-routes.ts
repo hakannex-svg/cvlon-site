@@ -237,10 +237,12 @@ export function createBusinessReviewRoute(aggregate: MarketplaceAggregate) {
  *  - The secure credential and its URL are minted below this boundary and are
  *    never in the response. A staff browser has no use for the link, and a
  *    response carrying one would put it in a console log, a screenshot, and a
- *    support ticket. Staff learn that a request was sent, and its expiry.
+ *    support ticket. Staff learn that a request was recorded, and its expiry.
  *  - The e-mail is queued in the same transaction as the request row and its
  *    audit event, so a seller can never hold a link to a request that was not
- *    recorded, and a recorded request is never silently unsent.
+ *    recorded, and a recorded request is never silently unqueued. Queued is all
+ *    this response can honestly claim: delivery is the outbox's business, and
+ *    the detail page reports it from the outbox row rather than from here.
  *  - The seller contact must be verified and the record must not be terminal.
  *    Both are decided against the stored record inside the transaction, not
  *    from anything the browser sent.
@@ -283,14 +285,16 @@ export function createEvidenceRequestRoute() {
         }, 409);
       }
 
-      // Categories and expiry only. No credential, no URL, no recipient.
+      // Categories, expiry, and the one delivery fact this boundary knows: the
+      // message is queued, not sent. No credential, no URL, no recipient.
       return privateJson({
         ok: true,
+        delivery: "queued",
         categories: result.data.categories,
         expiresAt: result.data.expiresAt.toISOString(),
       }, 201);
     } catch {
-      return privateJson({ ok: false, error: "The evidence request could not be sent." }, 400);
+      return privateJson({ ok: false, error: "The evidence request could not be recorded." }, 400);
     }
   };
 }

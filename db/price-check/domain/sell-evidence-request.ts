@@ -20,6 +20,18 @@
  * here: "send us something else" is not an instruction a seller can act on, and
  * a request that cannot be satisfied is worse than no request.
  */
+/**
+ * The shared-outbox coordinates of the seller's request e-mail.
+ *
+ * They live here rather than in the repository because two layers need them and
+ * only one of them writes: the handler that sends the message, and the
+ * read-only admin projection that reports whether it was actually delivered. A
+ * read repository importing a write repository to learn a string constant would
+ * be a dependency in the wrong direction.
+ */
+export const SELL_EVIDENCE_REQUEST_MESSAGE_TYPE = "SELL_SUBMISSION_EVIDENCE_REQUEST";
+export const SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE = "sell_evidence_request";
+
 export const sellEvidenceRequestCategories = [
   "WAREHOUSE_BUSINESS_EVIDENCE",
   "CUSTODY_PART_PHOTO",
@@ -93,4 +105,38 @@ export function sellEvidenceRequestState(
   if (request.revokedAt) return "revoked";
   if (request.expiresAt.valueOf() <= now.valueOf()) return "expired";
   return "awaiting_seller";
+}
+
+/**
+ * Whether the seller's e-mail actually went out, as the shared outbox records
+ * it — which is a different question from whether the request exists.
+ *
+ * Issuing a request writes a row and queues a message in one transaction. That
+ * makes the *request* certain and the *e-mail* merely queued, and staff copy
+ * that reports the second as though it were the first would be claiming a
+ * delivery Civilon has no evidence of. `delivered` here means the provider
+ * accepted the message, which is the strongest thing the outbox can know: it is
+ * not a read receipt and not proof the seller saw anything.
+ */
+export type SellEvidenceDeliveryState =
+  | "queued"
+  | "sending"
+  | "delivered"
+  | "retrying"
+  | "undeliverable"
+  | "unrecorded";
+
+export function sellEvidenceDeliveryState(
+  outboxState: string | null | undefined,
+): SellEvidenceDeliveryState {
+  switch (outboxState) {
+    case "pending": return "queued";
+    case "running": return "sending";
+    case "succeeded": return "delivered";
+    case "failed": return "retrying";
+    case "dead_letter": return "undeliverable";
+    // No row, or a state this build does not recognise. Saying nothing is
+    // known is honest; guessing "sent" is not.
+    default: return "unrecorded";
+  }
 }

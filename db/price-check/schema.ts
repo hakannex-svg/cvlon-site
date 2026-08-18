@@ -2131,7 +2131,7 @@ export const marketplaceEvidenceRequests = pgTable(
     ),
     check(
       "marketplace_evidence_requests_categories_chk",
-      sql`array_length(${table.requestedCategories}, 1) between 1 and 5 and ${table.requestedCategories} <@ array['INVENTORY_SPREADSHEET', 'WAREHOUSE_BUSINESS_EVIDENCE', 'CUSTODY_PART_PHOTO', 'PART_NUMBER_SERIAL_PHOTO', 'RELEASE_SUPPORTING_DOCUMENT']::varchar(40)[]`,
+      sql`cardinality(${table.requestedCategories}) between 1 and 5 and ${table.requestedCategories} <@ array['INVENTORY_SPREADSHEET', 'WAREHOUSE_BUSINESS_EVIDENCE', 'CUSTODY_PART_PHOTO', 'PART_NUMBER_SERIAL_PHOTO', 'RELEASE_SUPPORTING_DOCUMENT']::varchar(40)[]`,
     ),
     // A consumed request carries at least one bound file, and an unconsumed one
     // carries none: the counter cannot drift away from what actually happened.

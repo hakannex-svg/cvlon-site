@@ -9,6 +9,7 @@ import type { MarketplaceActionContext } from "@/lib/price-check/admin/marketpla
 import { summarizeEvidenceCategories } from "@/db/price-check/domain/internal-review";
 import {
   isSellEvidenceRequestCategory,
+  sellEvidenceDeliveryState,
   sellEvidenceRequestCategories,
   sellEvidenceRequestState,
 } from "@/db/price-check/domain/sell-evidence-request";
@@ -117,8 +118,15 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
   // Pre-checked in the request control. Derived from the same summary the table
   // above renders, so what staff are asked to request is exactly what the table
   // shows as missing — no second definition of "missing" anywhere.
+  //
+  // An inventory list is the one exception, and it is pre-checked for bulk
+  // records only. A single-part submission is one part: defaulting to "send us
+  // your inventory spreadsheet" would ask a seller for a bulk list nobody
+  // needed, which reads as a demand rather than a question. Staff can still
+  // tick it deliberately when there is a reason.
   const missingCategories = sellEvidenceRequestCategories.filter((category) => (
-    evidenceSummary.some((entry) => entry.purpose === category && entry.state === "missing")
+    (bulk || category !== "INVENTORY_SPREADSHEET")
+    && evidenceSummary.some((entry) => entry.purpose === category && entry.state === "missing")
   ));
   // Requesting evidence needs a confirmed seller address and a record Civilon
   // has not ended. Both are re-decided against the stored record by the route.
@@ -134,6 +142,12 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
     issuedAt: formatDateTime(detail.evidenceRequest.issuedAt),
     expiresAt: formatDateTime(detail.evidenceRequest.expiresAt),
     submittedAttachmentCount: detail.evidenceRequest.submittedAttachmentCount,
+    // What the outbox actually says about the seller's e-mail. Recording a
+    // request and delivering one are different facts and the panel says so.
+    delivery: sellEvidenceDeliveryState(detail.evidenceRequest.deliveryState),
+    deliveredAt: detail.evidenceRequest.deliveredAt
+      ? formatDateTime(detail.evidenceRequest.deliveredAt)
+      : null,
   };
   const blockedReason = !actions.canRequestEvidence
     ? "You do not have permission to ask a seller for evidence."

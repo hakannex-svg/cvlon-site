@@ -80,12 +80,19 @@ export function SellSubmissionUploads({
    */
   required?: boolean;
 }) {
-  const [purpose, setPurpose] = useState<SellUploadPurpose>(options[0]!.value);
+  // Never indexed bare: a caller that narrows the list down to nothing — a
+  // malformed stored category set is the realistic way that happens — must get
+  // a control that renders nothing, not a page that throws on its first render.
+  const [purpose, setPurpose] = useState<SellUploadPurpose>(
+    options[0]?.value ?? sellUploadOptions[0]!.value,
+  );
   const [notice, setNotice] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const startedTracking = useRef(false);
 
-  const selected = options.find((option) => option.value === purpose) ?? options[0]!;
+  const selected = options.find((option) => option.value === purpose)
+    ?? options[0]
+    ?? sellUploadOptions[0]!;
   const totalBytes = items.reduce((sum, item) => sum + item.size, 0);
 
   function patch(localId: string, changes: Partial<UploadItem>) {
@@ -226,6 +233,11 @@ export function SellSubmissionUploads({
   }
 
   const pending = items.some((item) => item.status === "authorizing" || item.status === "uploading");
+
+  // After the hooks, never before: a purpose picker with no purposes is a
+  // control the seller cannot use, and rendering an empty select would be worse
+  // than rendering nothing. The surrounding page is what explains the gap.
+  if (options.length === 0) return null;
 
   return (
     <div className="marketplace-upload-panel">

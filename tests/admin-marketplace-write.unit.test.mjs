@@ -90,12 +90,18 @@ test("each handler uses its own capability and checks the origin before mutating
       body.indexOf("verifyAdminMutationOrigin(request)") < body.indexOf("readJsonBody"),
       `${factory}: origin must be verified before the body is read`,
     );
+    const repository = repositoryImport[factory] ?? "marketplace-write-repository";
+    assert.ok(body.includes(repository), `${factory}: expected to import ${repository}`);
     assert.ok(
-      body.indexOf("verifyAdminMutationOrigin(request)") < body.indexOf("marketplace-write-repository"),
+      body.indexOf("verifyAdminMutationOrigin(request)") < body.indexOf(repository),
       `${factory}: origin must be verified before any repository import`,
     );
   }
-  assert.equal((shared.match(/verifyAdminMutationOrigin\(request\)/g) ?? []).length, 5);
+  // One per handler, and the handler count is the length of the map above.
+  assert.equal(
+    (shared.match(/verifyAdminMutationOrigin\(request\)/g) ?? []).length,
+    Object.keys(handlers).length,
+  );
 });
 
 test("the exceptional capability is enforced on the route, not just in the repository", () => {
@@ -119,7 +125,9 @@ test("no write surface depends on any public product flag", () => {
 test("every client-visible error is generic and private", () => {
   // No provider, driver or record detail escapes.
   assert.doesNotMatch(shared, /error\.message|error\.name|String\(error\)|JSON\.stringify\(error\)|console\./);
-  assert.equal((shared.match(/\} catch \{/g) ?? []).length, 5);
+  // One opaque catch per mutation handler: status, assignment, note, business
+  // review, attachment review, evidence request.
+  assert.equal((shared.match(/\} catch \{/g) ?? []).length, 6);
   // Every response is privateJson or an access error, never a bare Response.
   const bare = shared.match(/return new Response\(/g) ?? [];
   assert.equal(bare.length, 1, "only the 405 helper constructs a Response directly");

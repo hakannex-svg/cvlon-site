@@ -19,7 +19,7 @@ CREATE TABLE "marketplace_evidence_requests" (
 	CONSTRAINT "marketplace_evidence_requests_lifecycle_chk" CHECK ("consumed_at" is null or "revoked_at" is null),
 	CONSTRAINT "marketplace_evidence_requests_consumed_order_chk" CHECK ("consumed_at" is null or "consumed_at" >= "issued_at"),
 	CONSTRAINT "marketplace_evidence_requests_attempt_chk" CHECK ("attempt_count" >= 0 and "max_attempt_count" > 0 and "attempt_count" <= "max_attempt_count"),
-	CONSTRAINT "marketplace_evidence_requests_categories_chk" CHECK (array_length("requested_categories", 1) between 1 and 5 and "requested_categories" <@ array['INVENTORY_SPREADSHEET', 'WAREHOUSE_BUSINESS_EVIDENCE', 'CUSTODY_PART_PHOTO', 'PART_NUMBER_SERIAL_PHOTO', 'RELEASE_SUPPORTING_DOCUMENT']::varchar(40)[]),
+	CONSTRAINT "marketplace_evidence_requests_categories_chk" CHECK (cardinality("requested_categories") between 1 and 5 and "requested_categories" <@ array['INVENTORY_SPREADSHEET', 'WAREHOUSE_BUSINESS_EVIDENCE', 'CUSTODY_PART_PHOTO', 'PART_NUMBER_SERIAL_PHOTO', 'RELEASE_SUPPORTING_DOCUMENT']::varchar(40)[]),
 	CONSTRAINT "marketplace_evidence_requests_submitted_chk" CHECK (("consumed_at" is null and "submitted_attachment_count" = 0) or ("consumed_at" is not null and "submitted_attachment_count" >= 1))
 );
 --> statement-breakpoint

@@ -41,7 +41,7 @@ test("no detail projection or rendered component can reach a storage key or a cr
   const forbidden = [
     "objectKey", "object_key", "storageProvider", "storage_provider", "contentDigest",
     "tokenHash", "keyedTokenHash", "tokenDerivationNonce", "idempotencyHash",
-    "sourcePendingUploadId", "sanitizedMetadata", "notificationOutbox",
+    "sourcePendingUploadId", "sanitizedMetadata",
     "emailVerificationTokens", "marketplaceUploadSessions", "marketplacePendingUploads",
     "MARKETPLACE_UPLOAD_BUCKET", "amazonaws", "s3://", "getSignedUrl",
   ];
@@ -50,6 +50,25 @@ test("no detail projection or rendered component can reach a storage key or a cr
     for (const [name, source] of Object.entries(renderedSurfaces)) {
       assert.doesNotMatch(source, new RegExp(token.replace(/[.:/]/g, "\\$&")), `${name} must not reference ${token}`);
     }
+  }
+
+  // The evidence-request summary may read only the outbox's delivery state and
+  // sent timestamp. Rendered surfaces receive those projected values, never the
+  // outbox object or any routing/provider/lease data.
+  for (const [name, source] of Object.entries(renderedSurfaces)) {
+    assert.doesNotMatch(source, /notificationOutbox/, `${name} must not reference notificationOutbox`);
+  }
+  const requestQueryStart = detailSection.search(/db\.select\(\{\r?\n\s+id: marketplaceEvidenceRequests\.id,/);
+  const requestQueryEnd = detailSection.indexOf(".limit(1)", requestQueryStart);
+  assert.ok(requestQueryStart > 0 && requestQueryEnd > requestQueryStart, "the evidence-request query must be present");
+  const requestQuery = detailSection.slice(requestQueryStart, requestQueryEnd);
+  assert.match(requestQuery, /notificationOutbox\.state/);
+  assert.match(requestQuery, /notificationOutbox\.sentAt/);
+  for (const field of [
+    "recipientReference", "providerMessageId", "leaseOwner", "leaseExpiresAt",
+    "sanitizedFailureCode", "idempotencyKey", "templateVersion", "attemptCount",
+  ]) {
+    assert.doesNotMatch(requestQuery, new RegExp(`notificationOutbox\\.${field}`), `detail must not select outbox ${field}`);
   }
 });
 
@@ -111,7 +130,7 @@ test("the buyer offer type carries no supplier field and no supplier pointer", (
 });
 
 test("the buyer offer query selects no supplier column", () => {
-  const start = detailSection.indexOf("db.select({\n      id: buyerOffers.id,");
+  const start = detailSection.search(/db\.select\(\{\r?\n\s+id: buyerOffers\.id,/);
   const end = detailSection.indexOf(".orderBy(desc(buyerOffers.version))", start);
   assert.ok(start > 0 && end > start, "the buyer offer query must be present");
   const query = detailSection.slice(start, end);

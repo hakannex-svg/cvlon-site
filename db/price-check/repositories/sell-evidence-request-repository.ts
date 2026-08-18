@@ -1,6 +1,6 @@
 import "../server-boundary.ts";
 
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, gt, inArray, isNull } from "drizzle-orm";
 
 import type { PriceCheckDb } from "../index.ts";
 import {
@@ -14,7 +14,10 @@ import {
 } from "../schema.ts";
 import { generateOrderedId } from "../domain/identifiers.ts";
 import {
+  SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE,
+  SELL_EVIDENCE_REQUEST_MESSAGE_TYPE,
   isSellEvidenceRequestCategory,
+  normalizeSellEvidenceCategories,
   type SellEvidenceRequestCategory,
 } from "../domain/sell-evidence-request.ts";
 
@@ -41,9 +44,18 @@ import {
  * the existing `not_reviewed` state and nothing more.
  */
 
-export const SELL_EVIDENCE_REQUEST_MESSAGE_TYPE = "SELL_SUBMISSION_EVIDENCE_REQUEST";
-export const SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE = "sell_evidence_request";
+export {
+  SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE,
+  SELL_EVIDENCE_REQUEST_MESSAGE_TYPE,
+} from "../domain/sell-evidence-request.ts";
 export const SELL_SUBMISSION_AGGREGATE_TYPE = "sell_submission";
+
+/**
+ * Why a queued request e-mail was terminalised without being sent. Recorded on
+ * the outbox row so a staff or operational reader sees a cancellation rather
+ * than an unexplained dead letter.
+ */
+export const SELL_EVIDENCE_SUPERSEDED_CODE = "SELL_EVIDENCE_REQUEST_SUPERSEDED";
 
 export const SELL_EVIDENCE_REQUESTED_ACTION = "SELL_SUBMISSION_EVIDENCE_REQUESTED";
 export const SELL_EVIDENCE_REVOKED_ACTION = "SELL_SUBMISSION_EVIDENCE_REQUEST_REVOKED";
@@ -65,6 +77,12 @@ export const SELL_EVIDENCE_TERMINAL_STATUSES = [
 function isTerminal(status: string) {
   return (SELL_EVIDENCE_TERMINAL_STATUSES as readonly string[]).includes(status);
 }
+
+/**
+ * The stored upload purpose, taken from the column rather than restated, so a
+ * new purpose cannot be added to the enum and quietly miss this file.
+ */
+type UploadPurpose = (typeof marketplacePendingUploads.$inferSelect)["purpose"];
 
 export type IssueSellEvidenceRequestInput = {
   sellSubmissionId: string;
@@ -108,10 +126,12 @@ export async function issueSellEvidenceRequest(
   input: IssueSellEvidenceRequestInput,
 ): Promise<IssueSellEvidenceRequestOutcome> {
   const now = input.now ?? new Date();
-  const categories = [...input.categories];
-  if (categories.length === 0 || !categories.every(isSellEvidenceRequestCategory)) {
-    throw new Error("SELL_EVIDENCE_CATEGORIES_INVALID");
-  }
+  // Normalised at the boundary, not merely validated: a direct caller must not
+  // be able to store the same category twice or in its own order, because the
+  // stored array is what staff and the seller's e-mail both render. An invalid
+  // or empty set is refused outright rather than trimmed to whatever was left.
+  const categories = normalizeSellEvidenceCategories(input.categories);
+  if (!categories) throw new Error("SELL_EVIDENCE_CATEGORIES_INVALID");
   if (input.expiresAt.valueOf() <= now.valueOf()) {
     throw new Error("SELL_EVIDENCE_EXPIRY_INVALID");
   }
@@ -168,6 +188,35 @@ export async function issueSellEvidenceRequest(
     });
 
     if (superseded) {
+      // The superseded request's own e-mail, if it has not gone out yet.
+      //
+      // Revoking the request already makes the handler refuse to load it, so
+      // nothing can send a live link for a dead credential — but a message left
+      // `pending` would be leased, refused and rescheduled on every drain until
+      // it exhausted its attempts. Terminalising it here, in the same
+      // transaction that revokes the credential, turns that retry storm into
+      // one recorded cancellation.
+      //
+      // Only `pending` and `failed` are touched. A `running` row belongs to a
+      // worker that holds the lease, and taking it would break the lease
+      // predicate that worker completes under; that message refuses to load and
+      // fails honestly on its own. A `succeeded` row is history and is never
+      // rewritten.
+      await tx
+        .update(notificationOutbox)
+        .set({
+          state: "dead_letter",
+          leaseOwner: null,
+          leaseExpiresAt: null,
+          sanitizedFailureCode: SELL_EVIDENCE_SUPERSEDED_CODE,
+        })
+        .where(and(
+          eq(notificationOutbox.aggregateType, SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE),
+          eq(notificationOutbox.aggregateId, superseded.id),
+          eq(notificationOutbox.messageType, SELL_EVIDENCE_REQUEST_MESSAGE_TYPE),
+          inArray(notificationOutbox.state, ["pending", "failed"]),
+        ));
+
       await tx.insert(auditEvents).values({
         id: generateOrderedId(),
         aggregateType: SELL_SUBMISSION_AGGREGATE_TYPE,
@@ -438,6 +487,23 @@ export async function redeemSellEvidenceRequest(
         .where(and(
           eq(marketplacePendingUploads.id, attachment.pendingUploadId),
           eq(marketplacePendingUploads.uploadSessionId, attachment.uploadSessionId),
+          // Expiry is re-checked here, at the authoritative claim, and not only
+          // where the row was prepared. Preparation reads storage — several
+          // network round trips per file — and a handle that lapsed during them
+          // is no longer one the seller may spend. Checking it only before the
+          // transaction would make the window between the two a way to bind an
+          // expired handle.
+          gt(marketplacePendingUploads.expiresAt, now),
+          // …and the claimed row must still be the row that was prepared.
+          // Purpose, object key, declared type and reserved size are all fixed
+          // when the upload is authorized and never change afterwards, so a
+          // mismatch means the prepared file and the claimed file are not the
+          // same file — the scan verdict and signature check would then belong
+          // to something other than what is about to be bound.
+          eq(marketplacePendingUploads.purpose, attachment.purpose as UploadPurpose),
+          eq(marketplacePendingUploads.objectKey, attachment.objectKey),
+          eq(marketplacePendingUploads.declaredMime, attachment.declaredMime),
+          eq(marketplacePendingUploads.expectedByteSize, String(attachment.byteSize)),
           inArray(marketplacePendingUploads.state, ["AUTHORIZED", "UPLOADED"]),
           isNull(marketplacePendingUploads.claimedBuyRequestId),
           isNull(marketplacePendingUploads.claimedSellSubmissionId),
@@ -455,13 +521,7 @@ export async function redeemSellEvidenceRequest(
       aggregateId: submission.id,
       buyRequestId: null,
       sellSubmissionId: submission.id,
-      purpose: attachment.purpose as
-        | "INVENTORY_SPREADSHEET"
-        | "WAREHOUSE_BUSINESS_EVIDENCE"
-        | "CUSTODY_PART_PHOTO"
-        | "PART_NUMBER_SERIAL_PHOTO"
-        | "RELEASE_SUPPORTING_DOCUMENT"
-        | "OTHER",
+      purpose: attachment.purpose as UploadPurpose,
       // The seller uploaded it, exactly as at initial intake. `ADMIN` would
       // claim a staff member produced the evidence, which is not what happened.
       uploadedByType: "CONTACT" as const,

@@ -38,6 +38,30 @@ import { SellSubmissionUploads, type UploadItem } from "./SellSubmissionUploads"
  */
 type Stage = "reading" | "loading" | "ready" | "sending" | "sent" | "unavailable";
 
+/**
+ * The one refusal the seller ever sees, used for every reason a link cannot be
+ * used. Identical copy in each case: which check refused is Civilon's business,
+ * and telling a stranger holding a guessed credential why it failed would be
+ * telling them something about a submission that is not theirs.
+ */
+function UnavailablePanel() {
+  return (
+    <div className="marketplace-verify-panel is-unavailable" role="status" aria-live="polite">
+      <span className="section-label">SECURE LINK / UNAVAILABLE</span>
+      <h2>This link cannot be used.</h2>
+      <p>
+        The link may have expired, already been used, or been replaced by a
+        newer one. Civilon still has your original submission—nothing has been
+        lost. Contact Civilon and the team will send a fresh link.
+      </p>
+      <div className="marketplace-verify-actions">
+        <a className="button button-primary" href="/contact-us">Contact Civilon</a>
+        <a className="button button-ghost" href="/">Return to Civilon</a>
+      </div>
+    </div>
+  );
+}
+
 function formatExpiry(value: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.valueOf())) return null;
@@ -166,23 +190,7 @@ export function SellEvidenceRequest() {
     );
   }
 
-  if (stage === "unavailable") {
-    return (
-      <div className="marketplace-verify-panel is-unavailable" role="status" aria-live="polite">
-        <span className="section-label">SECURE LINK / UNAVAILABLE</span>
-        <h2>This link cannot be used.</h2>
-        <p>
-          The link may have expired, already been used, or been replaced by a
-          newer one. Civilon still has your original submission—nothing has been
-          lost. Contact Civilon and the team will send a fresh link.
-        </p>
-        <div className="marketplace-verify-actions">
-          <a className="button button-primary" href="/contact-us">Contact Civilon</a>
-          <a className="button button-ghost" href="/">Return to Civilon</a>
-        </div>
-      </div>
-    );
-  }
+  if (stage === "unavailable") return <UnavailablePanel />;
 
   if (stage === "sent") {
     return (
@@ -209,35 +217,39 @@ export function SellEvidenceRequest() {
     );
   }
 
-  const options = sellUploadOptions.filter(
-    (option) => request?.categories.includes(option.value as never),
-  );
-  const expiry = request ? formatExpiry(request.expiresAt) : null;
+  // Every category the request names that this build can actually offer an
+  // upload control for. A stored list that survives the server's own filter but
+  // matches nothing here would leave a page with a heading, no file control and
+  // a button that could never do anything; the seller is shown the ordinary
+  // refusal instead, and told to contact Civilon.
+  const categories: readonly string[] = request?.categories ?? [];
+  const options = sellUploadOptions.filter((option) => categories.includes(option.value));
+  if (!request || options.length === 0) return <UnavailablePanel />;
+
+  const expiry = formatExpiry(request.expiresAt);
 
   return (
     <div className="marketplace-verify-panel">
       <span className="section-label">SECURE UPLOAD / NO ACCOUNT</span>
       <h2>Send Civilon what was asked for.</h2>
       <p>
-        Reference <code>{request?.reference}</code>. Civilon already has your
+        Reference <code>{request.reference}</code>. Civilon already has your
         submission—this only adds files. Nothing you send is published, listed,
         or shown to a buyer, and no account is created.
       </p>
-      <p>Civilon asked for:</p>
-      <ul className="marketplace-evidence-request-list">
+      <p id="sell-evidence-asked-for">Civilon asked for:</p>
+      <ul className="marketplace-evidence-request-list" aria-labelledby="sell-evidence-asked-for">
         {options.map((option) => <li key={option.value}>{option.label}</li>)}
       </ul>
       {expiry && <p className="field-help">This secure link works until {expiry}.</p>}
 
-      {options.length > 0 && (
-        <SellSubmissionUploads
-          items={items}
-          onChange={(update) => setItems((current) => update(current))}
-          options={options}
-          sourcePage={SELL_EVIDENCE_PAGE_PATH}
-          required
-        />
-      )}
+      <SellSubmissionUploads
+        items={items}
+        onChange={(update) => setItems((current) => update(current))}
+        options={options}
+        sourcePage={SELL_EVIDENCE_PAGE_PATH}
+        required
+      />
 
       {error && <p className="field-error" role="alert">{error}</p>}
 
@@ -250,7 +262,9 @@ export function SellEvidenceRequest() {
         {stage === "sending" ? "Sending…" : "Send files to Civilon"}
         <span aria-hidden="true">→</span>
       </button>
-      <small className="field-help">
+      {/* How many files are actually sendable changes as uploads finish, so it
+          is announced rather than only shown. */}
+      <small className="field-help" role="status" aria-live="polite">
         {finished.length === 0
           ? pendingUploads
             ? "Waiting for your files to finish uploading."
