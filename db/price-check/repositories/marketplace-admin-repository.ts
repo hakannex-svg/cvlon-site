@@ -15,6 +15,7 @@ import {
   notificationOutbox,
   priceChecks,
   requesters,
+  sellInventoryFreshnessChecks,
   sellSubmissionItems,
   sellSubmissions,
   supplierResponses,
@@ -29,6 +30,10 @@ import {
   SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE,
   SELL_EVIDENCE_REQUEST_MESSAGE_TYPE,
 } from "../domain/sell-evidence-request.ts";
+import {
+  SELL_INVENTORY_FRESHNESS_AGGREGATE_TYPE,
+  SELL_INVENTORY_FRESHNESS_MESSAGE_TYPE,
+} from "../domain/sell-inventory-freshness.ts";
 
 /* ========================================================================= */
 /* Unified queue                                                             */
@@ -636,6 +641,7 @@ async function loadAudit(db: PriceCheckDb, aggregateType: MarketplaceAggregateTy
 const businessReviewer = alias(adminUsers, "marketplace_business_reviewer");
 const attachmentReviewer = alias(adminUsers, "marketplace_attachment_reviewer");
 const evidenceRequester = alias(adminUsers, "marketplace_evidence_requester");
+const freshnessRequester = alias(adminUsers, "marketplace_freshness_requester");
 
 const contactColumns = {
   id: marketplaceContacts.id,
@@ -906,6 +912,33 @@ export type SellEvidenceRequestSummary = {
   deliveredAt: Date | null;
 };
 
+/**
+ * The latest bulk-inventory freshness check, as staff need to read it.
+ *
+ * Deliberately without `keyed_token_hash`, `token_derivation_nonce`, or anything
+ * from which a link could be reconstructed: a staff page has no use for the
+ * credential, and a projection that cannot select it cannot leak it into a
+ * server-rendered payload. What staff need is when Civilon asked, until when the
+ * link lives, whether the e-mail went out, and what the seller said.
+ *
+ * `response` is the seller's own statement and is carried as the raw stored
+ * code. It is not a status, not a review outcome, and the page that renders it
+ * says so.
+ */
+export type SellInventoryFreshnessSummary = {
+  id: string;
+  requestedByEmail: string | null;
+  issuedAt: Date;
+  expiresAt: Date;
+  respondedAt: Date | null;
+  revokedAt: Date | null;
+  response: string | null;
+  /** The outbox state, or null when no message row resolves for this check. */
+  deliveryState: string | null;
+  /** When the provider accepted the message. Null until it has. */
+  deliveredAt: Date | null;
+};
+
 export type SellSubmissionAdminDetail = {
   sellSubmission: {
     id: string;
@@ -950,6 +983,11 @@ export type SellSubmissionAdminDetail = {
   attachments: SellAttachmentMetadata[];
   /** The most recent follow-up evidence request, or null if none was ever sent. */
   evidenceRequest: SellEvidenceRequestSummary | null;
+  /**
+   * The most recent bulk-inventory freshness check, or null if none was ever
+   * issued. Null on every single-part record, because none is ever issued there.
+   */
+  inventoryFreshness: SellInventoryFreshnessSummary | null;
   notes: MarketplaceNoteRecord[];
   audit: MarketplaceAuditRecord[];
 };
@@ -1007,7 +1045,7 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
     .limit(1);
   if (!record) return null;
 
-  const [assignee, notes, audit, items, attachments, evidenceRequests] = await Promise.all([
+  const [assignee, notes, audit, items, attachments, evidenceRequests, freshnessChecks] = await Promise.all([
     loadAssignee(db, record.assignedAdminUserId),
     loadNotes(db, "sell_submission", id),
     loadAudit(db, "sell_submission", id),
@@ -1078,6 +1116,31 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
       .where(eq(marketplaceEvidenceRequests.sellSubmissionId, id))
       .orderBy(desc(marketplaceEvidenceRequests.issuedAt), desc(marketplaceEvidenceRequests.id))
       .limit(1),
+    // The latest bulk-inventory freshness check. Credential columns are not in
+    // the projection at all, so no staff surface can render or forward one.
+    db.select({
+      id: sellInventoryFreshnessChecks.id,
+      requestedByEmail: freshnessRequester.displayEmail,
+      issuedAt: sellInventoryFreshnessChecks.issuedAt,
+      expiresAt: sellInventoryFreshnessChecks.expiresAt,
+      respondedAt: sellInventoryFreshnessChecks.respondedAt,
+      revokedAt: sellInventoryFreshnessChecks.revokedAt,
+      response: sellInventoryFreshnessChecks.response,
+      // The e-mail's real state, not an assumption that queuing is sending. One
+      // outbox row exists per check — the idempotency key is derived from the
+      // check id — so this join cannot multiply the row.
+      deliveryState: notificationOutbox.state,
+      deliveredAt: notificationOutbox.sentAt,
+    }).from(sellInventoryFreshnessChecks)
+      .leftJoin(freshnessRequester, eq(sellInventoryFreshnessChecks.requestedByAdminUserId, freshnessRequester.id))
+      .leftJoin(notificationOutbox, and(
+        eq(notificationOutbox.aggregateType, SELL_INVENTORY_FRESHNESS_AGGREGATE_TYPE),
+        eq(notificationOutbox.aggregateId, sellInventoryFreshnessChecks.id),
+        eq(notificationOutbox.messageType, SELL_INVENTORY_FRESHNESS_MESSAGE_TYPE),
+      ))
+      .where(eq(sellInventoryFreshnessChecks.sellSubmissionId, id))
+      .orderBy(desc(sellInventoryFreshnessChecks.issuedAt), desc(sellInventoryFreshnessChecks.id))
+      .limit(1),
   ]);
 
   return {
@@ -1090,6 +1153,7 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
     items,
     attachments,
     evidenceRequest: evidenceRequests[0] ?? null,
+    inventoryFreshness: freshnessChecks[0] ?? null,
     notes,
     audit,
   };

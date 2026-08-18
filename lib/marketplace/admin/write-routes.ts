@@ -14,6 +14,7 @@ import {
 import {
   isRecordId,
   validateInternalReview,
+  validateInventoryFreshnessRequest,
   validateMarketplaceAssignment,
   validateMarketplaceNote,
   validateMarketplaceStatusChange,
@@ -295,6 +296,80 @@ export function createEvidenceRequestRoute() {
       }, 201);
     } catch {
       return privateJson({ ok: false, error: "The evidence request could not be recorded." }, 400);
+    }
+  };
+}
+
+/**
+ * Asks a bulk-inventory seller whether what they offered is still available.
+ *
+ * Shares the evidence request's three disciplines — the credential is minted
+ * below this boundary and is never in the response, the e-mail is queued in the
+ * same transaction as the check row and its audit event, and eligibility is
+ * decided against the stored record rather than from anything the browser sent.
+ *
+ * Two refusals are specific to this workflow and both are answered honestly
+ * rather than as a generic failure, because both describe a fact a staff member
+ * can see on the page in front of them:
+ *
+ *  - A single-part record. "Is your inventory still available" is a question
+ *    about a list, and the panel is not offered on those records at all.
+ *  - A status outside `verified` / `under_review`. Neither the refusal nor
+ *    anything else here changes that status: an ineligible record is left
+ *    exactly as it was found.
+ */
+export function createInventoryFreshnessRequestRoute() {
+  return async function POST(request: Request, context: Context) {
+    const access = await requireStaffApi("request_inventory_freshness");
+    if (access.status !== "authorized") return accessErrorResponse(access.status);
+    try {
+      verifyAdminMutationOrigin(request);
+      const { id } = await context.params;
+      if (!isRecordId(id)) return privateJson({ ok: false, error: "This record is not available." }, 404);
+
+      const validation = validateInventoryFreshnessRequest(await readJsonBody(request));
+      if (!validation.ok) return privateJson({ ok: false, error: validation.error }, 400);
+
+      const [{ priceCheckDb }, service] = await Promise.all([
+        import("@/db/price-check"),
+        import("@/lib/marketplace/sell-inventory-freshness-request-service"),
+      ]);
+      const result = await service.requestSellInventoryFreshness(priceCheckDb, {
+        sellSubmissionId: id,
+        actor: { id: access.user.id },
+      });
+
+      if (!result.ok && result.reason === "not_found") {
+        return privateJson({ ok: false, error: "This record is not available." }, 404);
+      }
+      if (!result.ok && result.reason === "not_bulk_inventory") {
+        return privateJson({
+          ok: false,
+          error: "This is a single-part submission, so there is no inventory to check.",
+        }, 409);
+      }
+      if (!result.ok && result.reason === "ineligible_status") {
+        return privateJson({
+          ok: false,
+          error: "Civilon only asks about availability while a submission is verified or under review.",
+        }, 409);
+      }
+      if (!result.ok) {
+        return privateJson({
+          ok: false,
+          error: "This seller has not confirmed their email address, so there is no address to send a check to.",
+        }, 409);
+      }
+
+      // Expiry, and the one delivery fact this boundary knows: the message is
+      // queued, not sent. No credential, no URL, no recipient, no check id.
+      return privateJson({
+        ok: true,
+        delivery: "queued",
+        expiresAt: result.data.expiresAt.toISOString(),
+      }, 201);
+    } catch {
+      return privateJson({ ok: false, error: "The availability check could not be recorded." }, 400);
     }
   };
 }

@@ -552,6 +552,20 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-evidence-request-form button:hover:enabled{background:#0f4d90}
 .admin-evidence-request-form button:disabled{background:#8ba4b8;cursor:not-allowed}
 .marketplace-evidence-request-list{margin:6px 0 18px;padding-left:22px;display:grid;gap:6px;line-height:1.55}
+.admin-status.freshness-state-current,.admin-status.freshness-request-answered,.admin-status.freshness-delivery-delivered,.admin-status.freshness-response-all_available{border-color:#5e9c7d;background:#edf8f2;color:#245c40}
+.admin-status.freshness-state-awaiting_seller,.admin-status.freshness-state-due,.admin-status.freshness-request-awaiting_seller,.admin-status.freshness-delivery-queued,.admin-status.freshness-delivery-sending,.admin-status.freshness-delivery-retrying{border-color:#d19b46;background:#fff6e4;color:#724907}
+.admin-status.freshness-state-never_checked,.admin-status.freshness-request-expired,.admin-status.freshness-request-revoked,.admin-status.freshness-delivery-unrecorded{border-color:#9ba9b3;background:#f1f3f4;color:#42505b}
+.admin-status.freshness-state-some_changed,.admin-status.freshness-state-none_available,.admin-status.freshness-delivery-undeliverable,.admin-status.freshness-response-some_changed,.admin-status.freshness-response-none_available{border-color:#b56f5e;background:#fff1ed;color:#742615}
+.admin-callout{margin:16px 0 0;border-left:3px solid #b56f5e;background:#fff1ed;padding:11px 14px;color:#742615;font-size:13px;line-height:1.55}
+.admin-freshness-request-form{display:grid;gap:14px;margin-top:20px}
+.admin-freshness-request-form button{justify-self:start;min-height:42px;border:0;border-radius:3px;background:#145fae;color:#fff;padding:0 18px;font-weight:750;cursor:pointer}
+.admin-freshness-request-form button:hover:enabled{background:#0f4d90}
+.admin-freshness-request-form button:disabled{background:#8ba4b8;cursor:not-allowed}
+.marketplace-freshness-choices{display:grid;gap:10px;margin:18px 0;padding:16px;border:1px solid #ccd9e2;border-radius:3px;background:#f7fafc}
+.marketplace-freshness-choices legend{padding:0 6px;color:#23465f;font-size:11px;font-weight:750;letter-spacing:.05em;text-transform:uppercase}
+.marketplace-freshness-choices label{display:grid;grid-template-columns:20px 1fr;align-items:start;column-gap:11px;row-gap:3px;color:#1d394f;font-size:15px;line-height:1.5;cursor:pointer}
+.marketplace-freshness-choices input[type=radio]{grid-row:1/span 2;width:20px;height:20px;margin:2px 0 0;accent-color:#145fae;cursor:pointer}
+.marketplace-freshness-choices label small{color:#52687a;font-size:13px;line-height:1.45}
 .admin-evidence-review{display:grid;gap:6px;min-width:170px}
 .admin-evidence-review>small{color:#52687a;line-height:1.4}
 .admin-evidence-review-form{display:flex;gap:6px;align-items:center}

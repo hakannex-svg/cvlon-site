@@ -97,9 +97,24 @@ test("Price Check migrations build the expected empty database and replay as a n
       assert.ok(tables.has(name), `marketplace table ${name} is missing`);
     }
 
-    // Nothing else exists: the total is the two named sets and no more.
-    assert.equal(tables.size, priceCheckTables.length + marketplaceTables.length);
-    assert.equal(tables.size, 33);
+    // Additive follow-up workflows, each in its own later migration and each in
+    // its own table rather than as columns bolted onto an approved one.
+    const followUpTables = [
+      // Staff-issued follow-up seller evidence.
+      "marketplace_evidence_requests",
+      // Staff-issued bulk-inventory freshness checks.
+      "sell_inventory_freshness_checks",
+    ];
+    for (const name of followUpTables) {
+      assert.ok(tables.has(name), `follow-up table ${name} is missing`);
+    }
+
+    // Nothing else exists: the total is the three named sets and no more.
+    assert.equal(
+      tables.size,
+      priceCheckTables.length + marketplaceTables.length + followUpTables.length,
+    );
+    assert.equal(tables.size, 35);
   });
 });
 

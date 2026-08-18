@@ -44,6 +44,7 @@ test("the marketplace handler list owns Buy, Sell and buyer-offer types only", (
     "BUY_REQUEST_VERIFY_EMAIL",
     "SELL_SUBMISSION_EVIDENCE_REQUEST",
     "SELL_SUBMISSION_INTERNAL_RECEIVED",
+    "SELL_SUBMISSION_INVENTORY_FRESHNESS_CHECK",
     "SELL_SUBMISSION_VERIFY_EMAIL",
   ]);
   assert.equal(types.includes("RESULT_READY"), false);
@@ -51,7 +52,13 @@ test("the marketplace handler list owns Buy, Sell and buyer-offer types only", (
   // Every marketplace handler is a marketplace handler.
   for (const handler of marketplaceNotificationHandlers) {
     assert.equal(handler.workflow, "marketplace");
-    assert.ok(["buy_request", "sell_submission", "sell_evidence_request", "buyer_offer"].includes(handler.aggregateType));
+    assert.ok([
+      "buy_request",
+      "sell_submission",
+      "sell_evidence_request",
+      "sell_inventory_freshness_check",
+      "buyer_offer",
+    ].includes(handler.aggregateType));
   }
 });
 

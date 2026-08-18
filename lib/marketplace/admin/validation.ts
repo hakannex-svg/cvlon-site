@@ -139,6 +139,32 @@ export function validateSellEvidenceRequest(
   return { ok: true, data: { categories: normalized } };
 }
 
+export type InventoryFreshnessRequestInput = Record<string, never>;
+
+/**
+ * Bulk-inventory freshness request payload: nothing at all.
+ *
+ * There is deliberately no field to send. Which record is asked is the path
+ * parameter, the question is fixed, the fourteen-day expiry is a constant, and
+ * the answer is the seller's to give — so a body with content would be a body
+ * offering a staff member a choice the workflow does not have.
+ *
+ * An absent body and an empty object are both accepted, because a `fetch` with
+ * no `body` and one sending `{}` are the same intent. Anything with a key is
+ * refused rather than ignored: a caller sending `{"response":"all_available"}`
+ * is a caller who believes staff can answer on the seller's behalf, and
+ * silently dropping that field would let them keep believing it.
+ */
+export function validateInventoryFreshnessRequest(
+  raw: unknown,
+): ValidationResult<InventoryFreshnessRequestInput> {
+  if (raw === null || raw === undefined) return { ok: true, data: {} };
+  const body = asObject(raw);
+  if (!body) return reject("Unexpected fields were rejected.");
+  if (Object.keys(body).length > 0) return reject("Unexpected fields were rejected.");
+  return { ok: true, data: {} };
+}
+
 export type InternalReviewInput = { state: InternalReviewState };
 
 /** Internal review payload: exactly one recognised `state`, nothing else. */

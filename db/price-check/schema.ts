@@ -1059,6 +1059,20 @@ export const sellSubmissionKindEnum = pgEnum("sell_submission_kind", [
   "single_part",
   "bulk_inventory",
 ]);
+/**
+ * The three answers a seller may give to a bulk-inventory freshness check.
+ *
+ * Its own enum rather than a varchar with a check constraint, because these are
+ * a closed vocabulary that a reader of the database should be able to see
+ * without reading a constraint body, and because the seller's answer is the one
+ * column on the new table whose values Civilon must never be able to widen by
+ * accident. Nothing here is a workflow status: a Sell Submission's `status` is
+ * unchanged by any of these values.
+ */
+export const sellInventoryFreshnessResponseEnum = pgEnum(
+  "sell_inventory_freshness_response",
+  ["all_available", "some_changed", "none_available"],
+);
 export const marketplaceUrgencyEnum = pgEnum("marketplace_urgency", [
   "aog",
   "critical",
@@ -2142,6 +2156,97 @@ export const marketplaceEvidenceRequests = pgTable(
   ],
 );
 
+/**
+ * One staff-issued "is this still available?" check against an existing bulk
+ * inventory Sell Submission.
+ *
+ * Additive and self-contained, deliberately:
+ *
+ *  - No column is added to `sell_submissions` and no stored submission or
+ *    attachment row is altered. A freshness answer is a new fact about a record,
+ *    not a correction to it, and the record's status, its business review, its
+ *    evidence review and its verification timestamps all keep meaning exactly
+ *    what they meant before this table existed.
+ *  - Not a widened `marketplace_evidence_requests`. That table's rows carry a
+ *    requested-category array and a bound-attachment count, neither of which a
+ *    freshness check has, and its `submitted` semantics mean "files arrived".
+ *    Sharing one table would mean one of the two workflows storing columns that
+ *    are always null and a constraint body full of exceptions.
+ *
+ * Only the keyed hash and the derivation nonce are stored, exactly as for
+ * `email_verification_tokens` and `marketplace_evidence_requests`: the plaintext
+ * credential exists only inside the outgoing e-mail. The partial unique index
+ * gives one live check per submission, so issuing a new one requires revoking
+ * the previous one in the same transaction.
+ *
+ * A response here is the seller's own statement at a moment in time. It is not
+ * certification, authentication, supplier approval, airworthiness or any other
+ * regulatory approval, or a guarantee, and it does not oblige Civilon to buy.
+ */
+export const sellInventoryFreshnessChecks = pgTable(
+  "sell_inventory_freshness_checks",
+  {
+    id: id().primaryKey(),
+    sellSubmissionId: id("sell_submission_id")
+      .notNull()
+      .references(() => sellSubmissions.id, { onDelete: "cascade" }),
+    contactId: id("contact_id")
+      .notNull()
+      .references(() => marketplaceContacts.id, { onDelete: "restrict" }),
+    keyedTokenHash: varchar("keyed_token_hash", { length: 128 }).notNull(),
+    tokenDerivationNonce: varchar("token_derivation_nonce", { length: 64 }).notNull(),
+    requestedByAdminUserId: id("requested_by_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
+    issuedAt: utcTimestamp("issued_at").notNull(),
+    expiresAt: utcTimestamp("expires_at").notNull(),
+    /** When the seller answered. Null until they do; never set without a response. */
+    respondedAt: utcTimestamp("responded_at"),
+    revokedAt: utcTimestamp("revoked_at"),
+    /** The seller's own statement, and nothing Civilon concluded from it. */
+    response: sellInventoryFreshnessResponseEnum("response"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttemptCount: integer("max_attempt_count").notNull().default(10),
+    createdAt: utcTimestamp("created_at").notNull().defaultNow(),
+    updatedAt: utcTimestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("sell_inventory_freshness_checks_hash_uidx").on(table.keyedTokenHash),
+    // Exactly one live check per submission. A reissue must revoke the previous
+    // one in the same transaction, which is what makes the earlier emailed link
+    // stop working the moment a new one is issued.
+    uniqueIndex("sell_inventory_freshness_checks_active_uidx")
+      .on(table.sellSubmissionId)
+      .where(sql`${table.respondedAt} is null and ${table.revokedAt} is null`),
+    index("sell_inventory_freshness_checks_submission_idx").on(table.sellSubmissionId),
+    index("sell_inventory_freshness_checks_expiry_idx").on(table.expiresAt),
+    check(
+      "sell_inventory_freshness_checks_expiry_chk",
+      sql`${table.expiresAt} > ${table.issuedAt}`,
+    ),
+    check(
+      "sell_inventory_freshness_checks_lifecycle_chk",
+      sql`${table.respondedAt} is null or ${table.revokedAt} is null`,
+    ),
+    check(
+      "sell_inventory_freshness_checks_responded_order_chk",
+      sql`${table.respondedAt} is null or ${table.respondedAt} >= ${table.issuedAt}`,
+    ),
+    // The answer and the moment it arrived are one fact and cannot drift apart:
+    // a response with no timestamp, or a timestamp with no response, would be a
+    // row nobody can read honestly.
+    check(
+      "sell_inventory_freshness_checks_response_chk",
+      sql`(${table.respondedAt} is null and ${table.response} is null) or (${table.respondedAt} is not null and ${table.response} is not null)`,
+    ),
+    check(
+      "sell_inventory_freshness_checks_attempt_chk",
+      sql`${table.attemptCount} >= 0 and ${table.maxAttemptCount} > 0 and ${table.attemptCount} <= ${table.maxAttemptCount}`,
+    ),
+  ],
+);
+
 export type MarketplaceContact = typeof marketplaceContacts.$inferSelect;
 export type NewMarketplaceContact = typeof marketplaceContacts.$inferInsert;
 export type BuyRequest = typeof buyRequests.$inferSelect;
@@ -2166,3 +2271,7 @@ export type MarketplaceEvidenceRequest =
   typeof marketplaceEvidenceRequests.$inferSelect;
 export type NewMarketplaceEvidenceRequest =
   typeof marketplaceEvidenceRequests.$inferInsert;
+export type SellInventoryFreshnessCheck =
+  typeof sellInventoryFreshnessChecks.$inferSelect;
+export type NewSellInventoryFreshnessCheck =
+  typeof sellInventoryFreshnessChecks.$inferInsert;

@@ -75,7 +75,7 @@ test("no read in the repository can reach a storage key, a token or a hash", () 
   for (const token of [
     "objectKey", "object_key", "storageProvider", "contentDigest",
     "tokenHash", "keyedTokenHash", "tokenDerivationNonce", "idempotencyHash",
-    "notificationOutbox", "emailVerificationTokens", "marketplaceUploadSessions",
+    "emailVerificationTokens", "marketplaceUploadSessions",
     "marketplacePendingUploads", "sanitizedMetadata",
     "MARKETPLACE_UPLOAD_BUCKET", "process.env",
   ]) {
@@ -83,10 +83,57 @@ test("no read in the repository can reach a storage key, a token or a hash", () 
   }
 });
 
+/**
+ * The shared outbox is the one delivery table this repository may touch, and
+ * only for the two columns that answer "did Civilon manage to send it?".
+ *
+ * The follow-up workflows (seller evidence, bulk-inventory freshness) each
+ * report a delivery state to staff, and the honest source for that is the outbox
+ * row rather than an assumption that queuing is sending. A blanket ban on naming
+ * the table would therefore be a rule the code cannot keep — so the rule is
+ * stated at the column level instead, which is what it was always standing in
+ * for: a recipient address, an idempotency key or a provider message id must
+ * never reach a staff page.
+ */
+test("the repository reads the outbox for delivery state only", () => {
+  for (const column of [
+    "notificationOutbox.recipientReference",
+    "notificationOutbox.idempotencyKey",
+    "notificationOutbox.providerMessageId",
+    "notificationOutbox.templateVersion",
+    "notificationOutbox.leaseOwner",
+    "notificationOutbox.leaseExpiresAt",
+    "notificationOutbox.sanitizedFailureCode",
+    "notificationOutbox.nextAttemptAt",
+  ]) {
+    assert.doesNotMatch(
+      repository,
+      new RegExp(column.replace(".", "\\.")),
+      `repository must not select ${column}`,
+    );
+  }
+  // Exactly the two readable columns, and only ever as a projected value.
+  const selected = [...repository.matchAll(/notificationOutbox\.([A-Za-z]+)/g)]
+    .map((match) => match[1]);
+  assert.ok(selected.length > 0, "the outbox is joined for delivery state");
+  for (const property of new Set(selected)) {
+    assert.ok(
+      ["state", "sentAt", "aggregateType", "aggregateId", "messageType"].includes(property),
+      `notificationOutbox.${property} is not a delivery-state column or a join key`,
+    );
+  }
+  // The join is still read-only: no write of any kind reaches the outbox.
+  assert.doesNotMatch(repository, /\.(?:insert|update|delete)\(notificationOutbox\)/);
+});
+
 test("repository imports only the tables its projections need", () => {
-  const start = repository.indexOf("import {\n  adminUsers");
+  // Line endings are normalised first: this checkout uses `core.autocrlf=true`,
+  // and an anchor on "\n" would otherwise make the assertion depend on a git
+  // setting rather than on the import block.
+  const source = repository.replace(/\r\n/g, "\n");
+  const start = source.indexOf("import {\n  adminUsers");
   assert.ok(start > 0, "schema import block should be present");
-  const importBlock = repository.slice(start, repository.indexOf("} from \"../schema.ts\""));
+  const importBlock = source.slice(start, source.indexOf("} from \"../schema.ts\""));
   for (const table of [
     "adminUsers", "auditEvents", "buyRequests", "buyerOffers", "marketplaceAttachments",
     "marketplaceContacts", "marketplaceNotes", "priceChecks", "requesters",
@@ -94,8 +141,10 @@ test("repository imports only the tables its projections need", () => {
   ]) {
     assert.match(importBlock, new RegExp(`\\b${table}\\b`));
   }
-  // Credential-bearing and delivery tables are never imported at all.
-  assert.doesNotMatch(importBlock, /emailVerificationTokens|marketplaceUploadSessions|marketplacePendingUploads|notificationOutbox|resultAccessTokens|adminSessions/);
+  // Credential-bearing tables are never imported at all. The shared outbox is
+  // the one exception and is covered, column by column, by the delivery-state
+  // test above.
+  assert.doesNotMatch(importBlock, /emailVerificationTokens|marketplaceUploadSessions|marketplacePendingUploads|resultAccessTokens|adminSessions/);
 });
 
 test("verification state comes from the contact record, never the aggregate timestamp", () => {
