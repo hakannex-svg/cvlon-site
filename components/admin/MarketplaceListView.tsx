@@ -9,9 +9,12 @@ import {
 import {
   UNASSIGNED_FILTER,
   isAssigneeFilter,
+  type MarketplaceReviewCounts,
   type UnifiedQueueRecord,
   type UnifiedQueueType,
 } from "@/db/price-check/repositories/marketplace-admin-repository";
+import type { InternalReviewState } from "@/db/price-check/domain/internal-review";
+import { InternalReviewChip } from "@/components/admin/MarketplaceShared";
 
 /**
  * A single-workflow view over the same unified queue read the `/admin/queue`
@@ -19,7 +22,7 @@ import {
  * two views can never disagree about what a staff member is allowed to see.
  */
 export function MarketplaceListView({
-  type, basePath, title, lede, statuses, records, admins, filters, rawAssignee,
+  type, basePath, title, lede, statuses, records, reviewCounts, admins, filters, rawAssignee,
 }: {
   type: UnifiedQueueType;
   basePath: string;
@@ -27,10 +30,29 @@ export function MarketplaceListView({
   lede: string;
   statuses: readonly string[];
   records: UnifiedQueueRecord[];
+  reviewCounts: MarketplaceReviewCounts;
   admins: { id: string; displayEmail: string }[];
-  filters: { status?: string; verification?: string; age?: string; search?: string };
+  filters: { status?: string; verification?: string; review?: InternalReviewState; age?: string; search?: string };
   rawAssignee: string;
 }) {
+  const reviewHref = (review?: InternalReviewState) => {
+    const params = new URLSearchParams();
+    if (filters.search) params.set("search", filters.search);
+    if (filters.status) params.set("status", filters.status);
+    if (filters.verification) params.set("verification", filters.verification);
+    if (isAssigneeFilter(rawAssignee)) params.set("assignee", rawAssignee);
+    if (filters.age) params.set("age", filters.age);
+    if (review) params.set("review", review);
+    const query = params.toString();
+    return query ? `${basePath}?${query}` : basePath;
+  };
+  const reviewOptions: { state?: InternalReviewState; label: string; count: number }[] = [
+    { label: "All", count: reviewCounts.all },
+    { state: "not_reviewed", label: "Not reviewed", count: reviewCounts.not_reviewed },
+    { state: "reviewed", label: "Reviewed", count: reviewCounts.reviewed },
+    { state: "concern", label: "Concern", count: reviewCounts.concern },
+  ];
+
   return <section className="admin-page admin-queue-page">
     <div className="admin-page-heading">
       <div>
@@ -41,7 +63,20 @@ export function MarketplaceListView({
       <div className="admin-queue-count"><strong>{records.length}</strong><span>visible records</span></div>
     </div>
 
+    <nav className="admin-review-filters" aria-label={`${title} internal review state`}>
+      {reviewOptions.map(option => <Link
+        key={option.state ?? "all"}
+        href={reviewHref(option.state)}
+        className={`admin-review-filter ${option.state ? `state-${option.state}` : "state-all"}`}
+        aria-current={filters.review === option.state ? "page" : undefined}
+      >
+        <span>{option.label}</span>
+        <strong>{option.count}</strong>
+      </Link>)}
+    </nav>
+
     <form className="admin-filters" method="get" aria-label={`Filter ${title}`}>
+      {filters.review && <input type="hidden" name="review" value={filters.review} />}
       <label className="admin-search"><span>Search authorized fields</span><input name="search" defaultValue={filters.search} placeholder="Reference, part, company, contact" /></label>
       <label><span>Status</span><select name="status" defaultValue={filters.status ?? ""}><option value="">All statuses</option>{statuses.map(status => <option key={status} value={status}>{marketplaceStatusLabels[status] ?? status.replaceAll("_", " ")}</option>)}</select></label>
       <label><span>Verification</span><select name="verification" defaultValue={filters.verification ?? ""}><option value="">All</option><option value="verified">Verified</option><option value="pending">Awaiting verification</option></select></label>
@@ -53,7 +88,7 @@ export function MarketplaceListView({
     <div className="admin-table-wrap">
       <table className="admin-queue-table">
         <caption className="sr-only">{title}</caption>
-        <thead><tr><th>Reference</th><th>Received</th><th>Priority</th><th>Company</th><th>Contact</th><th>Part number</th><th>Verification</th><th>Status</th><th>Assignee</th><th>Age</th></tr></thead>
+        <thead><tr><th>Reference</th><th>Received</th><th>Priority</th><th>Company</th><th>Contact</th><th>Part number</th><th>Verification</th><th>Review</th><th>Status</th><th>Assignee</th><th>Age</th></tr></thead>
         <tbody>{records.map(record => <tr key={record.id} className={record.urgency === "aog" ? "is-aog" : ""}>
           <td data-label="Reference"><a href={`${basePath}/${record.id}`}>{record.publicReference}</a></td>
           <td data-label="Received"><time dateTime={new Date(record.submittedAt).toISOString()}>{formatDateTime(record.submittedAt)}</time></td>
@@ -62,6 +97,7 @@ export function MarketplaceListView({
           <td data-label="Contact">{record.contactName}</td>
           <td data-label="Part number">{record.partNumber ? <code>{record.partNumber}</code> : "—"}</td>
           <td data-label="Verification">{record.verificationState === "verified" ? "Verified" : "Awaiting"}</td>
+          <td data-label="Review">{record.businessReviewState ? <InternalReviewChip state={record.businessReviewState} /> : "—"}</td>
           <td data-label="Status"><span className={`admin-status status-${record.status}`}>{unifiedStatusLabel(type, record.status)}</span></td>
           <td data-label="Assignee">{staffDisplayName(record.assigneeEmail)}</td>
           <td data-label="Age">{formatAge(record.submittedAt)}</td>
