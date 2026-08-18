@@ -162,7 +162,7 @@ export function BuyRequestDetail({
                 : "No Civilon offer drafted yet. Your role cannot draft one."}</p>
             : <div className="admin-table-wrap"><table className="admin-queue-table">
                 <caption className="sr-only">Civilon offers to the buyer</caption>
-                <thead><tr><th>Version</th><th>Civilon sale price</th><th>Qty</th><th>Condition</th><th>Delivery option</th><th>Lead time</th><th>Status</th><th>Sent</th><th>Expires</th><th>Drafted by</th></tr></thead>
+                <thead><tr><th>Version</th><th>Civilon sale price</th><th>Qty</th><th>Condition</th><th>Delivery option</th><th>Lead time</th><th>Status</th><th>Sent</th><th>Buyer responded</th><th>Expires</th><th>Drafted by</th></tr></thead>
                 <tbody>{detail.buyerOffers.map(offer => <tr key={offer.id}>
                   <td data-label="Version">{offer.version}</td>
                   <td data-label="Civilon sale price">{money(offer.civilonSaleUnitPrice, offer.currencyCode)}</td>
@@ -172,6 +172,7 @@ export function BuyRequestDetail({
                   <td data-label="Lead time">{offer.leadTimeDays === null ? "—" : `${offer.leadTimeDays} d`}</td>
                   <td data-label="Status">{value(offer.status)}</td>
                   <td data-label="Sent">{value(offer.sentAt)}</td>
+                  <td data-label="Buyer responded">{value(offer.respondedAt)}</td>
                   <td data-label="Expires">{value(offer.expiresAt)}</td>
                   <td data-label="Drafted by">{staffDisplayName(offer.createdByEmail)}</td>
                 </tr>)}</tbody>

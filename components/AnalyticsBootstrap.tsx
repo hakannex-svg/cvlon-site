@@ -31,6 +31,8 @@ export function AnalyticsBootstrap() {
       || path === "/buy-sell-aircraft-parts/verify" || path.startsWith("/buy-sell-aircraft-parts/verify/")
       || path === "/buy-sell-aircraft-parts/sell/verify"
       || path.startsWith("/buy-sell-aircraft-parts/sell/verify/")
+      || path === "/buy-sell-aircraft-parts/offer"
+      || path.startsWith("/buy-sell-aircraft-parts/offer/")
       || path === "/admin" || path.startsWith("/admin/");
     if (mode !== "consent-required" || !gtmId || isPrivateRoute) return;
 

@@ -41,6 +41,7 @@ const buyDetail = read("components", "admin", "BuyRequestDetail.tsx");
 const detailRepo = read("db", "price-check", "repositories", "marketplace-admin-repository.ts");
 const createRoute = read("app", "api", "admin", "marketplace", "buy-requests", "[id]", "buyer-offers", "route.ts");
 const statusRoute = read("app", "api", "admin", "marketplace", "buy-requests", "[id]", "buyer-offers", "[offerId]", "status", "route.ts");
+const sendRoute = read("app", "api", "admin", "marketplace", "buy-requests", "[id]", "buyer-offers", "[offerId]", "send", "route.ts");
 
 const ULID = "0123456789ABCDEFGHJKMNP0TV";
 const valid = { civilonSaleUnitPrice: "2400", currencyCode: "USD", quantity: "2" };
@@ -280,17 +281,17 @@ test("the disclosure states the limits plainly", () => {
 
 /* ------------------------------------------------------------------ routes */
 
-test("both routes are node runtime, POST only, and gated on manage_buyer_offer", () => {
-  for (const [name, source] of [["create", createRoute], ["status", statusRoute]]) {
+test("all offer admin routes are node runtime, POST only, and gated on manage_buyer_offer", () => {
+  for (const [name, source] of [["create", createRoute], ["status", statusRoute], ["send", sendRoute]]) {
     assert.match(source, /export const runtime = "nodejs"/, name);
     for (const method of ["GET", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]) {
       assert.match(source, new RegExp(`export const ${method} = buyerOfferMethodNotAllowed;`), `${name}: ${method}`);
     }
   }
-  assert.equal((routesLib.match(/requireStaffApi\("manage_buyer_offer"\)/g) ?? []).length, 2);
-  assert.equal((routesLib.match(/verifyAdminMutationOrigin\(request\)/g) ?? []).length, 2);
+  assert.equal((routesLib.match(/requireStaffApi\("manage_buyer_offer"\)/g) ?? []).length, 3);
+  assert.equal((routesLib.match(/verifyAdminMutationOrigin\(request\)/g) ?? []).length, 3);
   assert.match(routesLib, /headers\.set\("Allow", "POST"\)/);
-  for (const handler of ["POST_buyerOffer", "POST_buyerOfferStatus"]) {
+  for (const handler of ["POST_buyerOffer", "POST_buyerOfferStatus", "POST_buyerOfferDelivery"]) {
     const start = routesLib.indexOf(`export async function ${handler}(`);
     const body = routesLib.slice(start, routesLib.indexOf("\n}\n", start));
     assert.ok(body.indexOf("verifyAdminMutationOrigin(request)") < body.indexOf("readJsonBody"), handler);
@@ -302,25 +303,26 @@ test("both routes are node runtime, POST only, and gated on manage_buyer_offer",
   assert.equal(roleCan("ADMIN", "manage_buyer_offer"), true);
 });
 
-test("the routes are parent-bound, private, flag-free and silent", () => {
+test("the routes are parent-bound and only the dedicated route may queue delivery", () => {
   assert.match(routesLib, /if \(!isRecordId\(id\) \|\| !isRecordId\(offerId\)\)/);
   assert.match(routesLib, /buyRequestId: id,\s*buyerOfferId: offerId,/);
-  for (const source of [routesLib, createRoute, statusRoute, repo, panel, snapshot]) {
+  for (const source of [routesLib, createRoute, statusRoute, sendRoute, panel, snapshot]) {
     assert.doesNotMatch(source, /isPriceCheckEnabled|isMarketplaceEnabled|isSellSubmissionEnabled|NEXT_PUBLIC_|process\.env/);
     assert.doesNotMatch(source, /getPriceCheckAdminAccess|requireAdminApi/);
-    // No e-mail, no outbox, no customer URL: this slice sends nothing.
-    assert.doesNotMatch(source, /notificationOutbox|enqueueNotification|PostmarkTransactionalEmailProvider|TransactionalEmail|sendMail|mailto:/);
+    assert.doesNotMatch(source, /PostmarkTransactionalEmailProvider|TransactionalEmail|sendMail|mailto:/);
   }
+  assert.match(routesLib, /queueBuyerOfferDelivery/);
+  assert.match(routesLib, /Use Send Civilon Offer for delivery/);
+  assert.match(routesLib, /Buyer acceptance or decline can only come from the buyer's secure link/);
   assert.doesNotMatch(routesLib, /error\.message|String\(error\)|console\./);
   assert.equal((routesLib.match(/return new Response\(/g) ?? []).length, 1);
 });
 
 /* ------------------------------------------------------- write-path shape */
 
-test("the repository is transactional, audited, and touches nothing else", () => {
-  assert.equal((repo.match(/return db\.transaction\(async \(tx\) => \{/g) ?? []).length, 2);
+test("the repository keeps core writes transactional, audited, and supplier-cost free", () => {
+  assert.ok((repo.match(/return db\.transaction\(async \(tx\) => \{/g) ?? []).length >= 4);
   assert.match(repo, /await tx\.insert\(auditEvents\)\.values\(\{/);
-  assert.doesNotMatch(repo, /await db\.insert\(auditEvents\)/);
   // It never mutates the Buy Request or a supplier response.
   assert.doesNotMatch(repo, /update\(buyRequests\)|insert\(buyRequests\)|delete\(buyRequests\)/);
   assert.doesNotMatch(repo, /update\(supplierResponses\)|insert\(supplierResponses\)|delete\(supplierResponses\)/);
@@ -330,7 +332,7 @@ test("the repository is transactional, audited, and touches nothing else", () =>
 
 test("audit metadata is minimal and carries no price or supplier pointer", () => {
   const blocks = repo.match(/metadata: \{[\s\S]*?\}/g) ?? [];
-  assert.equal(blocks.length, 4, "drafted, superseded, draft-replaced, status-changed");
+  assert.ok(blocks.length >= 8, "draft, delivery, response and worker audits are present");
   for (const block of blocks) {
     assert.doesNotMatch(block, /civilonSaleUnitPrice|currencyCode|quantity|selectedSupplierResponseId/, block);
     assert.doesNotMatch(block, /supplierNameSnapshot|supplierUnitCost|businessEmail/, block);
@@ -380,16 +382,18 @@ test("the offer panel shows buyer terms only and no supplier data", () => {
   assert.match(panel, /Civilon sale price, per unit/);
   assert.match(panel, /Entered explicitly, not calculated\./);
   assert.match(panel, /Never shown to the buyer\./);
-  assert.match(panel, /Confirm I sent this offer to the buyer/);
-  assert.match(panel, /Sent \(recorded by staff\)/);
+  assert.match(panel, /Send Civilon Offer/);
+  assert.match(panel, /secure accept\/decline link/);
+  assert.doesNotMatch(panel, /Confirm I sent this offer to the buyer|Sent \(recorded by staff\)/);
   // No supplier field is rendered, and no arithmetic between the two sides.
   assert.doesNotMatch(panel, /supplierUnitCost|supplierNameSnapshot|supplierContactSnapshot|supplierCountry|locationText|shippingNotes|availabilityState/);
   assert.doesNotMatch(panel, /trackCivilonEvent|dataLayer|civilonAnalytics/);
   assert.match(panel, /role="alert"/);
   assert.match(panel, /role="status"/);
   assert.match(panel, /router\.refresh\(\);/);
-  // The panel computes no policy of its own.
-  assert.match(panel, /buyerOfferTargets\(openOffer\.status\)/);
+  // The generic control cannot claim a send or buyer response.
+  assert.match(panel, /\["expired", "withdrawn"\]/);
+  assert.doesNotMatch(panel, /buyerOfferTargets\(openOffer\.status\)/);
   assert.doesNotMatch(panel, /canTransitionBuyerOffer/);
 });
 

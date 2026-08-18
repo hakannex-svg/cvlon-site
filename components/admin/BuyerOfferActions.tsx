@@ -7,7 +7,6 @@ import {
   buyerOfferConditionCodes,
   buyerOfferCurrencies,
   buyerOfferDeliveryOptions,
-  buyerOfferTargets,
 } from "@/db/price-check/domain/buyer-offer-policy";
 
 /**
@@ -18,8 +17,8 @@ import {
  * the commercial rule's basis is not yet settled, and a guessed formula would
  * quote a customer a number nobody approved.
  *
- * Marking an offer sent records that a staff member says they sent it by their
- * own means. Nothing here e-mails anyone.
+ * Delivery uses Civilon's outbox and customer template; it cannot be recorded
+ * through the generic status control.
  */
 
 type SupplierOption = { id: string; label: string; status: string };
@@ -33,7 +32,7 @@ const deliveryLabels: Record<string, string> = {
 };
 
 const statusLabels: Record<string, string> = {
-  draft: "Draft", sent: "Sent (recorded by staff)", accepted: "Accepted by buyer",
+  draft: "Draft", sent: "Sent to buyer", accepted: "Accepted by buyer",
   declined: "Declined by buyer", expired: "Expired", superseded: "Superseded", withdrawn: "Withdrawn",
 };
 
@@ -107,7 +106,7 @@ export function BuyerOfferActions({ buyRequestId, supplierOptions, offers }: {
     <details className="admin-details-action">
       <summary><span>
         <b>Draft a Civilon offer</b>
-        <small>Civilon&apos;s own sale price and a buyer-facing delivery option. A new draft replaces an unsent working draft. An offer already sent stays active until this one is explicitly marked sent — only then is the earlier version superseded. Accepted history is never rewritten.</small>
+        <small>Civilon&apos;s own sale price and buyer-facing delivery terms. A new draft replaces an unsent working draft. The earlier sent version remains live until Send Civilon Offer queues the replacement email. Accepted history is never rewritten.</small>
       </span></summary>
       <form className="admin-form-grid" onSubmit={submitOffer}>
         <label>
@@ -135,7 +134,7 @@ export function BuyerOfferActions({ buyRequestId, supplierOptions, offers }: {
           </select>
         </label>
         <label><span>Lead time (days)</span><input name="leadTimeDays" inputMode="numeric" disabled={busy} /></label>
-        <label><span>Offer expires</span><input name="expiresAt" type="datetime-local" disabled={busy} /></label>
+        <label><span>Offer expires <em>Required before sending</em></span><input name="expiresAt" type="datetime-local" disabled={busy} required /></label>
         {supplierOptions.length > 0 ? (
           <label>
             <span>Internal: sourced from <em>Staff traceability only. Never shown to the buyer.</em></span>
@@ -158,20 +157,32 @@ export function BuyerOfferActions({ buyRequestId, supplierOptions, offers }: {
       </form>
     </details>
 
-    {openOffer ? (
+    {openOffer?.status === "draft" ? (
+      <div className="admin-inline-form">
+        <div><strong>Version {openOffer.version} — Draft</strong><small>Emails Civilon&apos;s terms to the verified buyer with a secure accept/decline link.</small></div>
+        <button type="button" disabled={busy} onClick={() => void post(
+          "send",
+          `${base}/${openOffer.id}/send`,
+          { expectedStatus: "draft" },
+          "Civilon offer queued for email delivery.",
+        )}>{pending === "send" ? "Queuing…" : "Send Civilon Offer"}</button>
+      </div>
+    ) : null}
+
+    {openOffer?.status === "sent" ? (
       <form className="admin-inline-form" onSubmit={(event) => {
         event.preventDefault();
         const to = String(new FormData(event.currentTarget).get("to") ?? "");
         if (!to) return;
         void post("status", `${base}/${openOffer.id}/status`, { expectedStatus: openOffer.status, to },
-          to === "sent" ? "Recorded as sent by staff." : "Offer updated.");
+          "Offer updated.");
       }}>
         <label>
           <span>Version {openOffer.version} — {statusLabels[openOffer.status] ?? openOffer.status}</span>
           <select name="to" disabled={busy}>
             <option value="">Keep {statusLabels[openOffer.status] ?? openOffer.status}</option>
-            {buyerOfferTargets(openOffer.status).map((target) => <option key={target} value={target}>
-              {target === "sent" ? "Confirm I sent this offer to the buyer" : statusLabels[target] ?? target}
+            {(["expired", "withdrawn"] as const).map((target) => <option key={target} value={target}>
+              {statusLabels[target] ?? target}
             </option>)}
           </select>
         </label>

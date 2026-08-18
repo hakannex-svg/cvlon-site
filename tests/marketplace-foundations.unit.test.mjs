@@ -229,8 +229,8 @@ test("truly unregistered and malformed messages dead-letter deterministically", 
   assert.deepEqual(priceCheck.invocations, []);
 });
 
-test("the shipped registry owns RESULT_READY and exposes its reserved types", () => {
-  // Buy Request and Sell Submission intake each ship with their two handlers
+test("the shipped registry owns every notification type and exposes its reserved types", () => {
+  // Buy Request, Sell Submission and buyer-offer delivery ship with their handlers
   // registered, so every marketplace message type is reserved before any
   // producer can enqueue it. Price Check's own claim on the shared outbox is
   // unchanged by either addition.
@@ -240,8 +240,10 @@ test("the shipped registry owns RESULT_READY and exposes its reserved types", ()
     "BUY_REQUEST_INTERNAL_RECEIVED",
     "SELL_SUBMISSION_VERIFY_EMAIL",
     "SELL_SUBMISSION_INTERNAL_RECEIVED",
+    "BUYER_OFFER_TO_BUYER",
+    "BUYER_OFFER_RESPONSE_INTERNAL",
   ]);
-  assert.equal(civilonNotificationHandlers.length, 5);
+  assert.equal(civilonNotificationHandlers.length, 7);
   assert.equal(
     civilonNotificationHandlers.filter((handler) => handler.workflow === "price-check").length,
     1,

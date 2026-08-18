@@ -35,9 +35,11 @@ const stripComments = (source) => source
 
 /* ------------------------------------------------------- handler containment */
 
-test("the marketplace handler list owns the four Buy/Sell types and nothing else", () => {
+test("the marketplace handler list owns Buy, Sell and buyer-offer types only", () => {
   const types = marketplaceNotificationHandlers.map((handler) => handler.messageType).sort();
   assert.deepEqual(types, [
+    "BUYER_OFFER_RESPONSE_INTERNAL",
+    "BUYER_OFFER_TO_BUYER",
     "BUY_REQUEST_INTERNAL_RECEIVED",
     "BUY_REQUEST_VERIFY_EMAIL",
     "SELL_SUBMISSION_INTERNAL_RECEIVED",
@@ -48,7 +50,7 @@ test("the marketplace handler list owns the four Buy/Sell types and nothing else
   // Every marketplace handler is a marketplace handler.
   for (const handler of marketplaceNotificationHandlers) {
     assert.equal(handler.workflow, "marketplace");
-    assert.ok(["buy_request", "sell_submission"].includes(handler.aggregateType));
+    assert.ok(["buy_request", "sell_submission", "buyer_offer"].includes(handler.aggregateType));
   }
 });
 
