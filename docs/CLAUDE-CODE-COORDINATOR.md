@@ -5,8 +5,11 @@ dispatch the Claude Code CLI directly: Opus as the primary model, Sonnet as the 
 overload fallback, running in its own isolated Git worktree so Codex can review the result
 independently.
 
-It is a local dispatcher, not a service: there is no daemon, no stored API key, and no path by
-which Claude can push, merge, or amend anything outside its own worktree.
+It is a local dispatcher, not a service: there is no daemon and no stored API key. The coordinator
+itself never pushes, merges, or amends. The delegated Claude process is isolated from the source
+checkout by a worktree and receives explicit no-delivery instructions, but it is not an operating-
+system or network sandbox; it retains whatever CLI, network, credential, and tool access the local
+Claude installation grants it. Codex must still inspect the real repository and remote state.
 
 ## Security boundaries
 
@@ -22,7 +25,8 @@ which Claude can push, merge, or amend anything outside its own worktree.
   `CLAUDE_CODE_MAX_RETRIES` if the caller hasn't already.
 - No `git push`, `git merge`, `--force`-push, or PR/merge operation is ever issued by the
   coordinator, and the composed prompt explicitly instructs the delegated Claude run not to
-  either. Delivery is a Codex/human decision, made after review.
+  either. This is a workflow control, not a hard network-security boundary. Delivery is a
+  Codex/human decision, made after repository and remote-state review.
 - Every run happens in its own sibling worktree on its own `claude/<run-id>` branch; the source
   repository's working tree, index, and HEAD are never touched by the coordinator itself.
 - `status` and `cleanup` only accept coordinator-shaped run IDs (`[A-Za-z0-9-]+`); anything with
@@ -68,7 +72,7 @@ Equivalent `npm` scripts: `npm run claude:run -- --prompt-file ...`, `claude:sta
 | `--max-turns <n>` | unset | Passed through to Claude when set. |
 | `--max-budget-usd <n>` | unset | Passed natively to the Claude CLI (`--max-budget-usd`), which enforces it. As defense in depth the coordinator also terminates the run (`budget_exceeded`) if the reported cost in the stream ever exceeds it. |
 | `--permission-mode <mode>` | `acceptEdits` | One of `acceptEdits`, `plan`. `bypassPermissions` is never permitted. |
-| `--allowed-tools <list>` | unset | Passed through to Claude when set. |
+| `--allowed-tools <list>` | unset | Permission/preapproval list passed through to Claude. It does not remove every other built-in tool or create an OS/network sandbox. |
 | `--dry-run` | off | Print the resolved plan and composed prompt as JSON; create nothing. |
 
 ## Where state lives
