@@ -517,6 +517,167 @@ test("notes never reach the outbox, and no write enqueues a notification", async
   });
 });
 
+/* ------------------------------------------------------ internal review */
+
+test("business review is audited and never changes e-mail verification", async () => {
+  await withDatabase(async ({ db, schema, writes, reads }) => {
+    const { eq } = await import("drizzle-orm");
+    const admin = await insertAdmin(db, schema, { displayEmail: "reviewer@cvlon.com" });
+    const contact = await insertContact(db, schema, {
+      verificationState: "PENDING",
+      verificationRequestedAt: SUBMITTED_AT,
+    });
+    const buy = await insertBuyRequest(db, schema, contact.id);
+
+    const changed = await writes.setContactBusinessReview(db, {
+      aggregate: "buy_request",
+      id: buy.id,
+      state: "reviewed",
+      actor: ADMIN_ACTOR(admin),
+      now: VERIFIED_AT,
+    });
+    assert.deepEqual(changed, {
+      ok: true,
+      data: { from: "not_reviewed", to: "reviewed", changed: true },
+    });
+
+    const [stored] = await db.select().from(schema.marketplaceContacts)
+      .where(eq(schema.marketplaceContacts.id, contact.id)).limit(1);
+    assert.equal(stored.businessReviewState, "reviewed");
+    assert.deepEqual(stored.businessReviewedAt, VERIFIED_AT);
+    assert.equal(stored.businessReviewedByAdminUserId, admin.id);
+    assert.equal(stored.verificationState, "PENDING");
+    assert.equal(stored.verifiedAt, null);
+
+    const detail = await reads.getBuyRequestAdminDetail(db, buy.id);
+    assert.equal(detail.contact.businessReviewState, "reviewed");
+    assert.equal(detail.contact.businessReviewedByEmail, "reviewer@cvlon.com");
+    assert.deepEqual(detail.contact.businessReviewedAt, VERIFIED_AT);
+    assert.equal(detail.contact.verificationState, "PENDING");
+
+    const audit = await auditFor(db, schema, buy.id);
+    assert.equal(audit.length, 1);
+    assert.equal(audit[0].action, "BUY_REQUEST_BUSINESS_REVIEW_CHANGED");
+    assert.deepEqual(audit[0].sanitizedMetadata, {
+      contactId: contact.id,
+      from: "not_reviewed",
+      to: "reviewed",
+      emailVerificationUnchanged: true,
+    });
+
+    const reset = await writes.setContactBusinessReview(db, {
+      aggregate: "buy_request",
+      id: buy.id,
+      state: "not_reviewed",
+      actor: ADMIN_ACTOR(admin),
+    });
+    assert.equal(reset.ok, true);
+    const [cleared] = await db.select().from(schema.marketplaceContacts)
+      .where(eq(schema.marketplaceContacts.id, contact.id)).limit(1);
+    assert.equal(cleared.businessReviewState, "not_reviewed");
+    assert.equal(cleared.businessReviewedAt, null);
+    assert.equal(cleared.businessReviewedByAdminUserId, null);
+  });
+});
+
+test("only clean live evidence under the named Sell Submission can be reviewed", async () => {
+  await withDatabase(async ({ db, schema, writes, reads }) => {
+    const { eq } = await import("drizzle-orm");
+    const admin = await insertAdmin(db, schema, { displayEmail: "evidence@cvlon.com" });
+    const contact = await insertContact(db, schema);
+    const sell = await insertSellSubmission(db, schema, contact.id);
+    const otherSell = await insertSellSubmission(db, schema, contact.id);
+
+    const attachment = async (submission, overrides = {}) => {
+      const row = {
+        id: ulid("AT"),
+        aggregateType: "sell_submission",
+        aggregateId: submission.id,
+        sellSubmissionId: submission.id,
+        purpose: "CUSTODY_PART_PHOTO",
+        uploadedByType: "CONTACT",
+        displayFilename: "custody.jpg",
+        objectKey: `marketplace/${submission.id}/${ulid("O")}.jpg`,
+        storageProvider: "S3",
+        declaredMime: "image/jpeg",
+        detectedMime: "image/jpeg",
+        byteSize: "128",
+        scanState: "CLEAN",
+        quarantineReleasedAt: VERIFIED_AT,
+        retentionClass: "MARKETPLACE_INTAKE_EVIDENCE",
+        ...overrides,
+      };
+      await db.insert(schema.marketplaceAttachments).values(row);
+      return row;
+    };
+
+    const clean = await attachment(sell);
+    const pending = await attachment(sell, {
+      scanState: "PENDING",
+      quarantineReleasedAt: null,
+      objectKey: `marketplace/${sell.id}/${ulid("O")}.jpg`,
+    });
+    const deleted = await attachment(sell, {
+      deletedAt: VERIFIED_AT,
+      objectKey: `marketplace/${sell.id}/${ulid("O")}.jpg`,
+    });
+    const foreign = await attachment(otherSell);
+
+    const changed = await writes.setAttachmentReview(db, {
+      sellSubmissionId: sell.id,
+      attachmentId: clean.id,
+      state: "concern",
+      actor: ADMIN_ACTOR(admin),
+      now: VERIFIED_AT,
+    });
+    assert.deepEqual(changed, {
+      ok: true,
+      data: { from: "not_reviewed", to: "concern", changed: true },
+    });
+
+    const detail = await reads.getSellSubmissionAdminDetail(db, sell.id);
+    const reviewed = detail.attachments.find(row => row.id === clean.id);
+    assert.equal(reviewed.reviewState, "concern");
+    assert.equal(reviewed.reviewedByEmail, "evidence@cvlon.com");
+    assert.deepEqual(reviewed.reviewedAt, VERIFIED_AT);
+
+    for (const [label, id] of [
+      ["pending", pending.id],
+      ["deleted", deleted.id],
+      ["foreign", foreign.id],
+    ]) {
+      const result = await writes.setAttachmentReview(db, {
+        sellSubmissionId: sell.id,
+        attachmentId: id,
+        state: "reviewed",
+        actor: ADMIN_ACTOR(admin),
+      });
+      assert.deepEqual(result, { ok: false, reason: "not_found" }, label);
+    }
+
+    const audit = await auditFor(db, schema, sell.id);
+    assert.equal(audit.length, 1);
+    assert.equal(audit[0].action, "SELL_SUBMISSION_ATTACHMENT_REVIEW_CHANGED");
+    assert.deepEqual(audit[0].sanitizedMetadata, {
+      attachmentId: clean.id,
+      from: "not_reviewed",
+      to: "concern",
+    });
+
+    await writes.setAttachmentReview(db, {
+      sellSubmissionId: sell.id,
+      attachmentId: clean.id,
+      state: "not_reviewed",
+      actor: ADMIN_ACTOR(admin),
+    });
+    const [cleared] = await db.select().from(schema.marketplaceAttachments)
+      .where(eq(schema.marketplaceAttachments.id, clean.id)).limit(1);
+    assert.equal(cleared.reviewState, "not_reviewed");
+    assert.equal(cleared.reviewedAt, null);
+    assert.equal(cleared.reviewedByAdminUserId, null);
+  });
+});
+
 /* ------------------------------------------------------------- atomicity */
 
 test("a failed audit rolls the aggregate write back", async () => {

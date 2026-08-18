@@ -128,9 +128,9 @@ async function rejects(promiseFactory, constraintFragment) {
 test("all archived migrations apply from an empty database", async () => {
   await withDatabase(async ({ applied, raw }) => {
     const directories = archivedMigrationDirectories();
-    assert.equal(directories.length, 9);
+    assert.equal(directories.length, 10);
     assert.equal(applied.length, expectedMigrationCount());
-    assert.equal(applied.length, 9);
+    assert.equal(applied.length, 10);
 
     const rows = await raw(
       `select table_name from information_schema.tables

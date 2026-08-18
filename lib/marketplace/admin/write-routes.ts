@@ -13,6 +13,7 @@ import {
 } from "../../../db/price-check/domain/marketplace-status-policy.ts";
 import {
   isRecordId,
+  validateInternalReview,
   validateMarketplaceAssignment,
   validateMarketplaceNote,
   validateMarketplaceStatusChange,
@@ -55,6 +56,7 @@ async function readJsonBody(request: Request): Promise<unknown> {
 }
 
 type Context = { params: Promise<{ id: string }> };
+type AttachmentContext = { params: Promise<{ id: string; attachmentId: string }> };
 
 /**
  * Status change. The capability depends on the target: an ordinary move needs
@@ -182,6 +184,86 @@ export function createNoteRoute(aggregate: MarketplaceAggregate) {
       return privateJson({ ok: true, noteId: result.data.noteId }, 201);
     } catch {
       return privateJson({ ok: false, error: "The note could not be saved." }, 400);
+    }
+  };
+}
+
+/** Internal business review; intentionally independent of e-mail verification. */
+export function createBusinessReviewRoute(aggregate: MarketplaceAggregate) {
+  return async function POST(request: Request, context: Context) {
+    const access = await requireStaffApi("review_marketplace");
+    if (access.status !== "authorized") return accessErrorResponse(access.status);
+    try {
+      verifyAdminMutationOrigin(request);
+      const { id } = await context.params;
+      if (!isRecordId(id)) return privateJson({ ok: false, error: "This record is not available." }, 404);
+
+      const validation = validateInternalReview(await readJsonBody(request));
+      if (!validation.ok) return privateJson({ ok: false, error: validation.error }, 400);
+
+      const [{ priceCheckDb }, repository] = await Promise.all([
+        import("@/db/price-check"),
+        import("@/db/price-check/repositories/marketplace-write-repository"),
+      ]);
+      const result = await repository.setContactBusinessReview(priceCheckDb, {
+        aggregate,
+        id,
+        state: validation.data.state,
+        actor: { id: access.user.id, role: access.user.role },
+      });
+
+      if (!result.ok && result.reason === "not_found") {
+        return privateJson({ ok: false, error: "This record is not available." }, 404);
+      }
+      if (!result.ok && result.reason === "conflict") {
+        return privateJson({ ok: false, error: "This review changed while you were working on it. Reload and try again." }, 409);
+      }
+      if (!result.ok) return privateJson({ ok: false, error: "The business review could not be saved." }, 400);
+
+      return privateJson({ ok: true, reviewState: result.data.to });
+    } catch {
+      return privateJson({ ok: false, error: "The business review could not be saved." }, 400);
+    }
+  };
+}
+
+/** Internal review of one live attachment bound to the named Sell Submission. */
+export function createAttachmentReviewRoute() {
+  return async function POST(request: Request, context: AttachmentContext) {
+    const access = await requireStaffApi("review_marketplace");
+    if (access.status !== "authorized") return accessErrorResponse(access.status);
+    try {
+      verifyAdminMutationOrigin(request);
+      const { id, attachmentId } = await context.params;
+      if (!isRecordId(id) || !isRecordId(attachmentId)) {
+        return privateJson({ ok: false, error: "This evidence is not available." }, 404);
+      }
+
+      const validation = validateInternalReview(await readJsonBody(request));
+      if (!validation.ok) return privateJson({ ok: false, error: validation.error }, 400);
+
+      const [{ priceCheckDb }, repository] = await Promise.all([
+        import("@/db/price-check"),
+        import("@/db/price-check/repositories/marketplace-write-repository"),
+      ]);
+      const result = await repository.setAttachmentReview(priceCheckDb, {
+        sellSubmissionId: id,
+        attachmentId,
+        state: validation.data.state,
+        actor: { id: access.user.id, role: access.user.role },
+      });
+
+      if (!result.ok && result.reason === "not_found") {
+        return privateJson({ ok: false, error: "This evidence is not available." }, 404);
+      }
+      if (!result.ok && result.reason === "conflict") {
+        return privateJson({ ok: false, error: "This review changed while you were working on it. Reload and try again." }, 409);
+      }
+      if (!result.ok) return privateJson({ ok: false, error: "The evidence review could not be saved." }, 400);
+
+      return privateJson({ ok: true, reviewState: result.data.to });
+    } catch {
+      return privateJson({ ok: false, error: "The evidence review could not be saved." }, 400);
     }
   };
 }

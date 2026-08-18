@@ -1113,6 +1113,17 @@ export const marketplaceUploadedByTypeEnum = pgEnum(
   "marketplace_uploaded_by_type",
   ["CONTACT", "ADMIN", "SYSTEM"],
 );
+/**
+ * Internal-only staff review state. This is not customer verification,
+ * certification, airworthiness approval, authenticity proof, fitness guarantee,
+ * supplier approval, or a public reputation score, and it is never exposed on
+ * any customer-facing surface.
+ */
+export const internalReviewStateEnum = pgEnum("internal_review_state", [
+  "not_reviewed",
+  "reviewed",
+  "concern",
+]);
 export const supplierSourceKindEnum = pgEnum("supplier_source_kind", [
   "registered_contact",
   "nonregistered_supplier",
@@ -1188,6 +1199,18 @@ export const marketplaceContacts = pgTable(
     verificationRequestedAt: utcTimestamp("verification_requested_at"),
     verifiedAt: utcTimestamp("verified_at"),
     verificationRevokedAt: utcTimestamp("verification_revoked_at"),
+    /**
+     * Internal business review, distinct from email verification: setting it
+     * never touches `verification_state`. Staff-facing only.
+     */
+    businessReviewState: internalReviewStateEnum("business_review_state")
+      .notNull()
+      .default("not_reviewed"),
+    businessReviewedAt: utcTimestamp("business_reviewed_at"),
+    businessReviewedByAdminUserId: id("business_reviewed_by_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
     serviceProcessingAcknowledgedAt: utcTimestamp(
       "service_processing_acknowledged_at",
     ),
@@ -1750,6 +1773,15 @@ export const marketplaceAttachments = pgTable(
     contentDigest: varchar("content_digest", { length: 128 }),
     scanState: marketplaceScanStateEnum("scan_state").notNull().default("PENDING"),
     quarantineReleasedAt: utcTimestamp("quarantine_released_at"),
+    /** Internal staff review of this piece of evidence. Never customer-facing. */
+    reviewState: internalReviewStateEnum("review_state")
+      .notNull()
+      .default("not_reviewed"),
+    reviewedAt: utcTimestamp("reviewed_at"),
+    reviewedByAdminUserId: id("reviewed_by_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
     retentionClass: marketplaceRetentionClassEnum("retention_class").notNull(),
     sourcePendingUploadId: id("source_pending_upload_id").references(
       () => marketplacePendingUploads.id,

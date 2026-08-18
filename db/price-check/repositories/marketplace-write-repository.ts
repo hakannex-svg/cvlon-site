@@ -6,9 +6,12 @@ import {
   adminUsers,
   auditEvents,
   buyRequests,
+  marketplaceAttachments,
+  marketplaceContacts,
   marketplaceNotes,
   sellSubmissions,
 } from "../schema.ts";
+import { type InternalReviewState } from "../domain/internal-review.ts";
 import { generateOrderedId } from "../domain/identifiers.ts";
 import {
   canTransitionMarketplace,
@@ -249,5 +252,154 @@ export async function addMarketplaceNote(
     });
 
     return { ok: true as const, data: { noteId } };
+  });
+}
+
+export type ReviewChangeResult = {
+  from: InternalReviewState;
+  to: InternalReviewState;
+  changed: boolean;
+};
+
+/**
+ * Sets the internal business review state of the contact behind a Buy Request
+ * or Sell Submission. Internal only: this never touches the contact's email
+ * `verification_state`, never enqueues an outbox row, and is never rendered on
+ * a customer surface. The audit row is attached to the aggregate the staff
+ * member was working from, and records the old and new state and the actor.
+ */
+export async function setContactBusinessReview(
+  db: PriceCheckDb,
+  input: {
+    aggregate: MarketplaceAggregate;
+    id: string;
+    state: InternalReviewState;
+    actor: MarketplaceWriteActor;
+    now?: Date;
+  },
+): Promise<MarketplaceWriteOutcome<ReviewChangeResult>> {
+  const table = aggregateTable(input.aggregate);
+  const now = input.now ?? new Date();
+
+  const [record] = await db.select({ id: table.id, contactId: table.contactId })
+    .from(table).where(eq(table.id, input.id)).limit(1);
+  if (!record) return { ok: false, reason: "not_found" };
+
+  const [contact] = await db.select({
+    id: marketplaceContacts.id,
+    businessReviewState: marketplaceContacts.businessReviewState,
+  }).from(marketplaceContacts)
+    .where(eq(marketplaceContacts.id, record.contactId))
+    .limit(1);
+  if (!contact) return { ok: false, reason: "not_found" };
+
+  // Setting the state it already has is a no-op, not an audit event.
+  if (contact.businessReviewState === input.state) {
+    return { ok: true, data: { from: contact.businessReviewState, to: input.state, changed: false } };
+  }
+
+  return db.transaction(async (tx) => {
+    const updated = await tx.update(marketplaceContacts)
+      .set({
+        businessReviewState: input.state,
+        businessReviewedAt: input.state === "not_reviewed" ? null : now,
+        businessReviewedByAdminUserId: input.state === "not_reviewed" ? null : input.actor.id,
+        updatedAt: now,
+      })
+      .where(and(
+        eq(marketplaceContacts.id, contact.id),
+        eq(marketplaceContacts.businessReviewState, contact.businessReviewState),
+      ))
+      .returning({ id: marketplaceContacts.id });
+    if (!updated.length) {
+      return { ok: false, reason: "conflict" as const, currentStatus: contact.businessReviewState };
+    }
+
+    await appendAudit(tx, {
+      aggregate: input.aggregate,
+      aggregateId: input.id,
+      actorId: input.actor.id,
+      action: input.aggregate === "buy_request"
+        ? "BUY_REQUEST_BUSINESS_REVIEW_CHANGED"
+        : "SELL_SUBMISSION_BUSINESS_REVIEW_CHANGED",
+      metadata: {
+        contactId: contact.id,
+        from: contact.businessReviewState,
+        to: input.state,
+        emailVerificationUnchanged: true,
+      },
+    });
+
+    return { ok: true as const, data: { from: contact.businessReviewState, to: input.state, changed: true } };
+  });
+}
+
+/**
+ * Sets the internal review state of one bound Sell Submission attachment. The
+ * attachment must belong to the named submission and must not be deleted.
+ * Internal only, and audited with the old and new state and the actor.
+ */
+export async function setAttachmentReview(
+  db: PriceCheckDb,
+  input: {
+    sellSubmissionId: string;
+    attachmentId: string;
+    state: InternalReviewState;
+    actor: MarketplaceWriteActor;
+    now?: Date;
+  },
+): Promise<MarketplaceWriteOutcome<ReviewChangeResult>> {
+  const now = input.now ?? new Date();
+
+  const [attachment] = await db.select({
+    id: marketplaceAttachments.id,
+    reviewState: marketplaceAttachments.reviewState,
+    scanState: marketplaceAttachments.scanState,
+    deletedAt: marketplaceAttachments.deletedAt,
+  }).from(marketplaceAttachments)
+    .where(and(
+      eq(marketplaceAttachments.id, input.attachmentId),
+      eq(marketplaceAttachments.sellSubmissionId, input.sellSubmissionId),
+    ))
+    .limit(1);
+  // A deleted attachment is no longer evidence, so it is no longer reviewable.
+  if (!attachment || attachment.deletedAt || attachment.scanState !== "CLEAN") {
+    return { ok: false, reason: "not_found" };
+  }
+
+  if (attachment.reviewState === input.state) {
+    return { ok: true, data: { from: attachment.reviewState, to: input.state, changed: false } };
+  }
+
+  return db.transaction(async (tx) => {
+    const updated = await tx.update(marketplaceAttachments)
+      .set({
+        reviewState: input.state,
+        reviewedAt: input.state === "not_reviewed" ? null : now,
+        reviewedByAdminUserId: input.state === "not_reviewed" ? null : input.actor.id,
+        updatedAt: now,
+      })
+      .where(and(
+        eq(marketplaceAttachments.id, attachment.id),
+        eq(marketplaceAttachments.reviewState, attachment.reviewState),
+      ))
+      .returning({ id: marketplaceAttachments.id });
+    if (!updated.length) {
+      return { ok: false, reason: "conflict" as const, currentStatus: attachment.reviewState };
+    }
+
+    await appendAudit(tx, {
+      aggregate: "sell_submission",
+      aggregateId: input.sellSubmissionId,
+      actorId: input.actor.id,
+      action: "SELL_SUBMISSION_ATTACHMENT_REVIEW_CHANGED",
+      metadata: {
+        attachmentId: attachment.id,
+        from: attachment.reviewState,
+        to: input.state,
+      },
+    });
+
+    return { ok: true as const, data: { from: attachment.reviewState, to: input.state, changed: true } };
   });
 }

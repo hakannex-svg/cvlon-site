@@ -203,10 +203,10 @@ async function submit(db, { payload = {}, sessionToken, storage }) {
 
 /* --------------------------------------------------------------- tests */
 
-test("the archive still applies all nine migrations from empty", async () => {
+test("the archive still applies all ten migrations from empty", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
     assert.equal(applied.length, expectedMigrationCount());
-    assert.ok(applied.length >= 9, `expected at least 9 migrations, applied ${applied.length}`);
+    assert.ok(applied.length >= 10, `expected at least 10 migrations, applied ${applied.length}`);
     // The three marketplace upload tables exist and start empty.
     assert.equal((await db.select().from(schema.marketplaceUploadSessions)).length, 0);
     assert.equal((await db.select().from(schema.marketplacePendingUploads)).length, 0);

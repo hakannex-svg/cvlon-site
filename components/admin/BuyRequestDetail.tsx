@@ -196,6 +196,7 @@ export function BuyRequestDetail({
           basePath="/api/admin/marketplace/buy-requests"
           recordId={request.id}
           currentStatus={request.status}
+          businessReviewState={detail.contact.businessReviewState}
           statusOptions={actions.statusOptions}
           statusLabels={marketplaceStatusLabels}
           assigneeId={detail.assignee?.id ?? null}
@@ -204,6 +205,7 @@ export function BuyRequestDetail({
           canAssign={actions.canAssign}
           canTransition={actions.canTransition}
           canWriteNote={actions.canWriteNote}
+          canReview={actions.canReview}
         />
       <div className="admin-detail-aside">
         <AssignmentPanel

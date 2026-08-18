@@ -1,7 +1,7 @@
 import "../server-boundary.ts";
 
 import { and, asc, desc, eq, ilike, isNull, ne, or, sql } from "drizzle-orm";
-import type { AnyPgColumn } from "drizzle-orm/pg-core";
+import { alias, type AnyPgColumn } from "drizzle-orm/pg-core";
 import type { PriceCheckDb } from "../index.ts";
 import {
   adminUsers,
@@ -18,6 +18,7 @@ import {
   supplierResponses,
 } from "../schema.ts";
 import { priceCheckStatuses, type PriceCheckStatus } from "../domain/status-policy.ts";
+import type { InternalReviewState } from "../domain/internal-review.ts";
 
 /* ========================================================================= */
 /* Unified queue                                                             */
@@ -404,6 +405,9 @@ export type MarketplaceContactSummary = {
   actsAsSeller: boolean;
   verificationState: string;
   verifiedAt: Date | null;
+  businessReviewState: InternalReviewState;
+  businessReviewedAt: Date | null;
+  businessReviewedByEmail: string | null;
   createdAt: Date;
   deletionRequestedAt: Date | null;
   deletedAt: Date | null;
@@ -531,6 +535,9 @@ async function loadAudit(db: PriceCheckDb, aggregateType: MarketplaceAggregateTy
     .limit(MARKETPLACE_AUDIT_LIMIT);
 }
 
+const businessReviewer = alias(adminUsers, "marketplace_business_reviewer");
+const attachmentReviewer = alias(adminUsers, "marketplace_attachment_reviewer");
+
 const contactColumns = {
   id: marketplaceContacts.id,
   firstName: marketplaceContacts.firstName,
@@ -548,6 +555,9 @@ const contactColumns = {
   actsAsSeller: marketplaceContacts.actsAsSeller,
   verificationState: marketplaceContacts.verificationState,
   verifiedAt: marketplaceContacts.verifiedAt,
+  businessReviewState: marketplaceContacts.businessReviewState,
+  businessReviewedAt: marketplaceContacts.businessReviewedAt,
+  businessReviewedByEmail: businessReviewer.displayEmail,
   createdAt: marketplaceContacts.createdAt,
   deletionRequestedAt: marketplaceContacts.deletionRequestedAt,
   deletedAt: marketplaceContacts.deletedAt,
@@ -649,6 +659,7 @@ export async function getBuyRequestAdminDetail(db: PriceCheckDb, id: string): Pr
     assignedAdminUserId: buyRequests.assignedAdminUserId,
   }).from(buyRequests)
     .innerJoin(marketplaceContacts, eq(buyRequests.contactId, marketplaceContacts.id))
+    .leftJoin(businessReviewer, eq(marketplaceContacts.businessReviewedByAdminUserId, businessReviewer.id))
     .where(eq(buyRequests.id, id))
     .limit(1);
   if (!record) return null;
@@ -755,6 +766,9 @@ export type SellAttachmentMetadata = {
   detectedMime: string | null;
   scanState: string;
   quarantineReleasedAt: Date | null;
+  reviewState: InternalReviewState;
+  reviewedAt: Date | null;
+  reviewedByEmail: string | null;
   retentionClass: string;
   deletionDueAt: Date | null;
   deletedAt: Date | null;
@@ -855,6 +869,7 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
     assignedAdminUserId: sellSubmissions.assignedAdminUserId,
   }).from(sellSubmissions)
     .innerJoin(marketplaceContacts, eq(sellSubmissions.contactId, marketplaceContacts.id))
+    .leftJoin(businessReviewer, eq(marketplaceContacts.businessReviewedByAdminUserId, businessReviewer.id))
     .where(eq(sellSubmissions.id, id))
     .limit(1);
   if (!record) return null;
@@ -893,11 +908,15 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
       detectedMime: marketplaceAttachments.detectedMime,
       scanState: marketplaceAttachments.scanState,
       quarantineReleasedAt: marketplaceAttachments.quarantineReleasedAt,
+      reviewState: marketplaceAttachments.reviewState,
+      reviewedAt: marketplaceAttachments.reviewedAt,
+      reviewedByEmail: attachmentReviewer.displayEmail,
       retentionClass: marketplaceAttachments.retentionClass,
       deletionDueAt: marketplaceAttachments.deletionDueAt,
       deletedAt: marketplaceAttachments.deletedAt,
       createdAt: marketplaceAttachments.createdAt,
     }).from(marketplaceAttachments)
+      .leftJoin(attachmentReviewer, eq(marketplaceAttachments.reviewedByAdminUserId, attachmentReviewer.id))
       .where(eq(marketplaceAttachments.sellSubmissionId, id))
       .orderBy(asc(marketplaceAttachments.createdAt), asc(marketplaceAttachments.id)),
   ]);

@@ -2,6 +2,10 @@ import {
   isMarketplaceStatus,
   type MarketplaceAggregate,
 } from "../../../db/price-check/domain/marketplace-status-policy.ts";
+import {
+  isInternalReviewState,
+  type InternalReviewState,
+} from "../../../db/price-check/domain/internal-review.ts";
 
 /**
  * Strict input validation for the marketplace admin mutations.
@@ -101,4 +105,18 @@ export function validateMarketplaceNote(raw: unknown): ValidationResult<NoteInpu
   if (normalized.length > NOTE_MAX_LENGTH) return reject(`Keep the note under ${NOTE_MAX_LENGTH} characters.`);
   if (CONTROL_CHARACTERS.test(normalized)) return reject("Remove control characters from the note.");
   return { ok: true, data: { body: normalized } };
+}
+
+export type InternalReviewInput = { state: InternalReviewState };
+
+/** Internal review payload: exactly one recognised `state`, nothing else. */
+export function validateInternalReview(raw: unknown): ValidationResult<InternalReviewInput> {
+  const body = asObject(raw);
+  if (!body) return reject("A request body is required.");
+  const extra = unknownKeys(body, ["state"]);
+  if (extra.length) return reject("Unexpected fields were rejected.");
+
+  const { state } = body;
+  if (!isInternalReviewState(state)) return reject("Choose a valid review state.");
+  return { ok: true, data: { state } };
 }
