@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
+import { InventoryFreshnessHealth } from "@/components/admin/InventoryFreshnessHealth";
 import { getAdminAccess } from "@/lib/price-check/admin/auth";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import {
@@ -25,6 +26,7 @@ import {
   unifiedQueueUrgencies,
   unifiedQueueVerificationStates,
   type MarketplaceReviewCounts,
+  type SellInventoryFreshnessHealthCounts,
   type UnifiedQueueAge,
   type UnifiedQueueRecord,
   type UnifiedQueueType,
@@ -93,17 +95,23 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
   let admins: { id: string; displayEmail: string; role: string }[];
   let buyReviewCounts: MarketplaceReviewCounts;
   let sellReviewCounts: MarketplaceReviewCounts;
+  let freshnessHealth: SellInventoryFreshnessHealthCounts;
   try {
     const [{ priceCheckDb }, repository] = await Promise.all([
       import("@/db/price-check"),
       import("@/db/price-check/repositories/marketplace-admin-repository"),
     ]);
     const adminRepository = await import("@/db/price-check/repositories/admin-repository");
-    [records, admins, buyReviewCounts, sellReviewCounts] = await Promise.all([
+    [records, admins, buyReviewCounts, sellReviewCounts, freshnessHealth] = await Promise.all([
       repository.listUnifiedAdminQueue(priceCheckDb, filters),
       adminRepository.listActiveAdmins(priceCheckDb),
       repository.countMarketplaceReviewStates(priceCheckDb, { type: "buy_request" }),
       repository.countMarketplaceReviewStates(priceCheckDb, { type: "sell_submission" }),
+      // Deliberately unfiltered, exactly as the concern counters are: the
+      // freshness cadence is a property of the workflow rather than of whatever
+      // the reader happens to be narrowing the table to, and a number that moved
+      // with the filters would be read as a total that it is not.
+      repository.countSellInventoryFreshnessHealth(priceCheckDb),
     ]);
   } catch {
     return <AdminAccessDenied unavailable />;
@@ -134,6 +142,8 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
           <Link href="/admin/sell-submissions?review=concern"><span>Sell submissions</span><strong>{sellReviewCounts.concern}</strong></Link>
         </nav>
       </aside>
+
+      <InventoryFreshnessHealth counts={freshnessHealth} />
 
       <form className="admin-filters" method="get" aria-label="Filter unified operations queue">
         <label className="admin-search"><span>Search authorized fields</span><input name="search" defaultValue={filters.search} placeholder="Reference, part, company, contact" /></label>
