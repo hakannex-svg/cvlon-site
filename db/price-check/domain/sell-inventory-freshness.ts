@@ -42,14 +42,13 @@ export const SELL_INVENTORY_FRESHNESS_TTL_MS =
   SELL_INVENTORY_FRESHNESS_TTL_DAYS * 24 * 60 * 60 * 1000;
 
 /**
- * How long a seller's answer is treated as current before staff would ordinarily
- * ask again. Forty-five days.
+ * How long a seller's answer is treated as current before Civilon asks again.
+ * Forty-five days.
  *
- * Stage 1 does not schedule anything: no producer, no cron, no autonomous
- * function. The constant exists so the admin surface can say honestly whether a
- * record is due, and so Stage 2 — which is the scheduled producer, and which
- * depends on this migration and this manual path being deployed and proven —
- * anchors on exactly the same number rather than inventing a second one.
+ * Stage 2's autonomous producer anchors on exactly this number rather than
+ * inventing a second one: the figure the admin surface shows as "next check
+ * due" is the figure the producer measures against, so staff never read one
+ * cadence while the schedule runs another.
  */
 export const SELL_INVENTORY_FRESHNESS_CADENCE_DAYS = 45;
 export const SELL_INVENTORY_FRESHNESS_CADENCE_MS =
@@ -99,10 +98,10 @@ export const sellInventoryFreshnessResponseLabels:
  *
  * A seller who has told Civilon that some or all of the inventory has moved has
  * already answered the question the cadence exists to ask. Asking again on a
- * timer would be Civilon repeating a question it has been answered, so Stage 2's
- * producer must treat these as terminal until a staff reissue creates a new
- * check. Stage 1 has no producer; it displays them distinctly and exports this
- * so the rule has one definition rather than two.
+ * timer would be Civilon repeating a question it has been answered, so the
+ * autonomous producer treats these as terminal until a staff reissue creates a
+ * newer check. The admin surface displays them distinctly from the same list, so
+ * the rule has one definition rather than two.
  */
 export const sellInventoryFreshnessStopResponses = [
   "some_changed",
@@ -262,4 +261,246 @@ export function sellInventoryFreshnessDueAt(
 ) {
   const anchor = latest.respondedAt ?? latest.issuedAt;
   return new Date(anchor.valueOf() + SELL_INVENTORY_FRESHNESS_CADENCE_MS);
+}
+
+/* ------------------------------------------------------------------ cadence */
+
+/**
+ * The autonomous cadence: the rule that decides, without a staff member, whether
+ * Civilon may ask one seller the freshness question again today.
+ *
+ * It is written here — as a pure function over stored rows — rather than only as
+ * a database predicate, because the producer must decide twice: once when it
+ * selects a batch (a SQL predicate, so a scan does not load every record), and
+ * once inside the transaction that writes (this function, against the rows as
+ * they are at that instant). Two spellings of one rule would eventually
+ * disagree; a predicate and its authority cannot.
+ *
+ * Nothing decided here changes a Sell Submission's status, its business review,
+ * its evidence review, or any certification, authenticity, airworthiness or
+ * regulatory position, and nothing here obliges Civilon to buy.
+ */
+
+/** How many submissions one scheduled run may ask about. */
+export const SELL_INVENTORY_FRESHNESS_CADENCE_BATCH_MAX = 25;
+
+/**
+ * How many automatic asks may lapse unanswered before the cadence stops for a
+ * record.
+ *
+ * Two, not one: a single unanswered link is as likely to be a holiday as a
+ * disinterested seller. Two consecutive automatic asks that both expired with no
+ * answer is Civilon talking to itself, and it stops until a staff member decides
+ * the record is worth asking about again.
+ */
+export const SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC = 2;
+
+/**
+ * A check, as the cadence rule reads it.
+ *
+ * `requestedByAdminUserId` is the whole of the manual/automatic distinction: a
+ * staff member's id marks a check somebody asked for, and null marks one the
+ * schedule produced. No second column, and no flag that could drift from it.
+ */
+export type SellInventoryFreshnessCadenceCheck = {
+  id: string;
+  requestedByAdminUserId: string | null;
+  issuedAt: Date;
+  expiresAt: Date;
+  respondedAt: Date | null;
+  revokedAt: Date | null;
+  response: string | null;
+};
+
+/** Why the cadence did or did not ask. Fixed categories: never an identifier. */
+export const sellInventoryFreshnessCadenceReasons = [
+  /** No check was ever issued for this record. */
+  "never_checked",
+  /** The 45 days since the last ask, or the last answer, have elapsed. */
+  "cadence_elapsed",
+  /** A credential the seller could still use is out. Nothing on a timer touches it. */
+  "live_check",
+  /** The seller's latest answer says the inventory moved. */
+  "stop_response",
+  /** Two automatic asks in a row lapsed unanswered. */
+  "lapsed_backoff",
+  /** Inside the 45-day cadence. */
+  "not_due",
+] as const;
+
+export type SellInventoryFreshnessCadenceReason =
+  (typeof sellInventoryFreshnessCadenceReasons)[number];
+
+export type SellInventoryFreshnessCadenceDecision =
+  | { due: true; reason: "never_checked" | "cadence_elapsed" }
+  | { due: false; reason: "live_check" | "stop_response" | "lapsed_backoff" | "not_due" };
+
+/** Newest first, by the same ordering the staff projection uses. */
+export function sellInventoryFreshnessChecksNewestFirst(
+  checks: readonly SellInventoryFreshnessCadenceCheck[],
+) {
+  return [...checks].sort((left, right) =>
+    right.issuedAt.valueOf() - left.issuedAt.valueOf()
+    || (left.id < right.id ? 1 : left.id > right.id ? -1 : 0));
+}
+
+/** Whether one stored check was produced by the schedule rather than by staff. */
+export function isSellInventoryFreshnessAutomaticCheck(
+  check: { requestedByAdminUserId: string | null },
+) {
+  return check.requestedByAdminUserId === null;
+}
+
+/**
+ * How many automatic asks have lapsed unanswered in an unbroken run ending at
+ * the newest check.
+ *
+ * The run is *trailing*: it is counted from the newest check backwards and stops
+ * at the first check that is not an automatic ask which expired unanswered. A
+ * staff-issued check therefore resets it by existing, which is the only reset
+ * there is — a status edit is not one, because nobody asked the seller anything
+ * by editing a status.
+ *
+ * `revoked_at` is deliberately not consulted. The producer retires an expired
+ * ask of its own to free the record's one index slot before writing the next
+ * one, and a strike that the producer could erase by taking its own row out of
+ * the way would not be a strike at all: two unanswered automatic asks are two
+ * unanswered automatic asks whether or not the first has since been retired.
+ * What ends the run is a *different kind* of check — one somebody answered, or
+ * one a staff member issued.
+ */
+export function sellInventoryFreshnessLapsedAutomaticRun(
+  checks: readonly SellInventoryFreshnessCadenceCheck[],
+  now: Date,
+) {
+  let run = 0;
+  for (const check of sellInventoryFreshnessChecksNewestFirst(checks)) {
+    const lapsed = isSellInventoryFreshnessAutomaticCheck(check)
+      && !check.respondedAt
+      && check.expiresAt.valueOf() <= now.valueOf();
+    if (!lapsed) break;
+    run += 1;
+  }
+  return run;
+}
+
+/**
+ * Whether a check is one the database still counts as standing.
+ *
+ * Unanswered and unrevoked, whatever its expiry — which is exactly the predicate
+ * of the partial unique index that allows one such row per submission. Standing
+ * is not the same as usable: a lapsed link is dead to the seller but still holds
+ * the record's slot, which is why retiring one is a precondition of asking
+ * again rather than an act against anybody.
+ */
+export function isSellInventoryFreshnessStandingCheck(
+  check: { respondedAt: Date | null; revokedAt: Date | null },
+) {
+  return !check.respondedAt && !check.revokedAt;
+}
+
+/**
+ * Whether a credential is one a seller could still use right now.
+ *
+ * Standing *and* unexpired. This is the check the producer must never touch:
+ * somebody may have the e-mail open. Expressed through the existing request
+ * state so "live" has one definition across the staff surface and the schedule.
+ */
+export function isSellInventoryFreshnessLiveCheck(
+  check: { respondedAt: Date | null; revokedAt: Date | null; expiresAt: Date },
+  now: Date,
+) {
+  return sellInventoryFreshnessRequestState(check, now) === "awaiting_seller";
+}
+
+/**
+ * Whether a check is a dead credential holding a live slot.
+ *
+ * Standing, so the partial unique index counts it; expired, so no seller can
+ * answer it and no link in anybody's inbox still works. Retiring one of these —
+ * stamping `revoked_at` in the same transaction that writes the next ask — is
+ * the only write the automatic path ever makes to an existing row, and it is
+ * bookkeeping on something already dead rather than the withdrawal of anything.
+ */
+export function isSellInventoryFreshnessRetirableCheck(
+  check: { respondedAt: Date | null; revokedAt: Date | null; expiresAt: Date },
+  now: Date,
+) {
+  return isSellInventoryFreshnessStandingCheck(check)
+    && !isSellInventoryFreshnessLiveCheck(check, now);
+}
+
+/**
+ * Whether the schedule may ask this record today, and why.
+ *
+ * Four independent reasons to say no, so the answer does not depend on the order
+ * they are tested in — the order below only decides which one is *reported*:
+ *
+ *  1. Two lapsed automatic asks in a row: the cadence has stopped talking to
+ *     itself, and it stays stopped until a staff member asks by hand.
+ *  2. A live check — standing and unexpired. A seller may be holding that
+ *     e-mail, and nothing on a timer may take it away from them.
+ *  3. A stop answer on the newest check is sticky. Only a newer check clears it,
+ *     and since the producer cannot write one while the stop answer is newest,
+ *     that newer check is always a staff member's.
+ *  4. The 45 days have not elapsed. No history at all is due immediately;
+ *     otherwise the newest check's `COALESCE(responded_at, issued_at) + 45 days`
+ *     decides, with the boundary itself counting as due.
+ *
+ * An expired standing check is deliberately *not* a reason to say no. By the
+ * time 45 days have passed a 14-day credential is three weeks dead, and the
+ * producer retires it inside the writing transaction to free the record's index
+ * slot.
+ */
+export function sellInventoryFreshnessCadenceDecision(
+  checks: readonly SellInventoryFreshnessCadenceCheck[],
+  now: Date,
+): SellInventoryFreshnessCadenceDecision {
+  const [latest] = sellInventoryFreshnessChecksNewestFirst(checks);
+  if (!latest) return { due: true, reason: "never_checked" };
+  if (
+    sellInventoryFreshnessLapsedAutomaticRun(checks, now)
+      >= SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC
+  ) {
+    return { due: false, reason: "lapsed_backoff" };
+  }
+  if (checks.some((check) => isSellInventoryFreshnessLiveCheck(check, now))) {
+    return { due: false, reason: "live_check" };
+  }
+  if (latest.respondedAt && isSellInventoryFreshnessStopResponse(latest.response)) {
+    return { due: false, reason: "stop_response" };
+  }
+  return now.valueOf() >= sellInventoryFreshnessDueAt(latest).valueOf()
+    ? { due: true, reason: "cadence_elapsed" }
+    : { due: false, reason: "not_due" };
+}
+
+/**
+ * Every way one submission can leave a scheduled run, as a closed vocabulary.
+ *
+ * A run summary is counts against these codes and nothing else: no submission
+ * id, no reference, no contact, no part, no file, no price, no location, no
+ * credential and no URL ever reaches a log line or an HTTP response.
+ */
+export const sellInventoryFreshnessCadenceOutcomes = [
+  /** A check, its audit event and its e-mail were recorded together. */
+  "issued",
+  "live_check",
+  "stop_response",
+  "lapsed_backoff",
+  "not_due",
+  /** Another writer held the record. It is left for the next run. */
+  "locked",
+  /** Kind, status or contact stopped qualifying between selection and writing. */
+  "ineligible",
+] as const;
+
+export type SellInventoryFreshnessCadenceOutcome =
+  (typeof sellInventoryFreshnessCadenceOutcomes)[number];
+
+export function isSellInventoryFreshnessCadenceOutcome(
+  value: unknown,
+): value is SellInventoryFreshnessCadenceOutcome {
+  return typeof value === "string"
+    && (sellInventoryFreshnessCadenceOutcomes as readonly string[]).includes(value);
 }
