@@ -18,7 +18,11 @@ import {
   supplierResponses,
 } from "../schema.ts";
 import { priceCheckStatuses, type PriceCheckStatus } from "../domain/status-policy.ts";
-import type { InternalReviewState } from "../domain/internal-review.ts";
+import {
+  internalReviewStates,
+  isInternalReviewState,
+  type InternalReviewState,
+} from "../domain/internal-review.ts";
 
 /* ========================================================================= */
 /* Unified queue                                                             */
@@ -98,6 +102,8 @@ export type UnifiedQueueFilters = {
   assignee?: string;
   urgency?: UnifiedQueueUrgency;
   verification?: UnifiedQueueVerificationState;
+  /** Internal Civilon business review of the marketplace contact. */
+  review?: InternalReviewState;
   age?: UnifiedQueueAge;
   search?: string;
   /**
@@ -117,6 +123,8 @@ export type UnifiedQueueRecord = {
   status: string;
   /** `null` for Price Check, which has no email-verification concept. */
   verificationState: UnifiedQueueVerificationState | null;
+  /** `null` for Price Check, which has no marketplace-contact review. */
+  businessReviewState: InternalReviewState | null;
   companyName: string;
   contactName: string;
   partNumber: string | null;
@@ -125,6 +133,17 @@ export type UnifiedQueueRecord = {
   assigneeId: string | null;
   assigneeEmail: string | null;
 };
+
+export type MarketplaceReviewCounts = {
+  all: number;
+  not_reviewed: number;
+  reviewed: number;
+  concern: number;
+};
+
+function emptyMarketplaceReviewCounts(): MarketplaceReviewCounts {
+  return { all: 0, not_reviewed: 0, reviewed: 0, concern: 0 };
+}
 
 function normalizeSearch(value: string | undefined) {
   const trimmed = value?.trim();
@@ -162,10 +181,65 @@ function compareQueueRecords(a: UnifiedQueueRecord, b: UnifiedQueueRecord) {
   return a.id < b.id ? 1 : a.id > b.id ? -1 : 0;
 }
 
+function buyRequestClauses(filters: UnifiedQueueFilters) {
+  type BuyRequestStatus = (typeof buyRequestStatuses)[number];
+  if (filters.status && !buyRequestStatuses.includes(filters.status as BuyRequestStatus)) return null;
+
+  const clauses = [];
+  if (filters.status) clauses.push(eq(buyRequests.status, filters.status as BuyRequestStatus));
+  if (filters.urgency === "aog") clauses.push(eq(buyRequests.urgency, "aog"));
+  if (filters.urgency === "critical") clauses.push(sql`${buyRequests.urgency} in ('aog', 'critical')`);
+  if (filters.verification === "verified") clauses.push(eq(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
+  if (filters.verification === "pending") clauses.push(ne(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
+  if (filters.review) clauses.push(eq(marketplaceContacts.businessReviewState, filters.review));
+  const assignee = assigneeClause(buyRequests.assignedAdminUserId, filters.assignee);
+  if (assignee) clauses.push(assignee);
+  const age = ageClause(buyRequests.submittedAt, filters.age);
+  if (age) clauses.push(age);
+  const search = normalizeSearch(filters.search);
+  if (search) {
+    clauses.push(or(
+      ilike(buyRequests.publicReference, search.needle),
+      ilike(buyRequests.normalizedPartNumber, search.partNeedle),
+      ilike(buyRequests.description, search.needle),
+      ilike(marketplaceContacts.companyName, search.needle),
+      ilike(sql`${marketplaceContacts.firstName} || ' ' || ${marketplaceContacts.lastName}`, search.needle),
+    )!);
+  }
+  return clauses;
+}
+
+function sellSubmissionClauses(filters: UnifiedQueueFilters) {
+  type SellSubmissionStatus = (typeof sellSubmissionStatuses)[number];
+  if (filters.urgency) return null;
+  if (filters.status && !sellSubmissionStatuses.includes(filters.status as SellSubmissionStatus)) return null;
+
+  const clauses = [];
+  if (filters.status) clauses.push(eq(sellSubmissions.status, filters.status as SellSubmissionStatus));
+  if (filters.verification === "verified") clauses.push(eq(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
+  if (filters.verification === "pending") clauses.push(ne(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
+  if (filters.review) clauses.push(eq(marketplaceContacts.businessReviewState, filters.review));
+  const assignee = assigneeClause(sellSubmissions.assignedAdminUserId, filters.assignee);
+  if (assignee) clauses.push(assignee);
+  const age = ageClause(sellSubmissions.submittedAt, filters.age);
+  if (age) clauses.push(age);
+  const search = normalizeSearch(filters.search);
+  if (search) {
+    clauses.push(or(
+      ilike(sellSubmissions.publicReference, search.needle),
+      ilike(sellSubmissions.normalizedPartNumber, search.partNeedle),
+      ilike(sellSubmissions.description, search.needle),
+      ilike(marketplaceContacts.companyName, search.needle),
+      ilike(sql`${marketplaceContacts.firstName} || ' ' || ${marketplaceContacts.lastName}`, search.needle),
+    )!);
+  }
+  return clauses;
+}
+
 async function listPriceCheckRows(db: PriceCheckDb, filters: UnifiedQueueFilters): Promise<UnifiedQueueRecord[]> {
   // Price Check carries no email-verification state, so a verification filter
   // excludes the workflow rather than inventing a value for it.
-  if (filters.verification) return [];
+  if (filters.verification || filters.review) return [];
   if (filters.status && !priceCheckStatuses.includes(filters.status as PriceCheckStatus)) return [];
 
   const clauses = [];
@@ -212,6 +286,7 @@ async function listPriceCheckRows(db: PriceCheckDb, filters: UnifiedQueueFilters
     publicReference: row.publicReference,
     status: row.status,
     verificationState: null,
+    businessReviewState: null,
     companyName: row.companyName,
     contactName: `${row.firstName} ${row.lastName}`.trim(),
     partNumber: row.partNumber,
@@ -223,29 +298,8 @@ async function listPriceCheckRows(db: PriceCheckDb, filters: UnifiedQueueFilters
 }
 
 async function listBuyRequestRows(db: PriceCheckDb, filters: UnifiedQueueFilters): Promise<UnifiedQueueRecord[]> {
-  type BuyRequestStatus = (typeof buyRequestStatuses)[number];
-  if (filters.status && !buyRequestStatuses.includes(filters.status as BuyRequestStatus)) return [];
-
-  const clauses = [];
-  if (filters.status) clauses.push(eq(buyRequests.status, filters.status as BuyRequestStatus));
-  if (filters.urgency === "aog") clauses.push(eq(buyRequests.urgency, "aog"));
-  if (filters.urgency === "critical") clauses.push(sql`${buyRequests.urgency} in ('aog', 'critical')`);
-  if (filters.verification === "verified") clauses.push(eq(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
-  if (filters.verification === "pending") clauses.push(ne(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
-  const assignee = assigneeClause(buyRequests.assignedAdminUserId, filters.assignee);
-  if (assignee) clauses.push(assignee);
-  const age = ageClause(buyRequests.submittedAt, filters.age);
-  if (age) clauses.push(age);
-  const search = normalizeSearch(filters.search);
-  if (search) {
-    clauses.push(or(
-      ilike(buyRequests.publicReference, search.needle),
-      ilike(buyRequests.normalizedPartNumber, search.partNeedle),
-      ilike(buyRequests.description, search.needle),
-      ilike(marketplaceContacts.companyName, search.needle),
-      ilike(sql`${marketplaceContacts.firstName} || ' ' || ${marketplaceContacts.lastName}`, search.needle),
-    )!);
-  }
+  const clauses = buyRequestClauses(filters);
+  if (!clauses) return [];
 
   const urgencyRank = sql<number>`case when ${buyRequests.urgency} = 'aog' then 2 when ${buyRequests.urgency} = 'critical' then 1 else 0 end`;
   const rows = await db.select({
@@ -254,6 +308,7 @@ async function listBuyRequestRows(db: PriceCheckDb, filters: UnifiedQueueFilters
     status: buyRequests.status,
     urgency: buyRequests.urgency,
     contactVerificationState: marketplaceContacts.verificationState,
+    businessReviewState: marketplaceContacts.businessReviewState,
     companyName: marketplaceContacts.companyName,
     firstName: marketplaceContacts.firstName,
     lastName: marketplaceContacts.lastName,
@@ -274,6 +329,7 @@ async function listBuyRequestRows(db: PriceCheckDb, filters: UnifiedQueueFilters
     publicReference: row.publicReference,
     status: row.status,
     verificationState: contactVerificationState(row.contactVerificationState),
+    businessReviewState: row.businessReviewState,
     companyName: row.companyName,
     contactName: `${row.firstName} ${row.lastName}`.trim(),
     partNumber: row.partNumber,
@@ -285,35 +341,15 @@ async function listBuyRequestRows(db: PriceCheckDb, filters: UnifiedQueueFilters
 }
 
 async function listSellSubmissionRows(db: PriceCheckDb, filters: UnifiedQueueFilters): Promise<UnifiedQueueRecord[]> {
-  type SellSubmissionStatus = (typeof sellSubmissionStatuses)[number];
-  // Sell Submissions carry no urgency tier, so an urgency filter excludes them.
-  if (filters.urgency) return [];
-  if (filters.status && !sellSubmissionStatuses.includes(filters.status as SellSubmissionStatus)) return [];
-
-  const clauses = [];
-  if (filters.status) clauses.push(eq(sellSubmissions.status, filters.status as SellSubmissionStatus));
-  if (filters.verification === "verified") clauses.push(eq(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
-  if (filters.verification === "pending") clauses.push(ne(marketplaceContacts.verificationState, VERIFIED_CONTACT_STATE));
-  const assignee = assigneeClause(sellSubmissions.assignedAdminUserId, filters.assignee);
-  if (assignee) clauses.push(assignee);
-  const age = ageClause(sellSubmissions.submittedAt, filters.age);
-  if (age) clauses.push(age);
-  const search = normalizeSearch(filters.search);
-  if (search) {
-    clauses.push(or(
-      ilike(sellSubmissions.publicReference, search.needle),
-      ilike(sellSubmissions.normalizedPartNumber, search.partNeedle),
-      ilike(sellSubmissions.description, search.needle),
-      ilike(marketplaceContacts.companyName, search.needle),
-      ilike(sql`${marketplaceContacts.firstName} || ' ' || ${marketplaceContacts.lastName}`, search.needle),
-    )!);
-  }
+  const clauses = sellSubmissionClauses(filters);
+  if (!clauses) return [];
 
   const rows = await db.select({
     id: sellSubmissions.id,
     publicReference: sellSubmissions.publicReference,
     status: sellSubmissions.status,
     contactVerificationState: marketplaceContacts.verificationState,
+    businessReviewState: marketplaceContacts.businessReviewState,
     companyName: marketplaceContacts.companyName,
     firstName: marketplaceContacts.firstName,
     lastName: marketplaceContacts.lastName,
@@ -334,6 +370,7 @@ async function listSellSubmissionRows(db: PriceCheckDb, filters: UnifiedQueueFil
     publicReference: row.publicReference,
     status: row.status,
     verificationState: contactVerificationState(row.contactVerificationState),
+    businessReviewState: row.businessReviewState,
     companyName: row.companyName,
     contactName: `${row.firstName} ${row.lastName}`.trim(),
     partNumber: row.partNumber,
@@ -359,6 +396,7 @@ export async function listUnifiedAdminQueue(
   // Fail closed. A malformed assignee filter returns nothing; it must never be
   // dropped, because dropping it silently widens the view to every assignee.
   if (filters.assignee && !isAssigneeFilter(filters.assignee)) return [];
+  if (filters.review && !isInternalReviewState(filters.review)) return [];
 
   const wanted = (type: UnifiedQueueType) => !filters.type || filters.type === type;
   const branches: Promise<UnifiedQueueRecord[]>[] = [];
@@ -368,6 +406,59 @@ export async function listUnifiedAdminQueue(
 
   const results = await Promise.all(branches);
   return results.flat().sort(compareQueueRecords).slice(0, UNIFIED_QUEUE_LIMIT);
+}
+
+type MarketplaceReviewCountRow = { state: InternalReviewState; count: number };
+
+async function countBuyRequestReviewStates(
+  db: PriceCheckDb,
+  filters: UnifiedQueueFilters,
+): Promise<MarketplaceReviewCountRow[]> {
+  const clauses = buyRequestClauses({ ...filters, review: undefined });
+  if (!clauses) return [];
+  return db.select({
+    state: marketplaceContacts.businessReviewState,
+    count: sql<number>`count(*)::int`,
+  }).from(buyRequests)
+    .innerJoin(marketplaceContacts, eq(buyRequests.contactId, marketplaceContacts.id))
+    .where(clauses.length ? and(...clauses) : undefined)
+    .groupBy(marketplaceContacts.businessReviewState);
+}
+
+async function countSellSubmissionReviewStates(
+  db: PriceCheckDb,
+  filters: UnifiedQueueFilters,
+): Promise<MarketplaceReviewCountRow[]> {
+  const clauses = sellSubmissionClauses({ ...filters, review: undefined });
+  if (!clauses) return [];
+  return db.select({
+    state: marketplaceContacts.businessReviewState,
+    count: sql<number>`count(*)::int`,
+  }).from(sellSubmissions)
+    .innerJoin(marketplaceContacts, eq(sellSubmissions.contactId, marketplaceContacts.id))
+    .where(clauses.length ? and(...clauses) : undefined)
+    .groupBy(marketplaceContacts.businessReviewState);
+}
+
+/** Exact counters for the active non-review filters; not limited to 200 rows. */
+export async function countMarketplaceReviewStates(
+  db: PriceCheckDb,
+  filters: UnifiedQueueFilters = {},
+): Promise<MarketplaceReviewCounts> {
+  const counts = emptyMarketplaceReviewCounts();
+  if (filters.assignee && !isAssigneeFilter(filters.assignee)) return counts;
+  if (filters.review && !isInternalReviewState(filters.review)) return counts;
+
+  const wanted = (type: UnifiedQueueType) => !filters.type || filters.type === type;
+  const branches: Promise<MarketplaceReviewCountRow[]>[] = [];
+  if (wanted("buy_request")) branches.push(countBuyRequestReviewStates(db, filters));
+  if (wanted("sell_submission")) branches.push(countSellSubmissionReviewStates(db, filters));
+
+  for (const rows of await Promise.all(branches)) {
+    for (const row of rows) counts[row.state] += Number(row.count);
+  }
+  counts.all = internalReviewStates.reduce((total, state) => total + counts[state], 0);
+  return counts;
 }
 
 /* ========================================================================= */

@@ -566,3 +566,14 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-offer-actions .admin-inline-form{margin:0}
 .admin-offer-actions .admin-inline-form>div{display:grid;gap:4px}
 .admin-offer-actions .admin-inline-form>div small{color:#52687a;line-height:1.45}
+
+/* Marketplace contact review counters and filters */
+.admin-review-filters{display:grid;grid-template-columns:repeat(4,minmax(120px,1fr));gap:10px;margin:0 0 16px}
+.admin-review-filter{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:54px;padding:11px 14px;border:1px solid #b9cad6;border-left:4px solid #7d93a3;border-radius:3px;background:#fff;color:#29485f!important;text-decoration:none;box-shadow:0 5px 16px rgba(18,46,70,.05)}
+.admin-review-filter span{font-size:11px;font-weight:800}
+.admin-review-filter strong{font-size:20px;line-height:1}
+.admin-review-filter:hover{background:#f3f8fb}
+.admin-review-filter.state-reviewed{border-left-color:#39805d}
+.admin-review-filter.state-concern{border-left-color:#ad503c}
+.admin-review-filter[aria-current="page"]{border-color:#1765c1;border-left-color:#1765c1;background:#eaf4fb;box-shadow:inset 0 -3px #1765c1}
+@media(max-width:700px){.admin-review-filters{grid-template-columns:1fr 1fr}}

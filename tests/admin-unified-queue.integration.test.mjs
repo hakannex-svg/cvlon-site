@@ -213,9 +213,12 @@ test("all three workflows appear unfiltered, including unverified marketplace re
     assert.equal(byType.sell_submission.status, "pending_verification");
     assert.equal(byType.buy_request.verificationState, "pending");
     assert.equal(byType.sell_submission.verificationState, "pending");
+    assert.equal(byType.buy_request.businessReviewState, "not_reviewed");
+    assert.equal(byType.sell_submission.businessReviewState, "not_reviewed");
 
     // Price Check has no email-verification concept; the page renders this as an em dash.
     assert.equal(byType.price_check.verificationState, null);
+    assert.equal(byType.price_check.businessReviewState, null);
 
     // Company / contact summary is joined per record, never deduplicated by email.
     assert.equal(byType.price_check.companyName, "Northline MRO");
@@ -229,7 +232,7 @@ test("all three workflows appear unfiltered, including unverified marketplace re
       assert.ok(record.submittedAt instanceof Date);
       // Nothing sensitive escapes the projection.
       assert.deepEqual(Object.keys(record).sort(), [
-        "assigneeEmail", "assigneeId", "companyName", "contactName", "id",
+        "assigneeEmail", "assigneeId", "businessReviewState", "companyName", "contactName", "id",
         "partNumber", "publicReference", "status", "submittedAt", "type",
         "urgency", "verificationState",
       ]);
@@ -323,6 +326,77 @@ test("verification filter is opt-in and excludes Price Check", async () => {
     // Unfiltered, both are still present alongside the Price Check.
     const all = await repository.listUnifiedAdminQueue(db, { includePriceChecks: true });
     assert.equal(all.length, 3);
+  });
+});
+
+test("internal review filter excludes Price Check and counters retain the other filters", async () => {
+  await withDatabase(async ({ db, schema, repository }) => {
+    const requester = await insertRequester(db, schema);
+    await insertPriceCheck(db, schema, requester.id);
+
+    const notReviewed = await insertContact(db, schema, {
+      companyName: "Review Filter Aviation",
+      normalizedEmail: "not-reviewed@example.com",
+      businessEmail: "not-reviewed@example.com",
+    });
+    const reviewed = await insertContact(db, schema, {
+      companyName: "Review Filter Aviation",
+      normalizedEmail: "reviewed@example.com",
+      businessEmail: "reviewed@example.com",
+      businessReviewState: "reviewed",
+    });
+    const concern = await insertContact(db, schema, {
+      companyName: "Review Filter Aviation",
+      normalizedEmail: "concern@example.com",
+      businessEmail: "concern@example.com",
+      businessReviewState: "concern",
+    });
+
+    const pendingBuy = await insertBuyRequest(db, schema, notReviewed.id, { status: "sourcing" });
+    const reviewedBuy = await insertBuyRequest(db, schema, reviewed.id, { status: "sourcing" });
+    await insertBuyRequest(db, schema, concern.id, { status: "quoted" });
+    const reviewedSell = await insertSellSubmission(db, schema, reviewed.id, { status: "under_review" });
+    const concernSell = await insertSellSubmission(db, schema, concern.id, { status: "under_review" });
+
+    const reviewedRecords = await repository.listUnifiedAdminQueue(db, {
+      includePriceChecks: true,
+      review: "reviewed",
+    });
+    assert.deepEqual(
+      reviewedRecords.map(keyOf).sort(),
+      [`buy_request:${reviewedBuy.publicReference}`, `sell_submission:${reviewedSell.publicReference}`].sort(),
+    );
+    assert.ok(reviewedRecords.every((record) => record.businessReviewState === "reviewed"));
+
+    const buyCounts = await repository.countMarketplaceReviewStates(db, {
+      type: "buy_request",
+      status: "sourcing",
+      search: "Review Filter",
+      review: "reviewed",
+    });
+    assert.deepEqual(buyCounts, { all: 2, not_reviewed: 1, reviewed: 1, concern: 0 });
+
+    const sellCounts = await repository.countMarketplaceReviewStates(db, {
+      type: "sell_submission",
+      status: "under_review",
+      review: "concern",
+    });
+    assert.deepEqual(sellCounts, { all: 2, not_reviewed: 0, reviewed: 1, concern: 1 });
+
+    const notReviewedRecords = await repository.listUnifiedAdminQueue(db, {
+      type: "buy_request",
+      status: "sourcing",
+      review: "not_reviewed",
+    });
+    assert.deepEqual(notReviewedRecords.map(keyOf), [`buy_request:${pendingBuy.publicReference}`]);
+
+    const malformed = await repository.listUnifiedAdminQueue(db, { review: "not-a-review-state" });
+    assert.deepEqual(malformed, []);
+    assert.deepEqual(
+      await repository.countMarketplaceReviewStates(db, { review: "not-a-review-state" }),
+      { all: 0, not_reviewed: 0, reviewed: 0, concern: 0 },
+    );
+    assert.equal(concernSell.status, "under_review");
   });
 });
 
@@ -519,6 +593,10 @@ test("the queue caps at 200 records and keeps the highest-ranked page", async ()
     // A single-workflow view is capped the same way.
     const buyOnly = await repository.listUnifiedAdminQueue(db, { includePriceChecks: true, type: "buy_request" });
     assert.equal(buyOnly.length, 200);
+    assert.deepEqual(
+      await repository.countMarketplaceReviewStates(db, { type: "buy_request" }),
+      { all: 205, not_reviewed: 205, reviewed: 0, concern: 0 },
+    );
   });
 });
 

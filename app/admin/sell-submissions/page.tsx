@@ -2,11 +2,13 @@ import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
 import { MarketplaceListView } from "@/components/admin/MarketplaceListView";
 import { requireMarketplacePageAccess } from "@/lib/price-check/admin/marketplace-access";
+import { internalReviewStates, type InternalReviewState } from "@/db/price-check/domain/internal-review";
 import {
   sellSubmissionStatuses,
   unifiedQueueAges,
   unifiedQueueVerificationStates,
   type UnifiedQueueAge,
+  type MarketplaceReviewCounts,
   type UnifiedQueueRecord,
   type UnifiedQueueVerificationState,
 } from "@/db/price-check/repositories/marketplace-admin-repository";
@@ -33,21 +35,24 @@ export default async function SellSubmissionListPage({ searchParams }: { searchP
     // Passed through as supplied; the repository fails closed on a malformed value.
     assignee: rawAssignee || undefined,
     verification: pick<UnifiedQueueVerificationState>("verification", unifiedQueueVerificationStates),
+    review: pick<InternalReviewState>("review", internalReviewStates),
     age: pick<UnifiedQueueAge>("age", unifiedQueueAges),
     search: search || undefined,
   };
 
   let records: UnifiedQueueRecord[];
   let admins: { id: string; displayEmail: string }[];
+  let reviewCounts: MarketplaceReviewCounts;
   try {
     const [{ priceCheckDb }, repository, adminRepository] = await Promise.all([
       import("@/db/price-check"),
       import("@/db/price-check/repositories/marketplace-admin-repository"),
       import("@/db/price-check/repositories/admin-repository"),
     ]);
-    [records, admins] = await Promise.all([
+    [records, admins, reviewCounts] = await Promise.all([
       repository.listUnifiedAdminQueue(priceCheckDb, filters),
       adminRepository.listActiveAdmins(priceCheckDb),
+      repository.countMarketplaceReviewStates(priceCheckDb, filters),
     ]);
   } catch {
     return <AdminAccessDenied unavailable />;
@@ -61,6 +66,7 @@ export default async function SellSubmissionListPage({ searchParams }: { searchP
       lede="Offers to sell parts to Civilon. Unverified submissions are shown by default; the record here is the system of record, not the notification email."
       statuses={sellSubmissionStatuses}
       records={records}
+      reviewCounts={reviewCounts}
       admins={admins}
       filters={filters}
       rawAssignee={rawAssignee}
