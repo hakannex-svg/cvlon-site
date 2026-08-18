@@ -1,10 +1,11 @@
 # Civilon marketplace migration plan (Buy / Sell intake schema)
 
-Status: **production migration applied and verified; public feature flags remain off.**
+Status: **production migration and staged Buy/Sell launch completed and verified.**
 
 The production migration was explicitly authorized and applied on 2026-08-18 to
-the target recorded in section 5. Public route activation remains a separate
-release step and must follow the post-migration deploy and production smoke tests.
+the target recorded in section 5. Buy and Sell were then activated separately,
+with production smoke, email, verification and signed-in admin evidence captured
+before both public flags were left on.
 
 This plan operates under the temporary manual-migration mode described in
 `docs/NETLIFY-MANUAL-MIGRATIONS.md`: migration history lives in
@@ -178,6 +179,7 @@ Preview credentials and data were not reused in production.
 | Post-apply inventory | 33 public tables total; 11 marketplace tables; 19 marketplace enum types |
 | Regression guard | Existing-table column signature unchanged |
 | Public flags during apply | `NEXT_PUBLIC_MARKETPLACE_ENABLED=false`; `NEXT_PUBLIC_SELL_SUBMISSIONS_ENABLED=false` |
+| Public flags after staged launch | `NEXT_PUBLIC_MARKETPLACE_ENABLED=true`; `NEXT_PUBLIC_SELL_SUBMISSIONS_ENABLED=true` |
 
 The guarded runner in `scripts/apply-marketplace-production-migration.mjs`
 bound the operation to the exact host, port, database, and owner role above;
@@ -194,15 +196,22 @@ API sends returned HTTP 200 / Postmark `ErrorCode: 0` for the marketplace sender
 and all three configured internal recipients: `sales@cvlon.com`,
 `hakan@shipnex.com`, and `david@cvlon.com`.
 
-### Remaining release ordering
+### Staged production activation evidence
 
-1. Redeploy the application with both marketplace flags still off so the new
-   runtime secrets are active.
-2. Reconfirm Price Check and admin health while marketplace routes remain 404.
-3. Enable Buy first and complete a synthetic production submission.
-4. Enable Sell and complete a synthetic production submission.
-5. Keep both routes live only if the database, admin, notification, and privacy
-   checks pass; otherwise turn the affected flag off without reverting schema.
+| Stage | Evidence |
+| --- | --- |
+| Secrets active, routes off | Production deploy `6a8464c0a90016000853998e` was ready on merge commit `8983858c062d53464c835bb8612eef70e2e8692e`; homepage, Price Check and admin returned 200 while marketplace routes returned 404 |
+| Buy only | Production deploy `6a8467adacf6a850e4e65512` was ready with Buy on and Sell off; five consecutive probes returned 200 for homepage, Price Check, admin, hub and Buy, while Sell returned 404 |
+| Buy journey | Synthetic request `BR-BHR2FQXA8P` returned 201, sent the customer verification message, verified through the public fragment-token page, appeared in the signed-in admin panel, sent the internal notice to all three recipients, and was closed |
+| Buy and Sell | Production deploy `6a8468d43e066c5d291032ad` was ready with both flags on; three consecutive probes returned 200 for homepage, Price Check, admin, hub, Buy and Sell |
+| Sell journey | Synthetic submission `SS-N44NYX9Q5H` returned 201 without an attachment, sent the customer verification message, verified through the public fragment-token page, appeared in the signed-in admin panel, sent the internal notice to all three recipients, and was closed |
+
+The first Buy activation produced one isolated homepage 500 during the rollout.
+The Buy flag was immediately disabled and the healthy site restored. Netlify
+recorded no application error, the flag-on local production build and rendered
+homepage tests passed, and the response did not recur in five consecutive Buy
+probes or the later full-launch probes. Keep this as a monitored rollout anomaly;
+the route flags remain the immediate rollback control if it recurs.
 
 ---
 
