@@ -17,6 +17,7 @@ import {
   validateMarketplaceAssignment,
   validateMarketplaceNote,
   validateMarketplaceStatusChange,
+  validateSellEvidenceRequest,
 } from "./validation.ts";
 
 /**
@@ -223,6 +224,77 @@ export function createBusinessReviewRoute(aggregate: MarketplaceAggregate) {
       return privateJson({ ok: true, reviewState: result.data.to });
     } catch {
       return privateJson({ ok: false, error: "The business review could not be saved." }, 400);
+    }
+  };
+}
+
+/**
+ * Asks the seller for follow-up evidence on one Sell Submission.
+ *
+ * The one mutation here that causes Civilon to contact a customer, so three
+ * things are true of it that are not true of the others:
+ *
+ *  - The secure credential and its URL are minted below this boundary and are
+ *    never in the response. A staff browser has no use for the link, and a
+ *    response carrying one would put it in a console log, a screenshot, and a
+ *    support ticket. Staff learn that a request was recorded, and its expiry.
+ *  - The e-mail is queued in the same transaction as the request row and its
+ *    audit event, so a seller can never hold a link to a request that was not
+ *    recorded, and a recorded request is never silently unqueued. Queued is all
+ *    this response can honestly claim: delivery is the outbox's business, and
+ *    the detail page reports it from the outbox row rather than from here.
+ *  - The seller contact must be verified and the record must not be terminal.
+ *    Both are decided against the stored record inside the transaction, not
+ *    from anything the browser sent.
+ */
+export function createEvidenceRequestRoute() {
+  return async function POST(request: Request, context: Context) {
+    const access = await requireStaffApi("request_marketplace_evidence");
+    if (access.status !== "authorized") return accessErrorResponse(access.status);
+    try {
+      verifyAdminMutationOrigin(request);
+      const { id } = await context.params;
+      if (!isRecordId(id)) return privateJson({ ok: false, error: "This record is not available." }, 404);
+
+      const validation = validateSellEvidenceRequest(await readJsonBody(request));
+      if (!validation.ok) return privateJson({ ok: false, error: validation.error }, 400);
+
+      const [{ priceCheckDb }, service] = await Promise.all([
+        import("@/db/price-check"),
+        import("@/lib/marketplace/sell-evidence-request-service"),
+      ]);
+      const result = await service.requestSellEvidence(priceCheckDb, {
+        sellSubmissionId: id,
+        categories: validation.data.categories,
+        actor: { id: access.user.id },
+      });
+
+      if (!result.ok && result.reason === "not_found") {
+        return privateJson({ ok: false, error: "This record is not available." }, 404);
+      }
+      if (!result.ok && result.reason === "terminal_record") {
+        return privateJson({
+          ok: false,
+          error: "This submission is closed, so Civilon cannot ask the seller for more evidence.",
+        }, 409);
+      }
+      if (!result.ok) {
+        return privateJson({
+          ok: false,
+          error: "This seller has not confirmed their email address, so there is no address to send a request to.",
+        }, 409);
+      }
+
+      // Categories, expiry, and the one delivery fact this boundary knows: the
+      // message is queued, not sent. No credential, no URL, no recipient.
+      return privateJson({
+        ok: true,
+        delivery: "queued",
+        categories: result.data.categories,
+        expiresAt: result.data.expiresAt.toISOString(),
+      }, 201);
+    } catch {
+      return privateJson({ ok: false, error: "The evidence request could not be recorded." }, 400);
     }
   };
 }

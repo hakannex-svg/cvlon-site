@@ -46,6 +46,8 @@ export type MarketplaceActionContext = {
   canAssign: boolean;
   canWriteNote: boolean;
   canReview: boolean;
+  /** Ordinary marketplace work: asks a seller for files Civilon does not have. */
+  canRequestEvidence: boolean;
 };
 
 export function buildMarketplaceActionContext(input: {
@@ -63,5 +65,6 @@ export function buildMarketplaceActionContext(input: {
     canAssign: can(input.role, "assign_marketplace"),
     canWriteNote: can(input.role, "write_marketplace_note"),
     canReview: can(input.role, "review_marketplace"),
+    canRequestEvidence: can(input.role, "request_marketplace_evidence"),
   };
 }

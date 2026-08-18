@@ -21,6 +21,9 @@ const ordinaryMarketplaceWork = [
   "transition_marketplace",
   "write_marketplace_note",
   "download_marketplace_evidence",
+  // Asking a seller for follow-up evidence changes nothing about the record and
+  // asserts nothing about the parts, so it sits with ordinary staff work.
+  "request_marketplace_evidence",
   "review_marketplace",
   "record_supplier_response",
 ];

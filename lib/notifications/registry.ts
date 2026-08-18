@@ -8,6 +8,7 @@ import {
   sellSubmissionInternalNotificationHandler,
   sellSubmissionVerifyNotificationHandler,
 } from "../marketplace/email/sell-submission-handlers.ts";
+import { sellEvidenceRequestNotificationHandler } from "../marketplace/email/sell-evidence-handlers.ts";
 import { buyerOfferNotificationHandlers } from "../marketplace/email/buyer-offer-handlers.ts";
 
 /**
@@ -23,6 +24,7 @@ export const marketplaceNotificationHandlers: readonly NotificationHandler[] = [
   buyRequestInternalNotificationHandler,
   sellSubmissionVerifyNotificationHandler,
   sellSubmissionInternalNotificationHandler,
+  sellEvidenceRequestNotificationHandler,
   ...buyerOfferNotificationHandlers,
 ];
 

@@ -10,7 +10,9 @@ import {
   buyerOffers,
   marketplaceAttachments,
   marketplaceContacts,
+  marketplaceEvidenceRequests,
   marketplaceNotes,
+  notificationOutbox,
   priceChecks,
   requesters,
   sellSubmissionItems,
@@ -23,6 +25,10 @@ import {
   isInternalReviewState,
   type InternalReviewState,
 } from "../domain/internal-review.ts";
+import {
+  SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE,
+  SELL_EVIDENCE_REQUEST_MESSAGE_TYPE,
+} from "../domain/sell-evidence-request.ts";
 
 /* ========================================================================= */
 /* Unified queue                                                             */
@@ -472,8 +478,9 @@ export async function countMarketplaceReviewStates(
 /*                                                                           */
 /* These projections never select a storage key, a storage provider, a        */
 /* content digest, an upload-session token or hash, an e-mail verification    */
-/* token or hash, an idempotency hash, or an outbox row. Evidence is metadata */
-/* only in this slice; the authenticated download arrives separately.         */
+/* token or hash, an idempotency hash, or outbox routing/provider/lease data.  */
+/* The evidence-request summary reads only delivery state and sent time.       */
+/* Evidence is metadata only; authenticated download arrives separately.      */
 /* ========================================================================= */
 
 /** How many audit rows a detail page shows. Newest first. */
@@ -628,6 +635,7 @@ async function loadAudit(db: PriceCheckDb, aggregateType: MarketplaceAggregateTy
 
 const businessReviewer = alias(adminUsers, "marketplace_business_reviewer");
 const attachmentReviewer = alias(adminUsers, "marketplace_attachment_reviewer");
+const evidenceRequester = alias(adminUsers, "marketplace_evidence_requester");
 
 const contactColumns = {
   id: marketplaceContacts.id,
@@ -868,6 +876,36 @@ export type SellAttachmentMetadata = {
   createdAt: Date;
 };
 
+/**
+ * The latest follow-up evidence request, as staff need to read it.
+ *
+ * Deliberately without `keyed_token_hash`, `token_derivation_nonce`, or
+ * anything from which a link could be reconstructed: a staff page has no use
+ * for the credential, and a projection that cannot select it cannot leak it
+ * into a server-rendered payload. What staff need is what was asked for, when,
+ * until when, and whether the seller has answered.
+ *
+ * `deliveryState` is the shared outbox's own state for this request's e-mail,
+ * carried so the page can distinguish a request Civilon recorded from an e-mail
+ * Civilon actually sent. The outbox row's recipient reference, idempotency key
+ * and provider message id stay out: the delivery *state* is what staff need,
+ * and the address is already on the contact panel under its own permission.
+ */
+export type SellEvidenceRequestSummary = {
+  id: string;
+  categories: string[];
+  requestedByEmail: string | null;
+  issuedAt: Date;
+  expiresAt: Date;
+  consumedAt: Date | null;
+  revokedAt: Date | null;
+  submittedAttachmentCount: number;
+  /** The outbox state, or null when no message row resolves for this request. */
+  deliveryState: string | null;
+  /** When the provider accepted the message. Null until it has. */
+  deliveredAt: Date | null;
+};
+
 export type SellSubmissionAdminDetail = {
   sellSubmission: {
     id: string;
@@ -910,6 +948,8 @@ export type SellSubmissionAdminDetail = {
   assignee: MarketplaceAssignee;
   items: SellSubmissionItemRecord[];
   attachments: SellAttachmentMetadata[];
+  /** The most recent follow-up evidence request, or null if none was ever sent. */
+  evidenceRequest: SellEvidenceRequestSummary | null;
   notes: MarketplaceNoteRecord[];
   audit: MarketplaceAuditRecord[];
 };
@@ -967,7 +1007,7 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
     .limit(1);
   if (!record) return null;
 
-  const [assignee, notes, audit, items, attachments] = await Promise.all([
+  const [assignee, notes, audit, items, attachments, evidenceRequests] = await Promise.all([
     loadAssignee(db, record.assignedAdminUserId),
     loadNotes(db, "sell_submission", id),
     loadAudit(db, "sell_submission", id),
@@ -1012,6 +1052,32 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
       .leftJoin(attachmentReviewer, eq(marketplaceAttachments.reviewedByAdminUserId, attachmentReviewer.id))
       .where(eq(marketplaceAttachments.sellSubmissionId, id))
       .orderBy(asc(marketplaceAttachments.createdAt), asc(marketplaceAttachments.id)),
+    // The latest follow-up evidence request. Credential columns are not in the
+    // projection at all, so no staff surface can render or forward one.
+    db.select({
+      id: marketplaceEvidenceRequests.id,
+      categories: marketplaceEvidenceRequests.requestedCategories,
+      requestedByEmail: evidenceRequester.displayEmail,
+      issuedAt: marketplaceEvidenceRequests.issuedAt,
+      expiresAt: marketplaceEvidenceRequests.expiresAt,
+      consumedAt: marketplaceEvidenceRequests.consumedAt,
+      revokedAt: marketplaceEvidenceRequests.revokedAt,
+      submittedAttachmentCount: marketplaceEvidenceRequests.submittedAttachmentCount,
+      // The e-mail's real state, not an assumption that queuing is sending.
+      // One outbox row exists per request — the idempotency key is derived from
+      // the request id — so this join cannot multiply the row.
+      deliveryState: notificationOutbox.state,
+      deliveredAt: notificationOutbox.sentAt,
+    }).from(marketplaceEvidenceRequests)
+      .leftJoin(evidenceRequester, eq(marketplaceEvidenceRequests.requestedByAdminUserId, evidenceRequester.id))
+      .leftJoin(notificationOutbox, and(
+        eq(notificationOutbox.aggregateType, SELL_EVIDENCE_REQUEST_AGGREGATE_TYPE),
+        eq(notificationOutbox.aggregateId, marketplaceEvidenceRequests.id),
+        eq(notificationOutbox.messageType, SELL_EVIDENCE_REQUEST_MESSAGE_TYPE),
+      ))
+      .where(eq(marketplaceEvidenceRequests.sellSubmissionId, id))
+      .orderBy(desc(marketplaceEvidenceRequests.issuedAt), desc(marketplaceEvidenceRequests.id))
+      .limit(1),
   ]);
 
   return {
@@ -1023,6 +1089,7 @@ export async function getSellSubmissionAdminDetail(db: PriceCheckDb, id: string)
     assignee,
     items,
     attachments,
+    evidenceRequest: evidenceRequests[0] ?? null,
     notes,
     audit,
   };

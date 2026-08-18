@@ -18,7 +18,13 @@ export type AnalyticsEventName =
   | "sell_submission_upload_started"
   | "sell_submission_upload_completed"
   | "sell_submission_submit"
-  | "sell_submission_verification_confirmed";
+  | "sell_submission_verification_confirmed"
+  // Follow-up seller evidence. Like every event above, these are page-level
+  // facts and carry only `source_page` — never a credential, a file name, a
+  // storage key, a category, a size, an upload identifier, a Civilon
+  // reference, or anything read from inside a file.
+  | "sell_evidence_request_opened"
+  | "sell_evidence_request_submitted";
 
 export type AnalyticsContext = {
   source_page?: string;
