@@ -84,9 +84,23 @@ export function secureEqualHex(left: string, right: string) {
  * production host and Netlify preview hosts, always over https. Anything else
  * throws, so a misconfigured deploy fails loudly instead of emailing a customer
  * a link pointing at an attacker-controlled host.
+ *
+ * `MARKETPLACE_PREVIEW_ORIGIN` is consulted first because Netlify's serverless
+ * runtime does not expose the build-only deploy variables: `DEPLOY_PRIME_URL`
+ * and `DEPLOY_URL` are read-only *build* variables, and of the read-only set
+ * only `URL`, `SITE_NAME` and `SITE_ID` reach a function at request time. `URL`
+ * is the production site address even inside a deploy preview, so without an
+ * explicit branch-scoped origin a preview would email links that land on
+ * production. Setting it is opt-in, branch-scoped, and still subject to the
+ * same https + approved-host validation as every other candidate — it widens
+ * nothing, it only names the deploy the code cannot otherwise see.
  */
 export function marketplaceOrigin(env: Record<string, string | undefined> = process.env) {
-  const candidate = env.DEPLOY_PRIME_URL || env.URL || env.NEXT_PUBLIC_SITE_URL || "";
+  const candidate = env.MARKETPLACE_PREVIEW_ORIGIN
+    || env.DEPLOY_PRIME_URL
+    || env.URL
+    || env.NEXT_PUBLIC_SITE_URL
+    || "";
   let url: URL;
   try {
     url = new URL(candidate);

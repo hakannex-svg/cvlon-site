@@ -6,6 +6,7 @@ import test from "node:test";
 import {
   MARKETPLACE_PREVIEW_DRAIN_LIMIT,
   MARKETPLACE_PREVIEW_NOTIFICATIONS_FLAG,
+  MARKETPLACE_PREVIEW_ORIGIN_VAR,
   isMarketplacePreviewDrainEnabled,
 } from "../lib/marketplace/notifications/preview-drain.ts";
 import {
@@ -74,15 +75,15 @@ test("the preview drain gate requires all three conditions and fails closed", ()
   };
   assert.equal(isMarketplacePreviewDrainEnabled(open), true);
   assert.equal(isMarketplacePreviewDrainEnabled({ ...open, CONTEXT: "branch-deploy" }), true);
+  assert.equal(isMarketplacePreviewDrainEnabled({ ...open, CONTEXT: "production" }), false);
 
-  // An absent CONTEXT is treated as production: Netlify can omit it from the
-  // production runtime, so "missing" is never permission to run a preview tool.
+  // With no CONTEXT and no explicit preview origin there is no proof of
+  // non-production, so the gate stays shut — an omitted variable never opens it.
   const withoutContext = { ...open };
   delete withoutContext.CONTEXT;
   assert.equal(isMarketplacePreviewDrainEnabled(withoutContext), false);
   assert.equal(isMarketplacePreviewDrainEnabled({ ...open, CONTEXT: "" }), false);
   assert.equal(isMarketplacePreviewDrainEnabled({ ...open, CONTEXT: "   " }), false);
-  assert.equal(isMarketplacePreviewDrainEnabled({ ...open, CONTEXT: "production" }), false);
 
   // The flag is the literal "true" and nothing else.
   for (const value of [undefined, "", "false", "TRUE", "1", "yes"]) {
@@ -99,6 +100,85 @@ test("the preview drain gate requires all three conditions and fails closed", ()
     false,
   );
   assert.equal(isMarketplacePreviewDrainEnabled({}), false);
+});
+
+/**
+ * Netlify's serverless runtime carries no CONTEXT, so the live preview takes
+ * this path exclusively. It is the one the architectural law is about: the
+ * substitute proof of non-production must be at least as hard to satisfy by
+ * accident as the CONTEXT it replaces.
+ */
+test("without CONTEXT the gate demands an explicit Civilon deploy-preview origin", () => {
+  const base = {
+    [MARKETPLACE_PREVIEW_NOTIFICATIONS_FLAG]: "true",
+    NEXT_PUBLIC_MARKETPLACE_ENABLED: "true",
+  };
+  const withOrigin = (origin) => ({ ...base, [MARKETPLACE_PREVIEW_ORIGIN_VAR]: origin });
+
+  // The live shape: branch-scoped origin, no CONTEXT in the function runtime.
+  assert.equal(
+    isMarketplacePreviewDrainEnabled(withOrigin("https://deploy-preview-20--cvlon.netlify.app")),
+    true,
+  );
+  // A trailing path, or whitespace around the value, does not defeat the check.
+  assert.equal(isMarketplacePreviewDrainEnabled(withOrigin("https://deploy-preview-20--cvlon.netlify.app/")), true);
+  assert.equal(isMarketplacePreviewDrainEnabled(withOrigin("  https://deploy-preview-20--cvlon.netlify.app  ")), true);
+
+  // Everything that is production, is not Civilon, or is not a URL at all.
+  for (const origin of [
+    undefined,
+    "",
+    "   ",
+    "https://cvlon.com",
+    "https://www.cvlon.com",
+    "https://cvlon.netlify.app",
+    "http://deploy-preview-20--cvlon.netlify.app",
+    "https://--cvlon.netlify.app",
+    // A branch-deploy alias is not a Deploy Preview: it names a branch, not a
+    // pull request, so it is not the identity this endpoint is scoped to.
+    "https://codex-civilon-fast-track-phase-1--cvlon.netlify.app",
+    "https://deploy-preview-0--cvlon.netlify.app",
+    "https://deploy-preview-x--cvlon.netlify.app",
+    "https://deploy-preview-20--attacker.netlify.app",
+    "https://attacker.netlify.app",
+    "https://deploy-preview-20--cvlon.netlify.app.attacker.example",
+    "deploy-preview-20--cvlon.netlify.app",
+    "not-a-url",
+    "//deploy-preview-20--cvlon.netlify.app",
+  ]) {
+    assert.equal(
+      isMarketplacePreviewDrainEnabled(withOrigin(origin)),
+      false,
+      `the gate must not open on ${JSON.stringify(origin)}`,
+    );
+  }
+
+  // An explicit production CONTEXT still wins over a valid preview origin: the
+  // origin is a fallback for an unavailable CONTEXT, never an override of one.
+  assert.equal(
+    isMarketplacePreviewDrainEnabled({
+      ...withOrigin("https://deploy-preview-20--cvlon.netlify.app"),
+      CONTEXT: "production",
+    }),
+    false,
+  );
+
+  // The other two conditions are unchanged by the new path.
+  for (const override of [
+    { [MARKETPLACE_PREVIEW_NOTIFICATIONS_FLAG]: "false" },
+    { [MARKETPLACE_PREVIEW_NOTIFICATIONS_FLAG]: undefined },
+    { NEXT_PUBLIC_MARKETPLACE_ENABLED: "false" },
+    { NEXT_PUBLIC_MARKETPLACE_ENABLED: undefined },
+  ]) {
+    assert.equal(
+      isMarketplacePreviewDrainEnabled({
+        ...withOrigin("https://deploy-preview-20--cvlon.netlify.app"),
+        ...override,
+      }),
+      false,
+      `a valid preview origin must not substitute for ${Object.keys(override)[0]}`,
+    );
+  }
 });
 
 test("the drain ceiling is ten and is a hard cap, not a default", () => {
@@ -198,4 +278,8 @@ test("the scheduled production drain still refuses every non-production context"
 test("the preview flag is documented and ships disabled", () => {
   assert.match(envExample, /^MARKETPLACE_PREVIEW_NOTIFICATIONS_ENABLED=false$/m);
   assert.match(envExample, /ADMIN/);
+  // The preview origin ships blank, so a deploy that copies the example cannot
+  // inherit an address for a preview it is not.
+  assert.match(envExample, /^MARKETPLACE_PREVIEW_ORIGIN=$/m);
+  assert.match(envExample, /branch-scoped/);
 });

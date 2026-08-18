@@ -278,6 +278,46 @@ test("verification links are only ever built against approved Civilon origins", 
     marketplaceOrigin({ DEPLOY_PRIME_URL: "https://x--cvlon.netlify.app", NEXT_PUBLIC_SITE_URL: "https://cvlon.com" }),
     "https://x--cvlon.netlify.app",
   );
+
+  // MARKETPLACE_PREVIEW_ORIGIN outranks all three. Netlify does not expose
+  // DEPLOY_PRIME_URL to a function, and URL is the production address even
+  // inside a preview, so without this a preview would email production links.
+  assert.equal(
+    marketplaceOrigin({
+      MARKETPLACE_PREVIEW_ORIGIN: "https://deploy-preview-20--cvlon.netlify.app",
+      DEPLOY_PRIME_URL: "https://x--cvlon.netlify.app",
+      URL: "https://cvlon.com",
+      NEXT_PUBLIC_SITE_URL: "https://cvlon.com",
+    }),
+    "https://deploy-preview-20--cvlon.netlify.app",
+  );
+  // The runtime shape: URL alone would resolve to production.
+  assert.equal(marketplaceOrigin({ URL: "https://cvlon.com" }), "https://cvlon.com");
+
+  // It is a preference, not an escape hatch: the same https + approved-host
+  // validation applies, and an unusable value throws rather than silently
+  // falling back to a production link.
+  for (const origin of [
+    "http://deploy-preview-20--cvlon.netlify.app",
+    "https://deploy-preview-20--attacker.netlify.app",
+    "https://cvlon.com.evil.test",
+    "https://--cvlon.netlify.app",
+    "not-a-url",
+  ]) {
+    assert.throws(
+      () => marketplaceOrigin({ MARKETPLACE_PREVIEW_ORIGIN: origin, URL: "https://cvlon.com" }),
+      /MARKETPLACE_ORIGIN_INVALID/,
+      origin,
+    );
+  }
+  // Blank or unset is simply absent, so the existing precedence still applies.
+  for (const origin of [undefined, ""]) {
+    assert.equal(
+      marketplaceOrigin({ MARKETPLACE_PREVIEW_ORIGIN: origin, URL: "https://cvlon.com" }),
+      "https://cvlon.com",
+    );
+  }
+
   const token = deriveVerificationToken(TOKEN_KEY, newVerificationNonce());
   assert.equal(
     buyRequestVerificationUrl("https://cvlon.com/", token),

@@ -23,10 +23,14 @@ export const dynamic = "force-dynamic";
  *     which is ADMIN-only. Checked first, so an anonymous prober is turned away
  *     before it can learn anything about this deploy's configuration.
  *  2. A same-origin admin mutation Origin, exactly as every other admin write.
- *  3. The preview opt-in: an explicit non-production `CONTEXT`, the preview flag
- *     set to the literal "true", and marketplace intake enabled. Anything else —
- *     including a missing `CONTEXT` — answers 404, because a production deploy
- *     must not admit that this endpoint is even a thing.
+ *  3. The preview opt-in: the preview flag set to the literal "true",
+ *     marketplace intake enabled, and proof that this deploy is not production —
+ *     an explicit non-production `CONTEXT` where one exists, and otherwise a
+ *     branch-scoped `MARKETPLACE_PREVIEW_ORIGIN` naming a Civilon deploy-preview
+ *     host. Netlify does not expose `CONTEXT` to a function at request time, so
+ *     that second path is the one this route actually takes in a preview.
+ *     Anything else answers 404, because a production deploy must not admit that
+ *     this endpoint is even a thing.
  *  4. POST only. There is nothing to read here.
  *
  * The response is counts. No recipient address, no message body, no subject, no

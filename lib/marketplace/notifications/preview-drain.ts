@@ -7,6 +7,7 @@ import {
   registeredNotificationTypes,
 } from "../../notifications/registry.ts";
 import type { TransactionalEmailProvider } from "../../price-check/email/provider.ts";
+import { isCivilonDeployPreviewHost } from "../../submission-host.ts";
 import { isMarketplaceEnabled } from "../feature.ts";
 
 /**
@@ -37,6 +38,18 @@ export const MARKETPLACE_PREVIEW_DRAIN_LIMIT = 10;
 export const MARKETPLACE_PREVIEW_NOTIFICATIONS_FLAG = "MARKETPLACE_PREVIEW_NOTIFICATIONS_ENABLED";
 
 /**
+ * The explicit, branch-scoped address of the deploy this code is running in.
+ *
+ * Netlify's serverless runtime does not expose `CONTEXT`, `DEPLOY_PRIME_URL` or
+ * `DEPLOY_URL` — those are read-only *build* variables. Only `URL`, `SITE_NAME`
+ * and `SITE_ID` are read-only variables at request time, and `URL` is the
+ * production site address even inside a deploy preview. So a function cannot
+ * ask Netlify which deploy it belongs to; it has to be told, by a variable an
+ * operator scoped to one branch.
+ */
+export const MARKETPLACE_PREVIEW_ORIGIN_VAR = "MARKETPLACE_PREVIEW_ORIGIN";
+
+/**
  * Counts only.
  *
  * Deliberately carries no notification id, no aggregate id, no recipient, no
@@ -54,20 +67,51 @@ export type MarketplacePreviewDrainSummary = {
 };
 
 /**
- * The three conditions, all required, all failing closed.
+ * True only when this deploy can be *proved* to be a Civilon preview.
  *
- * `CONTEXT` must be present AND explicitly something other than `production`.
- * An absent `CONTEXT` is treated as production, matching the scheduled
- * function's own reasoning: Netlify can omit the variable from the production
- * runtime, so "missing" is never permission to run a preview-only tool.
+ * The preview flag and marketplace intake are always required. What is left is
+ * the harder question — "is this production?" — and it has two answers because
+ * `CONTEXT` reaches a build but not a function:
+ *
+ *  - `CONTEXT` present: trust it, and demand it be explicitly non-production.
+ *    This is the build-time and scheduled-function path, unchanged.
+ *  - `CONTEXT` absent: the serverless runtime. Fall back to the one variable an
+ *    operator scoped to a single branch, and require it to name a canonical
+ *    Civilon Netlify Deploy Preview host over https. `cvlon.com`, the bare
+ *    `cvlon.netlify.app` alias, a branch-deploy alias, any non-Civilon Netlify
+ *    host and anything unparseable all fail.
+ *
+ * Both paths fail closed, and neither can be satisfied by omission: production
+ * would have to be handed a branch-scoped variable pointing at a preview host
+ * *and* the preview flag *and* the marketplace flag before this opened. The
+ * absent-`CONTEXT` case is not a relaxation — it exchanges one explicit
+ * non-production assertion for another.
  */
 export function isMarketplacePreviewDrainEnabled(
   env: Record<string, string | undefined> = process.env,
 ) {
-  const context = env.CONTEXT?.trim();
-  if (!context || context === "production") return false;
   if (env[MARKETPLACE_PREVIEW_NOTIFICATIONS_FLAG] !== "true") return false;
-  return isMarketplaceEnabled(env);
+  if (!isMarketplaceEnabled(env)) return false;
+
+  const context = env.CONTEXT?.trim();
+  if (context) return context !== "production";
+  return isCivilonPreviewOrigin(env[MARKETPLACE_PREVIEW_ORIGIN_VAR]);
+}
+
+/**
+ * https, parseable, and a canonical Civilon Deploy Preview host.
+ *
+ * Deliberately reuses `isCivilonDeployPreviewHost` instead of testing a
+ * `.netlify.app` suffix: a suffix test would accept any tenant's Netlify site.
+ */
+function isCivilonPreviewOrigin(candidate: string | undefined) {
+  let url: URL;
+  try {
+    url = new URL(candidate?.trim() ?? "");
+  } catch {
+    return false;
+  }
+  return url.protocol === "https:" && isCivilonDeployPreviewHost(url.hostname);
 }
 
 /**
