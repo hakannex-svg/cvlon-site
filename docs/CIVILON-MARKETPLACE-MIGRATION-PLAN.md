@@ -269,7 +269,51 @@ production migration is complete before code begins reading new columns.
 
 ---
 
-## 7. Rollback
+## 7. Seller evidence follow-up release (completed 2026-08-18)
+
+PR #30 added the account-free seller evidence follow-up flow. Staff can request
+warehouse or business evidence, part or condition photos, part-number or serial
+photos, supporting documentation, or an inventory list. Files remain private,
+reuse the existing scan and secure-download controls, and arrive as `Not
+reviewed` for an authorized staff member to mark `Reviewed` or `Concern`.
+
+| Evidence | Result |
+| --- | --- |
+| Merge | PR #30; merge commit `9b2ff271f5112c22fa69b9ee70d41c037ffc6069` |
+| Production deploy | Netlify deploy `6a84ac591699ab0008cf1db1`, published from the exact merge commit |
+| Restore point | Automatic production-publish backup created for the deploy before migration |
+| Applied artifact | `20260818181459_seller_evidence_requests`, SHA256 `4932b7c8439249de8e0a8c7b845b60e05834853520d68c3dfc11c47614883baf` |
+| Read-only preflight | Exact production host/database confirmed; 8 statements; 0 objects present; safe to apply |
+| Transaction result | 8 statements committed atomically under an advisory transaction lock |
+| Post-apply inventory | 1 empty table; 16 columns; 5 indexes; 23 PostgreSQL catalog constraints |
+| Read-only verification | 45 expected schema objects present; artifact already applied; table empty |
+| Live smoke | Homepage, marketplace hub, Sell, account-free evidence page, and admin Sell list returned HTTP 200; an invalid credential received the generic unavailable response |
+| Signed-in admin smoke | Existing closed synthetic submission loaded the new panel, existing evidence, and `Not reviewed / Reviewed / Concern` control without changing any record |
+
+The guarded runner is
+`scripts/apply-seller-evidence-production-migration.mjs`. It binds preflight and
+apply to the approved production host, port and database; checks the exact
+migration digest and additive statement count; requires the owner role and an
+explicit apply flag for writes; refuses partial or repeated application; and
+verifies the exact table, column, index, constraint and row inventory before
+commit. Connection strings were passed directly from Netlify's masked controls
+to the running command, were not printed or stored, and the clipboard was
+cleared after every use.
+
+Two initial apply attempts stopped inside the transaction because the runner's
+post-apply catalog expectations were stricter than the production PostgreSQL
+catalog format. Both transactions rolled back. A read-only preflight confirmed
+zero objects after each stop before the corrected runner was retried.
+
+This evidence workflow remains an internal review aid. Requesting, uploading or
+reviewing files does not certify or authenticate a part, approve airworthiness,
+constitute regulatory or supplier approval, or guarantee authenticity or
+fitness. Documentation varies by part and source, and availability remains
+subject to confirmation.
+
+---
+
+## 8. Rollback
 
 The migration is purely additive, so the failure modes are narrow.
 
@@ -287,7 +331,7 @@ The migration is purely additive, so the failure modes are narrow.
 
 ---
 
-## 7. Remaining limitations
+## 9. Remaining limitations
 
 - A successful Postmark API acceptance proves the message entered Postmark's
   delivery pipeline; recipient mailbox placement remains outside application
