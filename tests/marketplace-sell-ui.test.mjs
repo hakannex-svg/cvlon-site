@@ -21,6 +21,7 @@ import {
   SELL_UPLOAD_MAX_FILES,
   SELL_UPLOAD_MAX_PHOTO_BYTES,
   SELL_UPLOAD_MAX_TOTAL_BYTES,
+  formatSellUploadSize,
   resolveSellUploadMime,
   sellUploadCeiling,
   sellUploadOptions,
@@ -317,6 +318,8 @@ test("the upload UI states the accepted formats and the real limits", () => {
   assert.equal(sellUploadCeiling("application/pdf"), SELL_UPLOAD_MAX_BYTES);
   assert.equal(resolveSellUploadMime("list.csv"), "text/csv");
   assert.equal(resolveSellUploadMime("payload.exe"), null);
+  assert.equal(formatSellUploadSize(0), "0 KB");
+  assert.equal(formatSellUploadSize(97), "1 KB");
 });
 
 test("uploads authorize server-side and post only server-issued presigned fields", () => {
