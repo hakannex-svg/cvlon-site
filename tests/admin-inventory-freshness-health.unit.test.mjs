@@ -366,7 +366,7 @@ test("the five labels are the agreed ones and the counting choice is stated", ()
   assert.match(section, /appears in none of them/);
 });
 
-test("the four record counters link out and Delivery concerns does not", () => {
+test("the four record counters use reliable native links and Delivery concerns does not", () => {
   // Exactly four links, and each one is a Sell Submission freshness drill-down.
   const hrefs = [...section.matchAll(/href=\{`([^`]+)`\}/g)].map((match) => match[1]);
   assert.deepEqual(hrefs, ["${SELL_SUBMISSION_LIST_PATH}?freshness=${filter}"]);
@@ -379,7 +379,8 @@ test("the four record counters link out and Delivery concerns does not", () => {
   assert.match(section, /opens nothing/);
   // The section links to that one list and nowhere else — no detail route, no
   // Buy Request, no Price Check, no external destination.
-  assert.doesNotMatch(section, /<a\b/);
+  assert.match(section, /<a\s+href=\{`\$\{SELL_SUBMISSION_LIST_PATH\}\?freshness=\$\{filter\}`\}/);
+  assert.doesNotMatch(section, /<Link\b|next\/link/);
   assert.doesNotMatch(section, /https?:\/\//);
   assert.doesNotMatch(section, /buy-requests|price-checks|queue\?/);
   // All Work itself still grew no freshness control of its own.

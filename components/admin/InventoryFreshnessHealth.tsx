@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   SELL_INVENTORY_FRESHNESS_CADENCE_DAYS,
   SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC,
@@ -118,10 +117,10 @@ export function InventoryFreshnessHealth({ counts }: { counts: SellInventoryFres
         return <div key={key} className={`counter-${key}`}>
           <dt>{counterLabels[key]}</dt>
           <dd>{filter
-            ? <Link
+            ? <a
               href={`${SELL_SUBMISSION_LIST_PATH}?freshness=${filter}`}
               aria-label={`${counterLabels[key]}: open ${counts[key]} in Sell Submissions`}
-            ><strong>{counts[key]}</strong></Link>
+            ><strong>{counts[key]}</strong></a>
             : <strong>{counts[key]}</strong>
           }<span>{counterDetails[key]}</span></dd>
         </div>;

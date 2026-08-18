@@ -414,7 +414,8 @@ test("Delivery concerns is a number and not a link, and the section says why", (
     [...section.matchAll(/href=\{`([^`]+)`\}/g)].map((match) => match[1]),
     ["${SELL_SUBMISSION_LIST_PATH}?freshness=${filter}"],
   );
-  assert.doesNotMatch(section, /<a\b/);
+  assert.equal((section.match(/<a\b/g) ?? []).length, 1, "one mapped native anchor renders the four record links");
+  assert.doesNotMatch(section, /<Link\b|next\/link/);
   assert.doesNotMatch(section, /https?:\/\//);
   // Each link carries its own accessible name; a bare number would read as "12".
   assert.match(
