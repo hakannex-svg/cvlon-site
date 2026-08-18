@@ -6,6 +6,10 @@ import {
   type IssueSellInventoryFreshnessCheckOutcome,
 } from "../../db/price-check/repositories/sell-inventory-freshness-repository.ts";
 import {
+  issueAutomaticSellInventoryFreshnessCheck,
+  type IssueAutomaticSellInventoryFreshnessCheckOutcome,
+} from "../../db/price-check/repositories/sell-inventory-freshness-cadence-repository.ts";
+import {
   SELL_INVENTORY_FRESHNESS_TOKEN_TTL_MS,
   deriveSellInventoryFreshnessToken,
   hashSellInventoryFreshnessToken,
@@ -39,6 +43,32 @@ const defaultDependencies: RequestSellInventoryFreshnessDependencies = {
   newNonce: newSellInventoryFreshnessNonce,
 };
 
+/**
+ * Mints one credential and returns only what a repository may be told about it.
+ *
+ * Shared by the staff-issued path and the scheduled one so there is exactly one
+ * derivation, one 14-day expiry and one place where a plaintext token exists.
+ * The token is derived, hashed, and dropped inside this function: the caller is
+ * handed a keyed hash, a nonce and an expiry, and can therefore never return,
+ * log or store the credential it never received.
+ */
+function mintSellInventoryFreshnessCredential(
+  dependencies: { tokenKey: () => string; newNonce: typeof newSellInventoryFreshnessNonce },
+  now: Date,
+) {
+  const key = dependencies.tokenKey();
+  const nonce = dependencies.newNonce();
+  const keyedTokenHash = hashSellInventoryFreshnessToken(
+    key,
+    deriveSellInventoryFreshnessToken(key, nonce),
+  );
+  return {
+    keyedTokenHash,
+    tokenDerivationNonce: nonce,
+    expiresAt: new Date(now.valueOf() + SELL_INVENTORY_FRESHNESS_TOKEN_TTL_MS),
+  };
+}
+
 export async function requestSellInventoryFreshness(
   db: PriceCheckDb,
   input: {
@@ -49,19 +79,48 @@ export async function requestSellInventoryFreshness(
   dependencies: RequestSellInventoryFreshnessDependencies = defaultDependencies,
 ): Promise<IssueSellInventoryFreshnessCheckOutcome> {
   const now = input.now ?? new Date();
-  const key = dependencies.tokenKey();
-  const nonce = dependencies.newNonce();
-  const keyedTokenHash = hashSellInventoryFreshnessToken(
-    key,
-    deriveSellInventoryFreshnessToken(key, nonce),
-  );
+  const credential = mintSellInventoryFreshnessCredential(dependencies, now);
 
   return dependencies.issue(db, {
     sellSubmissionId: input.sellSubmissionId,
-    keyedTokenHash,
-    tokenDerivationNonce: nonce,
-    expiresAt: new Date(now.valueOf() + SELL_INVENTORY_FRESHNESS_TOKEN_TTL_MS),
+    ...credential,
     actor: input.actor,
+    now,
+  });
+}
+
+export type RequestAutomaticSellInventoryFreshnessDependencies = {
+  issue: typeof issueAutomaticSellInventoryFreshnessCheck;
+  tokenKey: () => string;
+  newNonce: typeof newSellInventoryFreshnessNonce;
+};
+
+const defaultAutomaticDependencies: RequestAutomaticSellInventoryFreshnessDependencies = {
+  issue: issueAutomaticSellInventoryFreshnessCheck,
+  tokenKey: () => marketplaceVerifyTokenKey(),
+  newNonce: newSellInventoryFreshnessNonce,
+};
+
+/**
+ * The same credential, for the check nobody asked for.
+ *
+ * A sibling rather than a flag on the manual function: there is no actor, the
+ * repository it calls is the insert-only one, and every refusal it can return is
+ * a cadence category rather than a staff-facing eligibility message. Sharing the
+ * minting is the whole of what the two paths have in common, and that is exactly
+ * what is shared.
+ */
+export async function requestAutomaticSellInventoryFreshness(
+  db: PriceCheckDb,
+  input: { sellSubmissionId: string; now?: Date },
+  dependencies: RequestAutomaticSellInventoryFreshnessDependencies = defaultAutomaticDependencies,
+): Promise<IssueAutomaticSellInventoryFreshnessCheckOutcome> {
+  const now = input.now ?? new Date();
+  const credential = mintSellInventoryFreshnessCredential(dependencies, now);
+
+  return dependencies.issue(db, {
+    sellSubmissionId: input.sellSubmissionId,
+    ...credential,
     now,
   });
 }

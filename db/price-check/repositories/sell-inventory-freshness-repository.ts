@@ -132,6 +132,23 @@ export async function issueSellInventoryFreshnessCheck(
       .from(sellSubmissions)
       .innerJoin(marketplaceContacts, eq(sellSubmissions.contactId, marketplaceContacts.id))
       .where(eq(sellSubmissions.id, input.sellSubmissionId))
+      // The Sell Submission row is held for the length of this transaction, and
+      // the scheduled producer takes the same lock on the same row before it
+      // decides anything. Without it the two writers can both pass their own
+      // reads and then meet at the partial unique index, where the staff path —
+      // which supersedes rather than conflicting — would raise a unique
+      // violation instead of doing what the staff member asked.
+      //
+      // No SKIP LOCKED here, deliberately: the producer skips a record another
+      // writer holds because it has a whole batch to get through and can come
+      // back tomorrow, but a staff member pressing the button meant it. Waiting
+      // and then superseding whatever it finds is exactly the intended outcome.
+      //
+      // `of: sellSubmissions` locks the submission row only. The contact is
+      // joined for its verification state and must not be locked: contact
+      // verification is its own workflow, and freezing it here would let a
+      // freshness check block an unrelated write.
+      .for("update", { of: sellSubmissions })
       .limit(1);
     if (!record) return { ok: false as const, reason: "not_found" as const };
     if (!isSellInventoryFreshnessSubmissionKind(record.submissionKind)) {

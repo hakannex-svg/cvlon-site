@@ -104,7 +104,7 @@ function stateDetail(check: LatestCheck) {
     case "revoked":
       return "Replaced by a newer check. The link Civilon sent for it no longer works.";
     case "expired":
-      return "The link was not used before it expired. The seller made no statement either way.";
+      return "The link was not used before it expired. The seller made no statement either way. The scheduled check will retire this dead link and ask once more when the cadence comes round; if that one also goes unanswered it stops until a staff member asks by hand.";
     default:
       return "The check is recorded and the link is live. See the email row for whether Civilon has managed to send it.";
   }
@@ -175,10 +175,16 @@ export function InventoryFreshnessPanel({
       Records a check and queues one account-free email asking the seller whether
       what they offered is still available. The link expires in{" "}
       {SELL_INVENTORY_FRESHNESS_TTL_DAYS} days and replaces any earlier one.
-      Civilon would ordinarily ask again about every{" "}
-      {SELL_INVENTORY_FRESHNESS_CADENCE_DAYS} days; nothing is scheduled today,
-      so every check is issued by hand. A seller&rsquo;s answer is their own
-      statement about their stock at that moment: it changes no status, no
+      Civilon also asks on its own about every{" "}
+      {SELL_INVENTORY_FRESHNESS_CADENCE_DAYS} days: the scheduled check runs once
+      a day, asks at most once per submission per{" "}
+      {SELL_INVENTORY_FRESHNESS_CADENCE_DAYS} days, and never touches a link that
+      is still live — it only clears one that has already expired before asking
+      again. It stops after two scheduled asks in a row go unanswered, and it
+      stops as soon as the seller says the inventory changed. Asking here is
+      always available and starts the schedule over. A
+      seller&rsquo;s answer is their own statement about their stock at that
+      moment: it changes no status, no
       business review and no evidence review, and it is not email verification,
       company verification, supplier approval, certification, authenticity proof,
       airworthiness or regulatory approval, a confirmation of availability, or

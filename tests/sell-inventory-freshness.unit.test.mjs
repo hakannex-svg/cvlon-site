@@ -236,6 +236,13 @@ test("manual eligibility is an allowlist of two statuses and one submission kind
   assert.match(issue, /status: sellSubmissions\.status/);
   assert.doesNotMatch(issue, /\.update\(sellSubmissions\)/);
   assert.doesNotMatch(issue, /\.insert\(sellSubmissions\)|\.delete\(sellSubmissions\)/);
+  // That read holds the submission row for the transaction — a lock, not a
+  // write — so the scheduled producer, which locks the same row, cannot be
+  // deciding about this record at the same moment. Staff wait rather than skip:
+  // superseding whatever is found is what the button means.
+  assert.match(issue, /\.for\("update", \{ of: sellSubmissions \}\)/);
+  assert.doesNotMatch(issue, /skipLocked/);
+  assert.doesNotMatch(issue, /of: marketplaceContacts/, "the contact is read, never locked");
   // No write anywhere in the file touches the submission or its attachments.
   for (const table of ["sellSubmissions", "sellSubmissionItems", "marketplaceAttachments", "marketplaceContacts"]) {
     assert.doesNotMatch(repository, new RegExp(`\\.(?:update|insert|delete)\\(${table}\\)`), table);
@@ -259,9 +266,10 @@ test("the link lives 14 days and the cadence is 45 days", () => {
   );
 });
 
-test("Stage 1 ships no producer, no schedule and no cron", () => {
-  // The cadence constant exists for Stage 2 and for the admin surface. Nothing
-  // in Stage 1 may schedule, enqueue on a timer, or run autonomously.
+test("the manual path stays manual: the producer is an isolated surface", () => {
+  // Stage 2 added an autonomous producer, and it is deliberately somewhere else.
+  // Nothing on the staff-issued path may schedule, enqueue on a timer, or run
+  // itself — a seller e-mail sent by this path is one a staff member asked for.
   for (const [name, source] of [
     ["domain", domain],
     ["repository", repository],
@@ -271,17 +279,39 @@ test("Stage 1 ships no producer, no schedule and no cron", () => {
     ["public routes", publicRoutes],
     ["write routes", writeRoutes],
   ]) {
-    // Comments are stripped: the domain module explains in prose that Stage 1
-    // schedules nothing, and that sentence must not read as a scheduler.
+    // Comments are stripped: several of these modules discuss the cadence in
+    // prose, and a sentence about a schedule must not read as one.
     assert.doesNotMatch(stripComments(source), /setInterval|setTimeout|cron|schedule\(/i, name);
   }
-  // No Netlify scheduled function is registered for this workflow.
+  // The manual repository still supersedes, and still knows nothing about the
+  // cadence: the producer borrows its audit vocabulary, not the reverse.
+  assert.doesNotMatch(repository, /CADENCE/);
+  assert.doesNotMatch(repository, /selectDue|issueAutomatic/);
+  assert.match(domain, /SELL_INVENTORY_FRESHNESS_CADENCE_MS/);
+
+  // The autonomous surface is exactly three files, none of which is on the
+  // staff-issued path, and each of which exists.
+  for (const parts of [
+    ["db", "price-check", "repositories", "sell-inventory-freshness-cadence-repository.ts"],
+    ["lib", "marketplace", "sell-inventory-freshness-cadence-service.ts"],
+    ["netlify", "functions", "process-sell-inventory-freshness-cadence.ts"],
+  ]) {
+    assert.ok(read(...parts).length > 0, parts.join("/"));
+  }
+  // The schedule is declared in the function that runs, not in netlify.toml, so
+  // the deploy configuration is unchanged by this workflow.
   const netlifyToml = read("netlify.toml");
   assert.doesNotMatch(netlifyToml, /freshness|availability/i);
-  // The only place the cadence is consumed is the derived state and the panel
-  // copy — never a queue.
-  assert.match(domain, /SELL_INVENTORY_FRESHNESS_CADENCE_MS/);
-  assert.doesNotMatch(repository, /CADENCE/);
+  assert.match(
+    read("netlify", "functions", "process-sell-inventory-freshness-cadence.ts"),
+    /export const config = \{ schedule: "17 13 \* \* \*" \};/,
+  );
+  // The admin route is still the only staff way in, and the automatic path has
+  // no route at all: nothing outside the schedule can trigger it.
+  assert.match(writeRoutes, /export function createInventoryFreshnessRequestRoute\(/);
+  for (const parts of [["app", "api", "admin", "marketplace", "sell-submissions", "[id]", "inventory-freshness", "route.ts"]]) {
+    assert.doesNotMatch(read(...parts), /cadence|Automatic/i, parts.join("/"));
+  }
 });
 
 /* ------------------------------------------------------------- lifecycle */
@@ -1038,8 +1068,13 @@ test("the admin panel separates recording, delivery and the seller's statement",
   const panelProse = panel.replace(/\s+/g, " ");
   assert.match(panelProse, /it is not email verification, company verification, supplier approval, certification, authenticity proof, airworthiness or regulatory approval, a confirmation of availability, or any obligation for Civilon to buy/);
   assert.match(panelProse, /changes no status, no business review and no evidence review/);
-  // The 45-day cadence is described as unscheduled in Stage 1.
-  assert.match(panelProse, /nothing is scheduled today, so every check is issued by hand/);
+  // The 45-day cadence is described as the schedule it now is, including what
+  // the schedule will not do. The fuller wording is asserted in
+  // `sell-inventory-freshness-cadence.unit.test.mjs`.
+  assert.doesNotMatch(panelProse, /nothing is scheduled today/);
+  assert.match(panelProse, /Civilon also asks on its own about every/);
+  assert.match(panelProse, /never touches a link that is still live/);
+  assert.match(panelProse, /It stops after two scheduled asks in a row go unanswered/);
   // The panel never renders a credential.
   for (const forbidden of ["keyedTokenHash", "tokenDerivationNonce", "token", "Url"]) {
     assert.equal(panel.includes(forbidden), false, `the panel must not mention ${forbidden}`);
