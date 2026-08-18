@@ -95,6 +95,24 @@ test("OIDC login preserves PKCE, state, nonce, cookie and header handling", () =
   assert.match(loginRoute, /export const dynamic = "force-dynamic"/);
 });
 
+test("OIDC login logs only bounded failure shape while preserving its generic 503", () => {
+  assert.match(loginRoute, /let stage = "configuration"/);
+  assert.match(loginRoute, /stage = "authorization_request";\s*const authorization = await createGoogleAuthorizationRequest\(config\)/);
+  assert.match(loginRoute, /console\.error\("admin_oidc_login_start_failed", stage, safeLoginErrorName\(error\)\)/);
+  assert.match(loginRoute, /if \(error instanceof TypeError\) return "TypeError"/);
+  assert.match(loginRoute, /if \(error instanceof RangeError\) return "RangeError"/);
+  assert.match(loginRoute, /if \(error instanceof SyntaxError\) return "SyntaxError"/);
+  assert.match(loginRoute, /if \(error instanceof URIError\) return "URIError"/);
+  assert.match(loginRoute, /return error instanceof Error \? "Error" : "unexpected"/);
+
+  const catchBlock = loginRoute.slice(loginRoute.indexOf("} catch (error)"));
+  assert.doesNotMatch(catchBlock, /error\.(?:message|stack|name)/);
+  assert.doesNotMatch(catchBlock, /GOOGLE_OIDC_|authorization\.url|transaction|request\.headers/);
+  assert.match(catchBlock, /new Response\(null, \{\s*status: 503,/);
+  assert.match(catchBlock, /"Cache-Control": "private, no-store, max-age=0"/);
+  assert.match(catchBlock, /"X-Robots-Tag": "noindex, nofollow, noarchive"/);
+});
+
 test("OIDC callback preserves transaction verification, binding, session and generic failure", () => {
   assert.doesNotMatch(callbackRoute, /if \(!isPriceCheckEnabled\(\)\)/);
   assert.match(callbackRoute, /await verifyGoogleAuthorizationTransaction\(\s*transactionCookie,\s*state,\s*config,\s*\)/);
