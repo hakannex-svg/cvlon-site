@@ -589,8 +589,7 @@ export function BuyRequestForm() {
             <strong>I understand how this request will be processed.</strong>
             <small>
               Civilon will use the submitted contact and request information to
-              review and source the part, and will contact me about it. This
-              implementation copy is pending final legal/privacy approval.
+              review and source the part, and will contact me about it.
             </small>
           </label>
         </div>

@@ -691,8 +691,7 @@ export function SellSubmissionForm() {
             <small>
               Civilon will use the submitted contact and offer information to
               review what I am offering and to contact me about it. Civilon is not
-              obliged to buy, and nothing here is published or listed. This
-              implementation copy is pending final legal/privacy approval.
+              obliged to buy, and nothing here is published or listed.
             </small>
           </label>
         </div>
