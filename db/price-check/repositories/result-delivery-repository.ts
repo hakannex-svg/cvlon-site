@@ -1,10 +1,13 @@
 import "../server-boundary.ts";
 
+import { createHash } from "node:crypto";
 import { and, desc, eq, isNull, max } from "drizzle-orm";
 
 import type { PriceCheckDb } from "../index.ts";
 import {
   auditEvents,
+  buyRequests,
+  marketplaceContacts,
   notificationOutbox,
   priceCheckAnalyses,
   priceCheckComparables,
@@ -24,8 +27,11 @@ import {
   newTokenNonce,
   stableDigest,
 } from "../domain/customer-result.ts";
-import { generateOrderedId } from "../domain/identifiers.ts";
+import { generateOrderedId, generatePublicReference } from "../domain/identifiers.ts";
+import { normalizeEmail, normalizePhone } from "../domain/normalization.ts";
 import type { AdminActor } from "./admin-repository.ts";
+import { BUY_REQUEST_INTERNAL_MESSAGE_TYPE } from "./buy-request-repository.ts";
+import type { PriceCheckBuyRequestSubmission } from "../../../lib/marketplace/price-check-conversion-contract.ts";
 
 function correlationId(action: string) {
   return `${action}:${crypto.randomUUID()}`;
@@ -256,12 +262,25 @@ export async function redeemResultToken(db: PriceCheckDb, input: { token: string
 
 export async function getCustomerResult(db: PriceCheckDb, input: { resultId: string; tokenId: string; now?: Date }) {
   const now = input.now ?? new Date();
-  const [record] = await db.select({ result: priceCheckResults, analysis: priceCheckAnalyses, priceCheck: priceChecks, token: resultAccessTokens }).from(priceCheckResults).innerJoin(priceCheckAnalyses, eq(priceCheckResults.analysisId, priceCheckAnalyses.id)).innerJoin(priceChecks, eq(priceCheckResults.priceCheckId, priceChecks.id)).innerJoin(resultAccessTokens, eq(resultAccessTokens.resultId, priceCheckResults.id)).where(and(eq(priceCheckResults.id, input.resultId), eq(resultAccessTokens.id, input.tokenId))).limit(1);
+  const [record] = await db.select({ result: priceCheckResults, analysis: priceCheckAnalyses, priceCheck: priceChecks, requester: requesters, token: resultAccessTokens }).from(priceCheckResults).innerJoin(priceCheckAnalyses, eq(priceCheckResults.analysisId, priceCheckAnalyses.id)).innerJoin(priceChecks, eq(priceCheckResults.priceCheckId, priceChecks.id)).innerJoin(requesters, eq(priceChecks.requesterId, requesters.id)).innerJoin(resultAccessTokens, eq(resultAccessTokens.resultId, priceCheckResults.id)).where(and(eq(priceCheckResults.id, input.resultId), eq(resultAccessTokens.id, input.tokenId))).limit(1);
   if (!record || record.token.revokedAt || record.token.expiresAt <= now || record.result.supersededAt || !["APPROVED", "SENT"].includes(record.result.state) || record.priceCheck.currentResultId !== record.result.id) return null;
+  // This helper also runs inside the conversion transaction. Keep its reads
+  // sequential: one transaction owns one connection, and concurrent queries on
+  // that connection are deprecated by pg and would become an upgrade hazard.
   const [opportunity] = await db.select({ id: sourcingOpportunities.id }).from(sourcingOpportunities).where(eq(sourcingOpportunities.sourceResultId, record.result.id)).limit(1);
-  return { ...record, sourcingRequested: Boolean(opportunity) };
+  const [linkedBuyRequest] = await db.select({ id: buyRequests.id, publicReference: buyRequests.publicReference, status: buyRequests.status }).from(buyRequests).where(eq(buyRequests.sourceResultId, record.result.id)).limit(1);
+  return {
+    ...record,
+    sourcingRequested: Boolean(opportunity),
+    linkedBuyRequest: linkedBuyRequest ?? null,
+  };
 }
 
+/**
+ * Backward-compatible legacy action retained for historical callers. New
+ * customer UI uses `createResultBuyRequest`, which creates the operational Buy
+ * Request instead of only this lightweight sourcing marker.
+ */
 export async function createResultSourcingOpportunity(db: PriceCheckDb, input: { resultId: string; tokenId: string; now?: Date }) {
   return db.transaction(async (tx) => {
     const customer = await getCustomerResult(tx, input);
@@ -275,13 +294,240 @@ export async function createResultSourcingOpportunity(db: PriceCheckDb, input: {
   });
 }
 
+const PRICE_CHECK_BUY_REQUEST_SOURCE_PAGE = "/price-check/result";
+const INTERNAL_RECIPIENT_REFERENCE = "civilon-marketplace-internal";
+
+function sourceResultIdempotencyHash(resultId: string) {
+  return createHash("sha256")
+    .update(`civilon-price-check-buy-request:v1:${resultId}`)
+    .digest("hex");
+}
+
+function databaseError(error: unknown) {
+  let candidate: unknown = error;
+  for (let depth = 0; depth < 4 && candidate && typeof candidate === "object"; depth += 1) {
+    const detail = candidate as { code?: unknown; constraint?: unknown; cause?: unknown };
+    if (detail.code || detail.constraint) return detail;
+    candidate = detail.cause;
+  }
+  return {} as { code?: unknown; constraint?: unknown };
+}
+
+/**
+ * Converts the exact approved Price Check result behind the authenticated
+ * result session into one verified Buy Request. The browser cannot choose the
+ * customer, part number, Price Check or result; all provenance is server-bound.
+ *
+ * The Price Check link was delivered to the requester's business email and the
+ * session proves successful redemption. The conversion therefore records that
+ * verified result access as the marketplace contact gate and does not issue a
+ * second, redundant verification email. Civilon still receives the standard
+ * internal new-request notification.
+ */
+export async function createResultBuyRequest(
+  db: PriceCheckDb,
+  input: {
+    resultId: string;
+    tokenId: string;
+    submission: PriceCheckBuyRequestSubmission;
+    privacyVersion: string;
+    termsVersion: string;
+    now?: Date;
+  },
+) {
+  const now = input.now ?? new Date();
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      return await db.transaction(async (tx) => {
+        const customer = await getCustomerResult(tx, input);
+        if (!customer) throw new Error("Result access is unavailable.");
+        if (customer.linkedBuyRequest) {
+          return { ...customer.linkedBuyRequest, created: false };
+        }
+        if (!["sent", "quote_requested"].includes(customer.priceCheck.status)) {
+          throw new Error("The Price Check is not available for Buy Request conversion.");
+        }
+
+        const phone = input.submission.phone?.trim() || customer.requester.phone?.trim() || null;
+        if (["aog", "critical"].includes(input.submission.urgency) && !phone) {
+          throw new Error("A phone number is required for an urgent Buy Request.");
+        }
+
+        const contactId = generateOrderedId();
+        const buyRequestId = generateOrderedId();
+        const publicReference = generatePublicReference("BR");
+        const correlation = `price-check-buy-request:${crypto.randomUUID()}`;
+
+        await tx.insert(marketplaceContacts).values({
+          id: contactId,
+          firstName: customer.requester.firstName.trim(),
+          lastName: customer.requester.lastName.trim(),
+          companyName: customer.requester.companyName.trim(),
+          businessEmail: customer.requester.businessEmail.trim(),
+          normalizedEmail: normalizeEmail(customer.requester.businessEmail),
+          phone,
+          normalizedPhone: phone ? normalizePhone(phone) : null,
+          role: customer.requester.role?.trim() || null,
+          country: customer.requester.country?.trim().toUpperCase() || null,
+          actsAsBuyer: true,
+          actsAsSeller: false,
+          verificationState: "VERIFIED",
+          verifiedAt: now,
+          serviceProcessingAcknowledgedAt: now,
+          marketingConsentAt: null,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        await tx.insert(buyRequests).values({
+          id: buyRequestId,
+          publicReference,
+          contactId,
+          originalPartNumber: customer.priceCheck.originalPartNumber,
+          normalizedPartNumber: customer.priceCheck.normalizedPartNumber,
+          description: customer.priceCheck.description,
+          quantity: input.submission.quantity,
+          acceptableCondition: input.submission.acceptableCondition,
+          urgency: input.submission.urgency,
+          neededByDate: input.submission.neededByDate,
+          aircraftModel: customer.priceCheck.aircraftModel,
+          applicationNotes: input.submission.applicationNotes,
+          deliveryCountry: input.submission.deliveryCountry,
+          deliveryPostalCode: input.submission.deliveryPostalCode,
+          deliveryCity: input.submission.deliveryCity,
+          fulfillmentPreference: input.submission.fulfillmentPreference,
+          status: "verified",
+          verifiedAt: now,
+          sourcePage: PRICE_CHECK_BUY_REQUEST_SOURCE_PAGE,
+          landingPage: PRICE_CHECK_BUY_REQUEST_SOURCE_PAGE,
+          idempotencyHash: sourceResultIdempotencyHash(customer.result.id),
+          sourcePriceCheckId: customer.priceCheck.id,
+          sourceResultId: customer.result.id,
+          submittedAt: now,
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        const [opportunity] = await tx.insert(sourcingOpportunities).values({
+          id: generateOrderedId(),
+          priceCheckId: customer.priceCheck.id,
+          requesterId: customer.requester.id,
+          sourceResultId: customer.result.id,
+          status: "requested",
+          createdAt: now,
+          updatedAt: now,
+        }).onConflictDoNothing({ target: sourcingOpportunities.sourceResultId }).returning({ id: sourcingOpportunities.id });
+
+        await tx.insert(auditEvents).values([
+          {
+            id: generateOrderedId(),
+            aggregateType: "buy_request",
+            aggregateId: buyRequestId,
+            actorType: "REQUESTER" as const,
+            actorId: contactId,
+            action: "BUY_REQUEST_SUBMITTED",
+            afterVersionReference: "status:verified",
+            correlationId: correlation,
+            sanitizedMetadata: { sourcePage: PRICE_CHECK_BUY_REQUEST_SOURCE_PAGE },
+            createdAt: now,
+          },
+          {
+            id: generateOrderedId(),
+            aggregateType: "buy_request",
+            aggregateId: buyRequestId,
+            actorType: "REQUESTER" as const,
+            actorId: contactId,
+            action: "BUY_REQUEST_LEGAL_ACKNOWLEDGED",
+            correlationId: correlation,
+            sanitizedMetadata: {
+              privacyVersion: input.privacyVersion,
+              termsVersion: input.termsVersion,
+            },
+            createdAt: now,
+          },
+          {
+            id: generateOrderedId(),
+            aggregateType: "buy_request",
+            aggregateId: buyRequestId,
+            actorType: "SYSTEM" as const,
+            actorId: null,
+            action: "BUY_REQUEST_CONTACT_VERIFIED_FROM_PRICE_CHECK_RESULT",
+            afterVersionReference: "status:verified",
+            correlationId: correlation,
+            sanitizedMetadata: { sourceResultId: customer.result.id },
+            createdAt: now,
+          },
+        ]);
+
+        const [message] = await tx.insert(notificationOutbox).values({
+          id: generateOrderedId(),
+          messageType: BUY_REQUEST_INTERNAL_MESSAGE_TYPE,
+          aggregateType: "buy_request",
+          aggregateId: buyRequestId,
+          recipientReference: INTERNAL_RECIPIENT_REFERENCE,
+          templateVersion: "buy-request-internal-v1",
+          idempotencyKey: `buy-request-internal:${buyRequestId}:v1`,
+          nextAttemptAt: now,
+          createdAt: now,
+        }).returning({ id: notificationOutbox.id });
+        if (!message) throw new Error("The Buy Request notification was not enqueued atomically.");
+
+        if (customer.priceCheck.status === "sent") {
+          await tx.update(priceChecks).set({ status: "quote_requested", updatedAt: now }).where(and(eq(priceChecks.id, customer.priceCheck.id), eq(priceChecks.status, "sent")));
+        }
+        if (opportunity) {
+          await audit(tx, {
+            aggregateId: customer.priceCheck.id,
+            actorType: "SYSTEM",
+            action: "SOURCING_OPPORTUNITY_CREATED",
+            after: `result:${customer.result.version}`,
+            metadata: { opportunityId: opportunity.id },
+          });
+        }
+        await audit(tx, {
+          aggregateId: customer.priceCheck.id,
+          actorType: "SYSTEM",
+          action: "BUY_REQUEST_CREATED_FROM_PRICE_CHECK_RESULT",
+          after: `buy-request:${publicReference}`,
+          metadata: { buyRequestId, sourceResultId: customer.result.id },
+        });
+
+        return { id: buyRequestId, publicReference, status: "verified" as const, created: true };
+      });
+    } catch (error) {
+      const detail = databaseError(error);
+      if (
+        detail.code === "23505"
+        && ["buy_requests_source_result_uidx", "buy_requests_idempotency_hash_uidx"].includes(String(detail.constraint))
+      ) {
+        const [existing] = await db.select({
+          id: buyRequests.id,
+          publicReference: buyRequests.publicReference,
+          status: buyRequests.status,
+        }).from(buyRequests).where(eq(buyRequests.sourceResultId, input.resultId)).limit(1);
+        if (existing) return { ...existing, created: false };
+      }
+      if (detail.code === "23505" && detail.constraint === "buy_requests_public_reference_uidx") {
+        continue;
+      }
+      throw error;
+    }
+  }
+  throw new Error("Buy Request reference generation exhausted.");
+}
+
 export async function getAdminResultWorkspace(db: PriceCheckDb, priceCheckId: string) {
   const [priceCheck] = await db.select().from(priceChecks).where(eq(priceChecks.id, priceCheckId)).limit(1);
-  if (!priceCheck?.currentAnalysisId) return { analysis: null, currentResult: null, history: [], delivery: [] };
-  const [[analysis], history, delivery] = await Promise.all([
+  if (!priceCheck?.currentAnalysisId) return { analysis: null, currentResult: null, history: [], delivery: [], linkedBuyRequest: null };
+  const linkedBuyRequestQuery = priceCheck.currentResultId
+    ? db.select({ id: buyRequests.id, publicReference: buyRequests.publicReference, status: buyRequests.status }).from(buyRequests).where(eq(buyRequests.sourceResultId, priceCheck.currentResultId)).limit(1)
+    : Promise.resolve([]);
+  const [[analysis], history, delivery, [linkedBuyRequest]] = await Promise.all([
     db.select().from(priceCheckAnalyses).where(eq(priceCheckAnalyses.id, priceCheck.currentAnalysisId)).limit(1),
     db.select().from(priceCheckResults).where(eq(priceCheckResults.priceCheckId, priceCheckId)).orderBy(desc(priceCheckResults.version)),
     db.select().from(notificationOutbox).where(eq(notificationOutbox.aggregateType, "price_check_result")).orderBy(desc(notificationOutbox.createdAt)),
+    linkedBuyRequestQuery,
   ]);
-  return { analysis: analysis ?? null, currentResult: history.find((item) => item.id === priceCheck.currentResultId) ?? null, history, delivery: delivery.filter((item) => history.some((result) => result.id === item.aggregateId)) };
+  return { analysis: analysis ?? null, currentResult: history.find((item) => item.id === priceCheck.currentResultId) ?? null, history, delivery: delivery.filter((item) => history.some((result) => result.id === item.aggregateId)), linkedBuyRequest: linkedBuyRequest ?? null };
 }

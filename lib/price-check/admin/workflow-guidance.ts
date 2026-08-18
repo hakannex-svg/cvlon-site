@@ -39,7 +39,7 @@ const nextActions: Record<PriceCheckStatus, string> = {
   human_review: "Complete human review of the result. Revise it or approve it only when the customer-facing content is accurate.",
   approved: "Send the approved result, then confirm that secure delivery succeeds.",
   sent: "The result was delivered. Monitor customer follow-up and any sourcing request.",
-  quote_requested: "The customer requested a Civilon quote. Follow the linked sourcing opportunity and begin the approved sourcing follow-up.",
+  quote_requested: "The customer created a linked Buy Request. Open that record and begin the approved Civilon sourcing workflow; older records may retain only a legacy sourcing opportunity.",
   converted: "The sourcing opportunity was converted. Continue the operational follow-up and close the Price Check when appropriate.",
   closed: "This Price Check is closed. No further workflow action is expected.",
   spam: "This request is classified as spam. No operational Price Check action is available.",

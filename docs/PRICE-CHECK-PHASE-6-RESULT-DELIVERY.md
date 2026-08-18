@@ -38,11 +38,11 @@ Approval does not call Postmark. “Send result” transactionally creates/reuse
 
 ## Sourcing conversion
 
-The private result’s “Get a Civilon Quote” action creates one `sourcing_opportunities` row linked to the Price Check, requester and exact result version. The unique result constraint prevents duplicate conversion. It does not submit `quick-rfq`, modify Netlify Forms or call a CRM.
+The original private result action created one `sourcing_opportunities` row. The completed workflow now replaces that public action with a short **Create a Buy Request** confirmation. It creates one verified Buy Request linked to the Price Check and exact result version, retains the legacy sourcing marker for historical continuity, and returns the same `BR-…` reference on repeats. It does not submit `quick-rfq`, modify Netlify Forms, publish the requirement or call a CRM.
 
 ## Audit and security
 
-Controlled events include result draft creation/update, approval invalidation, approval, token issuance, delivery queued/succeeded/failed, result viewed and sourcing opportunity creation. Metadata excludes bearer credentials and confidential result contents. Admin mutations retain direct Google OIDC sessions, local RBAC and strict same-origin checks. Public result access is independently token/session scoped and cannot reach admin records.
+Controlled events include result draft creation/update, approval invalidation, approval, token issuance, delivery queued/succeeded/failed, result viewed, sourcing opportunity creation and the linked Buy Request conversion. Metadata excludes bearer credentials, contact details and confidential result contents. Admin mutations retain direct Google OIDC sessions, local RBAC and strict same-origin checks. Public result access is independently token/session scoped and cannot reach admin records.
 
 ## Preview and production isolation
 

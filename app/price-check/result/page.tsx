@@ -19,7 +19,7 @@ export default async function CustomerResultPage() {
     }
   } catch { customer = null; }
   if (!customer) return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><section className="result-unavailable" data-result-region="unavailable-state"><p>Civilon Price Check</p><h1>This Price Check result link is no longer available.</h1><p>For privacy, Civilon cannot provide additional information about this link.</p><Link href="/contact-us">Contact Civilon</Link></section></main>;
-  const { result, analysis, priceCheck } = customer;
+  const { result, analysis, priceCheck, requester } = customer;
   const currency = analysis.currencyCode ?? priceCheck.currencyCode;
   const model = {
     reference: priceCheck.publicReference,
@@ -37,5 +37,17 @@ export default async function CustomerResultPage() {
     explanation: result.approvedExplanation,
     limitation: result.limitedEvidenceStatement,
   };
-  return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><CustomerResultView model={model} action={<ResultSourcingAction alreadyRequested={customer.sourcingRequested} />} /></main>;
+  const initialCondition = ["NE", "NS", "OH", "SV", "AR"].includes(priceCheck.conditionCode)
+    ? priceCheck.conditionCode as "NE" | "NS" | "OH" | "SV" | "AR"
+    : "NOT_SURE";
+  return <main className="private-result-page" data-result-page="private"><CleanResultUrl /><CustomerResultView model={model} action={<ResultSourcingAction
+    partNumber={priceCheck.originalPartNumber}
+    initialQuantity={priceCheck.quantity}
+    initialCondition={initialCondition}
+    initialUrgency={priceCheck.aog ? "aog" : "not_sure"}
+    initialCountry={requester.country ?? ""}
+    hasPhoneOnFile={Boolean(requester.phone)}
+    legacySourcingRequested={customer.sourcingRequested}
+    existingRequest={customer.linkedBuyRequest ? { reference: customer.linkedBuyRequest.publicReference, status: customer.linkedBuyRequest.status } : null}
+  />} /></main>;
 }

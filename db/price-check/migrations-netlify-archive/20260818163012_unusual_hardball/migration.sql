@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "buy_requests_source_result_uidx" ON "buy_requests" ("source_result_id");

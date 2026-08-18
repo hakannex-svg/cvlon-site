@@ -225,7 +225,7 @@ export function BuyRequestDetail({
             <Field label="Last updated">{value(request.updatedAt)}</Field>
             <Field label="Closed">{value(request.closedAt)}</Field>
             <Field label="From Price Check" wide>{request.sourcePriceCheckId
-              ? <a href={`/admin/price-checks/${request.sourcePriceCheckId}`}>Originating Price Check</a>
+              ? <><a href={`/admin/price-checks/${request.sourcePriceCheckId}#result`}>Originating Price Check result</a>{request.sourceResultId ? <><br /><small className="admin-muted">Exact result record: <code>{request.sourceResultId}</code></small></> : null}</>
               : "—"}</Field>
           </dl>
         </section>
