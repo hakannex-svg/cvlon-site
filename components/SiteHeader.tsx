@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { navigation, siteConfig } from "@/lib/site-config";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
+import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 
 export function SiteHeader() {
@@ -42,8 +43,18 @@ export function SiteHeader() {
     };
   }, [mobile]);
 
-  const visibleNavigation = navigation.map((group) => group.label === "Services" && isPriceCheckEnabled()
-    ? { ...group, items: [...group.items, { label: "Aircraft Part Price Check", href: "/price-check" }] }
+  // Each workflow contributes its own entry under its own flag, so enabling
+  // one can never reveal the other. The private verification page is
+  // deliberately absent: it is only ever reached from an emailed link.
+  const visibleNavigation = navigation.map((group) => group.label === "Services"
+    ? {
+      ...group,
+      items: [
+        ...group.items,
+        ...(isMarketplaceEnabled() ? [{ label: "Buy & Sell Aircraft Parts", href: "/buy-sell-aircraft-parts" }] : []),
+        ...(isPriceCheckEnabled() ? [{ label: "Aircraft Part Price Check", href: "/price-check" }] : []),
+      ],
+    }
     : group);
 
   return <header>

@@ -1,4 +1,3 @@
-import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { isBootstrapAdmin } from "@/lib/price-check/admin/identity";
 import {
   exchangeGoogleAuthorizationCode,
@@ -31,8 +30,6 @@ function callbackRedirect(config: GoogleOidcConfig, path: string, cookies: strin
 }
 
 export async function GET(request: Request) {
-  if (!isPriceCheckEnabled()) return new Response(null, { status: 404 });
-
   let config: GoogleOidcConfig;
   let stage = "request_validation";
   try {
@@ -92,7 +89,7 @@ export async function GET(request: Request) {
       authorization.user.id,
       config.sessionSecret,
     );
-    return callbackRedirect(config, "/admin/price-checks", [
+    return callbackRedirect(config, "/admin/queue", [
       clearSecureCookie(GOOGLE_OIDC_TRANSACTION_COOKIE),
       secureCookie(ADMIN_SESSION_COOKIE, session.token, ADMIN_SESSION_TTL_SECONDS),
     ]);

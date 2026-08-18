@@ -197,7 +197,10 @@ test("admin source boundary uses server OIDC sessions, strict origin checks, no 
   assert.match(callback, /verifyGoogleAuthorizationTransaction/);
   assert.match(callback, /exchangeGoogleAuthorizationCode/);
   assert.match(callback, /isBootstrapAdmin/);
-  assert.match(callback, /\/admin\/price-checks/);
+  // A successful sign-in now lands on the unified staff queue, which is
+  // reachable with every public product flag off.
+  assert.match(callback, /\/admin\/queue/);
+  assert.doesNotMatch(callback, /isPriceCheckEnabled/);
   assert.match(callback, /Referrer-Policy/);
   assert.match(urlCleaner, /params\.has\("code"\) && params\.has\("state"\)/);
   assert.match(urlCleaner, /history\.replaceState/);

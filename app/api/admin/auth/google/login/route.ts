@@ -1,4 +1,3 @@
-import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import {
   createGoogleAuthorizationRequest,
   getGoogleOidcConfig,
@@ -9,8 +8,8 @@ import { secureCookie } from "@/lib/price-check/admin/session";
 
 export const dynamic = "force-dynamic";
 
+/** General staff sign-in start. PKCE, state and nonce are unchanged. */
 export async function GET() {
-  if (!isPriceCheckEnabled()) return new Response(null, { status: 404 });
   try {
     const config = getGoogleOidcConfig();
     const authorization = await createGoogleAuthorizationRequest(config);

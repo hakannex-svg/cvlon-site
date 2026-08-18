@@ -16,6 +16,33 @@ export const statusLabels: Record<string, string> = {
   withdrawn: "Withdrawn",
 };
 
+/** Buy Request and Sell Submission status labels, alongside the Price Check set above. */
+export const marketplaceStatusLabels: Record<string, string> = {
+  pending_verification: "Pending verification",
+  verified: "Verified",
+  sourcing: "Sourcing",
+  quoted: "Quoted",
+  under_review: "Under review",
+  accepted: "Accepted",
+  declined: "Declined",
+  converted: "Converted",
+  closed: "Closed",
+  spam: "Spam",
+  withdrawn: "Withdrawn",
+};
+
+export const unifiedTypeLabels: Record<string, string> = {
+  price_check: "Price Check",
+  buy_request: "Buy Request",
+  sell_submission: "Sell Submission",
+};
+
+/** Falls back to the raw value so an unmapped status is visible, not blank. */
+export function unifiedStatusLabel(type: string, status: string) {
+  const label = type === "price_check" ? statusLabels[status] : marketplaceStatusLabels[status];
+  return label ?? status.replaceAll("_", " ");
+}
+
 export function staffDisplayName(email: string | null) {
   if (!email) return "Unassigned";
   if (email === "david@cvlon.com") return "David";

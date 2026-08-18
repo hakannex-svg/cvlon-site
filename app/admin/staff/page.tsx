@@ -1,17 +1,21 @@
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
 import { StaffManagement } from "@/components/admin/StaffManagement";
-import { getPriceCheckAdminAccess } from "@/lib/price-check/admin/auth";
+import { getAdminAccess } from "@/lib/price-check/admin/auth";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * The staff allowlist is shared by every Civilon workflow, so a marketplace
+ * administrator must be able to manage it while Price Check intake is off.
+ * ADMIN-only enforcement below is unchanged.
+ */
 export default async function StaffPage() {
-  const access = await getPriceCheckAdminAccess();
-  if (access.status === "disabled") notFound();
+  const access = await getAdminAccess();
   if (access.status === "unauthenticated") redirect("/admin/login");
   if (access.status === "forbidden") redirect("/admin/access-denied");
-  if (access.status === "unavailable") return <AdminAccessDenied unavailable />;
+  if (access.status !== "authorized") return <AdminAccessDenied unavailable />;
   if (access.user.role !== "ADMIN") redirect("/admin/access-denied");
   let staff;
   try {

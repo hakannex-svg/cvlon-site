@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { NetlifyDB } from "@netlify/database-dev";
 
+import { expectedMigrationCount } from "./helpers/migration-archive.mjs";
+
 const migrationsDirectory = new URL(
   "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
@@ -36,7 +38,7 @@ function requestInput(attachments, suffix = "A") {
 
 test("pre-submission ownership binds atomically and a handle cannot be reused", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, expectedMigrationCount());
     const { eq } = await import("drizzle-orm");
     const { authorizePendingUpload, findClaimablePendingUploads } = await import("../db/price-check/repositories/upload-repository.ts");
     const { createPriceCheckRequest } = await import("../db/price-check/repositories/request-repository.ts");

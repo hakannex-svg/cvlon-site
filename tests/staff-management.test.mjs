@@ -38,6 +38,12 @@ test("staff page and API are admin/manage_staff gated with origin protection", (
   const page = read("app", "admin", "staff", "page.tsx");
   const route = read("app", "api", "admin", "staff", "route.ts");
   assert.match(page, /access\.user\.role !== "ADMIN"/);
-  assert.match(route, /requireAdminApi\("manage_staff"\)/);
+  // The allowlist is shared by every Civilon workflow, so it authenticates with
+  // the product-independent staff guard. `manage_staff` is still ADMIN-only, so
+  // the authorization outcome is unchanged.
+  assert.match(page, /getAdminAccess/);
+  assert.doesNotMatch(page, /getPriceCheckAdminAccess|isPriceCheckEnabled/);
+  assert.match(route, /requireStaffApi\("manage_staff"\)/);
+  assert.doesNotMatch(route, /requireAdminApi|isPriceCheckEnabled/);
   assert.match(route, /verifyAdminMutationOrigin\(request\)/);
 });

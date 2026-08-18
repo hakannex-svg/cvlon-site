@@ -8,6 +8,8 @@ import test from "node:test";
 
 import { NetlifyDB } from "@netlify/database-dev";
 
+import { expectedMigrationCount } from "./helpers/migration-archive.mjs";
+
 import { priceCheckFixtures } from "./fixtures/price-check-phase-2.mjs";
 
 const execFileAsync = promisify(execFile);
@@ -36,14 +38,68 @@ async function withPriceCheckDatabase(run) {
   }
 }
 
-test("Price Check migrations build an empty 22-table database and replay as a no-op", async () => {
+test("Price Check migrations build the expected empty database and replay as a no-op", async () => {
   await withPriceCheckDatabase(async ({ server, applied }) => {
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, expectedMigrationCount());
     assert.deepEqual(await server.applyMigrations(migrationsDirectory), []);
+
     const { rows } = await server.query(
-      "select count(*)::int as count from information_schema.tables where table_schema = 'public'",
+      "select table_name from information_schema.tables where table_schema = 'public'",
     );
-    assert.equal(rows[0].count, 22);
+    const tables = new Set(rows.map((row) => row.table_name));
+
+    // The 22 Price Check tables this suite has always guarded, named rather
+    // than counted so a rename or a drop cannot hide behind a matching total.
+    const priceCheckTables = [
+      "requesters",
+      "admin_users",
+      "admin_sessions",
+      "price_checks",
+      "price_check_document_requirements",
+      "price_check_upload_sessions",
+      "price_check_pending_uploads",
+      "attachments",
+      "attachment_extractions",
+      "price_check_revisions",
+      "price_observations",
+      "observation_documentation",
+      "part_relationships",
+      "ai_artifacts",
+      "price_check_analyses",
+      "price_check_comparables",
+      "price_check_results",
+      "result_access_tokens",
+      "processing_jobs",
+      "notification_outbox",
+      "audit_events",
+      "sourcing_opportunities",
+    ];
+    assert.equal(priceCheckTables.length, 22);
+    for (const name of priceCheckTables) {
+      assert.ok(tables.has(name), `Price Check table ${name} is missing`);
+    }
+
+    // The additive marketplace package (migration 9) adds exactly these 11.
+    const marketplaceTables = [
+      "marketplace_contacts",
+      "buy_requests",
+      "sell_submissions",
+      "sell_submission_items",
+      "email_verification_tokens",
+      "marketplace_upload_sessions",
+      "marketplace_pending_uploads",
+      "marketplace_attachments",
+      "marketplace_notes",
+      "supplier_responses",
+      "buyer_offers",
+    ];
+    for (const name of marketplaceTables) {
+      assert.ok(tables.has(name), `marketplace table ${name} is missing`);
+    }
+
+    // Nothing else exists: the total is the two named sets and no more.
+    assert.equal(tables.size, priceCheckTables.length + marketplaceTables.length);
+    assert.equal(tables.size, 33);
   });
 });
 

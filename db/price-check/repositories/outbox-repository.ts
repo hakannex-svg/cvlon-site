@@ -1,6 +1,6 @@
 import "../server-boundary.ts";
 
-import { and, asc, eq, inArray, isNull, lte, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, lte, notInArray, or } from "drizzle-orm";
 
 import type { PriceCheckDb } from "../index.ts";
 import { notificationOutbox } from "../schema.ts";
@@ -21,10 +21,38 @@ export async function enqueueNotification(
   return message ?? null;
 }
 
+export type LeaseNotificationInput = {
+  leaseOwner: string;
+  now: Date;
+  leaseUntil: Date;
+  /**
+   * Optional allowlist. When supplied, only these message types may be leased.
+   * A drain that cannot deliver a message type must never lease it, otherwise
+   * another Civilon workflow's message is consumed and dead-lettered by mistake.
+   */
+  messageTypes?: readonly string[];
+  /**
+   * Optional denylist, used to reap genuinely unregistered message types without
+   * touching messages that belong to a registered workflow.
+   */
+  excludeMessageTypes?: readonly string[];
+};
+
 export async function leaseNextNotification(
   db: PriceCheckDb,
-  input: { leaseOwner: string; now: Date; leaseUntil: Date },
+  input: LeaseNotificationInput,
 ) {
+  // An empty allowlist means "this drain handles nothing"; never fall through to
+  // an unfiltered lease, which would consume another workflow's message.
+  if (input.messageTypes && input.messageTypes.length === 0) return null;
+
+  const typeFilters = [
+    input.messageTypes ? inArray(notificationOutbox.messageType, [...input.messageTypes]) : undefined,
+    input.excludeMessageTypes && input.excludeMessageTypes.length > 0
+      ? notInArray(notificationOutbox.messageType, [...input.excludeMessageTypes])
+      : undefined,
+  ].filter((filter) => filter !== undefined);
+
   return db.transaction(async (tx) => {
     const [candidate] = await tx
       .select({ id: notificationOutbox.id })
@@ -37,6 +65,7 @@ export async function leaseNextNotification(
             isNull(notificationOutbox.leaseExpiresAt),
             lte(notificationOutbox.leaseExpiresAt, input.now),
           ),
+          ...typeFilters,
         ),
       )
       .orderBy(
@@ -61,6 +90,7 @@ export async function leaseNextNotification(
             isNull(notificationOutbox.leaseExpiresAt),
             lte(notificationOutbox.leaseExpiresAt, input.now),
           ),
+          ...typeFilters,
         ),
       )
       .returning();

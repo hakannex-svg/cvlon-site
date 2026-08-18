@@ -47,8 +47,12 @@ test("authenticated help and request guidance remain read-only and use normal an
     readFile("app/admin/price-checks/[id]/page.tsx", "utf8"),
     readFile("components/admin/AdminWorkflowOverview.tsx", "utf8"),
   ]);
-  assert.match(help, /getPriceCheckAdminAccess/);
+  // The guide is general staff navigation now, so it authenticates with the
+  // product-independent guard while still requiring a signed-in staff member.
+  assert.match(help, /getAdminAccess/);
+  assert.doesNotMatch(help, /getPriceCheckAdminAccess|isPriceCheckEnabled/);
   assert.match(help, /redirect\("\/admin\/login"\)/);
+  assert.match(help, /redirect\("\/admin\/access-denied"\)/);
   assert.match(help, /active="help"/);
   assert.doesNotMatch(help, /fetch\(|method:\s*"POST"|<form/);
   for (const anchor of ["overview", "documents", "review", "comparables", "result", "activity"]) {

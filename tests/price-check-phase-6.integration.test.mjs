@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { NetlifyDB } from "@netlify/database-dev";
 
+import { expectedMigrationCount } from "./helpers/migration-archive.mjs";
+
 const migrationsDirectory = new URL(
   "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
@@ -47,7 +49,7 @@ async function seedReadyAnalysis(db) {
 
 test("draft, approval, secure delivery, redemption, and sourcing conversion are versioned and private", async () => {
   await withDatabase(async ({ db, schema, applied }) => {
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, expectedMigrationCount());
     const { eq } = await import("drizzle-orm");
     const repository = await import("../db/price-check/repositories/result-delivery-repository.ts");
     const { processOneResultNotification } = await import("../lib/price-check/email/worker.ts");
