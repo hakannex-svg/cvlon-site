@@ -49,7 +49,7 @@ export function AssignmentPanel({ assignee, status, verificationState }: {
       <Field label="Workflow status">{status}</Field>
       <Field label="Contact verification"><VerificationChip state={verificationState} /></Field>
       <Field label="Assigned to">{staffDisplayName(assignee?.email ?? null)}</Field>
-      <Field label="Assignment changes">Available in a later slice</Field>
+      <Field label="Assignment controls">Available to authorized staff in the Actions panel</Field>
     </dl>
   </section>;
 }
@@ -109,7 +109,7 @@ export function MarketplaceNotesPanel({ notes }: { notes: MarketplaceNoteRecord[
   return <section className="admin-panel" aria-label="Internal notes">
     <div className="admin-panel-heading"><h2>Internal notes</h2><InternalOnlyBadge /></div>
     {notes.length === 0
-      ? <p className="admin-muted">No internal notes recorded. Adding notes arrives in a later slice.</p>
+      ? <p className="admin-muted">No internal notes recorded yet.</p>
       : <ul className="admin-note-list">{notes.map(note => <li key={note.id}>
           <p className="admin-note-meta">
             <b>{staffDisplayName(note.authorEmail)}</b>

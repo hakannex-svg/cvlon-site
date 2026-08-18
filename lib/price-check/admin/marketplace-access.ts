@@ -53,13 +53,13 @@ export function buildMarketplaceActionContext(input: {
   role: string;
   staff: readonly { id: string; displayEmail: string }[];
 }): MarketplaceActionContext {
-  const can = (capability: string) =>
-    roleCan(input.role as AdminRole, capability as AdminCapability);
+  const can = (role: string, capability: string) =>
+    roleCan(role as AdminRole, capability as AdminCapability);
   return {
     statusOptions: allowedMarketplaceTransitions(input.aggregate, input.currentStatus, input.role, can),
     staff: input.staff,
-    canTransition: can("transition_marketplace"),
-    canAssign: can("assign_marketplace"),
-    canWriteNote: can("write_marketplace_note"),
+    canTransition: can(input.role, "transition_marketplace"),
+    canAssign: can(input.role, "assign_marketplace"),
+    canWriteNote: can(input.role, "write_marketplace_note"),
   };
 }
