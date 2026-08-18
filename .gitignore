@@ -43,3 +43,6 @@ yarn-error.log*
 
 # Local Netlify folder
 .netlify
+
+# Claude coordinator run state (scripts/claude-coordinator.mjs)
+/.claude-coordinator/

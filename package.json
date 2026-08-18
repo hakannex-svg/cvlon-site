@@ -11,6 +11,11 @@
     "start": "vinext start",
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern .netlify",
+    "test:coordinator": "node --test tests/claude-coordinator.unit.test.mjs tests/claude-coordinator.integration.test.mjs",
+    "claude:run": "node scripts/claude-coordinator.mjs run",
+    "claude:status": "node scripts/claude-coordinator.mjs status",
+    "claude:list": "node scripts/claude-coordinator.mjs list",
+    "claude:cleanup": "node scripts/claude-coordinator.mjs cleanup",
     "db:generate": "drizzle-kit generate",
     "db:price-check:generate": "drizzle-kit generate --config=drizzle.price-check.config.ts"
   },
