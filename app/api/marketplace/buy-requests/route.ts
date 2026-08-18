@@ -1,5 +1,9 @@
 import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import {
+  intakeHeadNotAllowed,
+  intakeMethodNotAllowed,
+} from "@/lib/marketplace/intake-methods";
+import {
   BUY_REQUEST_MAX_BODY_BYTES,
   type BuyRequestSubmitResponse,
 } from "@/lib/marketplace/contract";
@@ -119,3 +123,16 @@ export async function POST(request: Request) {
     }, 503);
   }
 }
+
+/**
+ * Buy intake answers POST and refuses every other method explicitly, with the
+ * route's own privacy headers rather than the framework's bare fall-through.
+ * There is no GET here and never will be: a read surface on this route would
+ * expose other buyers' requests.
+ */
+export const GET = intakeMethodNotAllowed;
+export const PUT = intakeMethodNotAllowed;
+export const PATCH = intakeMethodNotAllowed;
+export const DELETE = intakeMethodNotAllowed;
+export const OPTIONS = intakeMethodNotAllowed;
+export const HEAD = intakeHeadNotAllowed;

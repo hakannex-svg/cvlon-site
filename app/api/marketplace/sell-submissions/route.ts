@@ -1,5 +1,9 @@
 import { isSellSubmissionEnabled } from "@/lib/marketplace/feature";
 import {
+  intakeHeadNotAllowed,
+  intakeMethodNotAllowed,
+} from "@/lib/marketplace/intake-methods";
+import {
   SELL_SUBMISSION_MAX_BODY_BYTES,
   type SellSubmissionSubmitResponse,
 } from "@/lib/marketplace/sell-contract";
@@ -42,7 +46,8 @@ const CONTENT_REFUSAL = /Macro-enabled|Password-protected|not a valid|not a plai
  * Sell intake accepts submissions and nothing else. There is deliberately no
  * GET, HEAD or list handler on this route: a Sell Submission is staff-facing
  * only, and a read surface here would be the beginning of a public inventory
- * listing. Unhandled methods fall through to the framework's 405.
+ * listing. Every non-POST method is answered by the shared refusal at the foot
+ * of this file, so no method reaches the framework's bare 405.
  */
 function json(body: SellSubmissionSubmitResponse, status: number, headers: HeadersInit = {}) {
   return Response.json(body, {
@@ -202,3 +207,16 @@ export async function POST(request: Request) {
     }, 503);
   }
 }
+
+/**
+ * Sell intake answers POST and refuses every other method explicitly, with the
+ * route's own privacy headers rather than the framework's bare fall-through.
+ * None of these is a read handler: a GET or HEAD that returned anything about a
+ * submission would be the beginning of a public inventory listing.
+ */
+export const GET = intakeMethodNotAllowed;
+export const PUT = intakeMethodNotAllowed;
+export const PATCH = intakeMethodNotAllowed;
+export const DELETE = intakeMethodNotAllowed;
+export const OPTIONS = intakeMethodNotAllowed;
+export const HEAD = intakeHeadNotAllowed;
