@@ -1,10 +1,10 @@
-import { accessErrorResponse, privateJson, requireAdminApi, verifyAdminMutationOrigin } from "@/lib/price-check/admin/auth";
+import { accessErrorResponse, privateJson, requireStaffApi, verifyAdminMutationOrigin } from "@/lib/price-check/admin/auth";
 import { staffRoles } from "@/db/price-check/repositories/admin-repository";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const access = await requireAdminApi("manage_staff");
+  const access = await requireStaffApi("manage_staff");
   if (access.status !== "authorized") return accessErrorResponse(access.status);
   try {
     const [{ priceCheckDb }, repository] = await Promise.all([
@@ -18,7 +18,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const access = await requireAdminApi("manage_staff");
+  const access = await requireStaffApi("manage_staff");
   if (access.status !== "authorized") return accessErrorResponse(access.status);
   try {
     verifyAdminMutationOrigin(request);
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const access = await requireAdminApi("manage_staff");
+  const access = await requireStaffApi("manage_staff");
   if (access.status !== "authorized") return accessErrorResponse(access.status);
   try {
     verifyAdminMutationOrigin(request);

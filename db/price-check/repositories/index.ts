@@ -36,3 +36,4 @@ export {
   redeemResultToken,
 } from "./result-delivery-repository.ts";
 export * from "./admin-repository.ts";
+export * from "./marketplace-admin-repository.ts";

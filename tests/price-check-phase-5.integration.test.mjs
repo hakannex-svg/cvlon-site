@@ -3,6 +3,8 @@ import test from "node:test";
 
 import { NetlifyDB } from "@netlify/database-dev";
 
+import { expectedMigrationCount } from "./helpers/migration-archive.mjs";
+
 const migrationsDirectory = new URL(
   "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
@@ -64,7 +66,7 @@ test("selected exact-PN observations create immutable deterministic versions and
     const { eq, asc } = await import("drizzle-orm");
     const { changePriceCheckStatus } = await import("../db/price-check/repositories/admin-repository.ts");
     const { listCandidateObservations, runGovernedAnalysis } = await import("../db/price-check/repositories/comparable-repository.ts");
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, expectedMigrationCount());
     const actor = await seedAdmin(db);
     const request = await seedRequest(db, "SV-100");
     await changePriceCheckStatus(db, { priceCheckId: request.priceCheckId, to: "ready_for_analysis", actor });

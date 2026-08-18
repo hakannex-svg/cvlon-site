@@ -1,0 +1,137 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { NOTE_MAX_LENGTH, UNASSIGNED_VALUE } from "@/lib/marketplace/admin/validation";
+
+/**
+ * The only write surface on a marketplace detail page.
+ *
+ * Kept in its own client component so the detail views stay server-rendered and
+ * free of any mutation path. Nothing here notifies a buyer or a supplier, sends
+ * mail, or emits analytics: a staff action changes the record and the audit
+ * trail, and the record is the system of record.
+ */
+
+type Staff = { id: string; displayEmail: string };
+
+export function MarketplaceDetailActions({
+  basePath, recordId, currentStatus, statusOptions, statusLabels,
+  assigneeId, staff, exceptionalStatuses, canAssign, canTransition, canWriteNote,
+}: {
+  /** `/api/admin/marketplace/buy-requests` or the Sell equivalent. */
+  basePath: string;
+  recordId: string;
+  currentStatus: string;
+  /** Only the transitions this staff member is actually authorized to make. */
+  statusOptions: readonly string[];
+  statusLabels: Record<string, string>;
+  assigneeId: string | null;
+  staff: readonly Staff[];
+  /** Rendered with a warning; they end or override a customer's record. */
+  exceptionalStatuses: readonly string[];
+  canAssign: boolean;
+  canTransition: boolean;
+  canWriteNote: boolean;
+}) {
+  const router = useRouter();
+  const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [nextStatus, setNextStatus] = useState("");
+  const [note, setNote] = useState("");
+
+  async function post(action: string, path: string, body: unknown, successMessage: string, onDone?: () => void) {
+    setPending(action);
+    setError(null);
+    setNotice(null);
+    try {
+      const response = await fetch(`${basePath}/${recordId}/${path}`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => null) as { ok?: boolean; error?: string } | null;
+      if (!response.ok || !payload?.ok) {
+        setError(payload?.error ?? "That action could not be completed.");
+        return;
+      }
+      setNotice(successMessage);
+      onDone?.();
+      router.refresh();
+    } catch {
+      setError("That action could not be completed.");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  const label = (status: string) => statusLabels[status] ?? status.replaceAll("_", " ");
+  const busy = pending !== null;
+
+  return <section className="admin-panel admin-actions-panel" aria-label="Record actions">
+    <div className="admin-panel-heading"><h2>Actions</h2><span>Recorded in the audit trail</span></div>
+
+    {error ? <p className="admin-error" role="alert">{error}</p> : null}
+    {notice ? <p className="admin-success" role="status">{notice}</p> : null}
+
+    {canTransition && statusOptions.length > 0 ? (
+      <form className="admin-inline-form" onSubmit={(event) => {
+        event.preventDefault();
+        if (!nextStatus) return;
+        void post("status", "status", { expectedStatus: currentStatus, to: nextStatus }, `Status changed to ${label(nextStatus)}.`, () => setNextStatus(""));
+      }}>
+        <label>
+          <span>Change status</span>
+          <select value={nextStatus} onChange={(event) => setNextStatus(event.target.value)} disabled={busy}>
+            <option value="">Keep {label(currentStatus)}</option>
+            {statusOptions.map((status) => <option key={status} value={status}>
+              {label(status)}{exceptionalStatuses.includes(status) ? " (ends the record)" : ""}
+            </option>)}
+          </select>
+        </label>
+        <button type="submit" disabled={busy || !nextStatus}>{pending === "status" ? "Saving…" : "Apply"}</button>
+      </form>
+    ) : <p className="admin-muted">You do not have permission to change this record&apos;s status, or it has reached a final state.</p>}
+
+    {canAssign ? (
+      <form className="admin-inline-form" onSubmit={(event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        const value = String(form.get("assigneeId") ?? "");
+        void post("assignment", "assignment", { assigneeId: value || UNASSIGNED_VALUE }, "Assignment saved.");
+      }}>
+        <label>
+          <span>Assign to</span>
+          <select name="assigneeId" defaultValue={assigneeId ?? ""} disabled={busy}>
+            <option value="">Unassigned</option>
+            {staff.map((member) => <option key={member.id} value={member.id}>{member.displayEmail}</option>)}
+          </select>
+        </label>
+        <button type="submit" disabled={busy}>{pending === "assignment" ? "Saving…" : "Save"}</button>
+      </form>
+    ) : null}
+
+    {canWriteNote ? (
+      <form className="admin-form-grid" onSubmit={(event) => {
+        event.preventDefault();
+        if (!note.trim()) return;
+        void post("note", "notes", { body: note }, "Note added.", () => setNote(""));
+      }}>
+        <label className="full">
+          <span>Internal note <em>Staff only. Never sent to a buyer or a supplier.</em></span>
+          <textarea
+            name="body"
+            value={note}
+            maxLength={NOTE_MAX_LENGTH}
+            onChange={(event) => setNote(event.target.value)}
+            placeholder="What happened, and what the next person needs to know."
+            disabled={busy}
+          />
+        </label>
+        <button type="submit" disabled={busy || !note.trim()}>{pending === "note" ? "Saving…" : "Add note"}</button>
+      </form>
+    ) : null}
+  </section>;
+}

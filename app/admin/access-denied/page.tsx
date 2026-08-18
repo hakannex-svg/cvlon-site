@@ -1,8 +1,6 @@
-import { notFound } from "next/navigation";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
-import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 
+/** Reachable for any staff member turned away, whatever the public flags say. */
 export default function AccessDeniedPage() {
-  if (!isPriceCheckEnabled()) notFound();
   return <AdminAccessDenied />;
 }

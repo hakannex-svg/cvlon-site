@@ -3,6 +3,8 @@ import test from "node:test";
 
 import { NetlifyDB } from "@netlify/database-dev";
 
+import { expectedMigrationCount } from "./helpers/migration-archive.mjs";
+
 const migrationsDirectory = new URL(
   "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
@@ -76,7 +78,7 @@ test("Phase 3 submission atomically creates the accepted aggregate and retries i
     const { eq, sql } = await import("drizzle-orm");
     const { validatePriceCheckSubmission } = await import("../lib/price-check/validation.ts");
     const { submitPriceCheck } = await import("../lib/price-check/submission-service.ts");
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, expectedMigrationCount());
 
     const validation = validatePriceCheckSubmission(rawSubmission());
     assert.equal(validation.success, true);

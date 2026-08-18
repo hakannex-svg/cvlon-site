@@ -7,12 +7,11 @@ import {
   clearSecureCookie,
   readCookie,
 } from "@/lib/price-check/admin/session";
-import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 
 export const dynamic = "force-dynamic";
 
+/** Origin check, revocation, cookie clearing and private headers are unchanged. */
 export async function POST(request: Request) {
-  if (!isPriceCheckEnabled()) return new Response(null, { status: 404 });
   try {
     verifyAdminMutationOrigin(request);
     const config = getGoogleOidcConfig();

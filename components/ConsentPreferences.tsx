@@ -6,7 +6,11 @@ const STORAGE_KEY = "civilon_analytics_consent_v1";
 type Preference = "granted" | "denied";
 
 function isPrivateRoute(path: string) {
-  return path === "/admin" || path.startsWith("/admin/") || path === "/price-check/result" || path.startsWith("/price-check/result/");
+  return path === "/admin" || path.startsWith("/admin/")
+    || path === "/price-check/result" || path.startsWith("/price-check/result/")
+    || path === "/buy-sell-aircraft-parts/verify" || path.startsWith("/buy-sell-aircraft-parts/verify/")
+    || path === "/buy-sell-aircraft-parts/sell/verify"
+    || path.startsWith("/buy-sell-aircraft-parts/sell/verify/");
 }
 
 function publishConsent(preference: Preference) {

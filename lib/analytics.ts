@@ -7,7 +7,18 @@ export type AnalyticsEventName =
   | "price_check_start"
   | "price_check_submit"
   | "price_check_upload_started"
-  | "price_check_upload_completed";
+  | "price_check_upload_completed"
+  | "buy_sell_hub_view"
+  | "buy_request_view"
+  | "buy_request_start"
+  | "buy_request_submit"
+  | "buy_request_verification_confirmed"
+  | "sell_submission_view"
+  | "sell_submission_start"
+  | "sell_submission_upload_started"
+  | "sell_submission_upload_completed"
+  | "sell_submission_submit"
+  | "sell_submission_verification_confirmed";
 
 export type AnalyticsContext = {
   source_page?: string;

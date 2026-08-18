@@ -40,7 +40,7 @@ export default async function PriceCheckQueuePage({ searchParams }: { searchPara
     return <AdminAccessDenied unavailable />;
   }
 
-  return <AdminChrome user={access.user} active="queue">
+  return <AdminChrome user={access.user} active="price-checks">
     <section className="admin-page admin-queue-page">
       <div className="admin-page-heading">
         <div><p className="admin-eyebrow">Price Check operations</p><h1>Review queue</h1><p>Human-reviewed transaction requests awaiting triage, clarification, or analysis preparation.</p></div>

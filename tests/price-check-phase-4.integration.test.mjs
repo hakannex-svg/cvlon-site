@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { NetlifyDB } from "@netlify/database-dev";
 
+import { expectedMigrationCount } from "./helpers/migration-archive.mjs";
+
 const migrationsDirectory = new URL(
   "../db/price-check/migrations-netlify-archive/",
   import.meta.url,
@@ -51,7 +53,7 @@ test("first verified Google OIDC login binds an ADMIN, subsequent subject author
   await withDatabase(async ({ db, schema, applied }) => {
     const { sql } = await import("drizzle-orm");
     const { bindOrAuthorizeAdmin } = await import("../db/price-check/repositories/admin-repository.ts");
-    assert.equal(applied.length, 8);
+    assert.equal(applied.length, expectedMigrationCount());
     const identity = googleIdentity("hakannex@gmail.com", "google-subject-hakan");
     const first = await bindOrAuthorizeAdmin(db, identity, true);
     assert.equal(first.status, "bound");
