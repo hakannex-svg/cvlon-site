@@ -2047,6 +2047,101 @@ export const buyerOffers = pgTable(
   ],
 );
 
+/**
+ * One staff-issued request for follow-up seller evidence on an existing Sell
+ * Submission.
+ *
+ * Deliberately its own table rather than a widened `email_verification_tokens`:
+ *
+ *  - That table's partial unique index allows exactly one live token per
+ *    aggregate, and its purpose check constraint forces
+ *    `sell_submission -> SELL_SUBMISSION_CONTACT`. Adding a second purpose would
+ *    mean altering an approved constraint on the path that proves a supplier's
+ *    e-mail address, to serve a workflow that has nothing to do with it.
+ *  - Business-email verification and evidence follow-up are different concepts
+ *    and must stay distinguishable in the record. Neither is company
+ *    verification, certification, airworthiness or regulatory approval, an
+ *    authenticity or fitness guarantee, or supplier approval.
+ *
+ * Only the keyed hash and the derivation nonce are stored, exactly as for
+ * `email_verification_tokens`: the plaintext credential exists only inside the
+ * outgoing e-mail. The partial unique index gives one live request per
+ * submission, so issuing a new one requires revoking the previous one in the
+ * same transaction. Nothing here publishes, lists, or exposes any evidence.
+ */
+export const marketplaceEvidenceRequests = pgTable(
+  "marketplace_evidence_requests",
+  {
+    id: id().primaryKey(),
+    sellSubmissionId: id("sell_submission_id")
+      .notNull()
+      .references(() => sellSubmissions.id, { onDelete: "cascade" }),
+    contactId: id("contact_id")
+      .notNull()
+      .references(() => marketplaceContacts.id, { onDelete: "restrict" }),
+    /**
+     * The evidence categories staff asked for, drawn from
+     * `marketplace_upload_purpose`. `OTHER` is deliberately not requestable:
+     * "send us something else" is not an evidence category a seller can act on.
+     */
+    requestedCategories: varchar("requested_categories", { length: 40 })
+      .array()
+      .notNull(),
+    keyedTokenHash: varchar("keyed_token_hash", { length: 128 }).notNull(),
+    tokenDerivationNonce: varchar("token_derivation_nonce", { length: 64 }).notNull(),
+    requestedByAdminUserId: id("requested_by_admin_user_id").references(
+      () => adminUsers.id,
+      { onDelete: "set null" },
+    ),
+    issuedAt: utcTimestamp("issued_at").notNull(),
+    expiresAt: utcTimestamp("expires_at").notNull(),
+    consumedAt: utcTimestamp("consumed_at"),
+    revokedAt: utcTimestamp("revoked_at"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    maxAttemptCount: integer("max_attempt_count").notNull().default(10),
+    /** How many files the seller actually bound when they used the link. */
+    submittedAttachmentCount: integer("submitted_attachment_count")
+      .notNull()
+      .default(0),
+    createdAt: utcTimestamp("created_at").notNull().defaultNow(),
+    updatedAt: utcTimestamp("updated_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("marketplace_evidence_requests_hash_uidx").on(table.keyedTokenHash),
+    uniqueIndex("marketplace_evidence_requests_active_uidx")
+      .on(table.sellSubmissionId)
+      .where(sql`${table.consumedAt} is null and ${table.revokedAt} is null`),
+    index("marketplace_evidence_requests_submission_idx").on(table.sellSubmissionId),
+    index("marketplace_evidence_requests_expiry_idx").on(table.expiresAt),
+    check(
+      "marketplace_evidence_requests_expiry_chk",
+      sql`${table.expiresAt} > ${table.issuedAt}`,
+    ),
+    check(
+      "marketplace_evidence_requests_lifecycle_chk",
+      sql`${table.consumedAt} is null or ${table.revokedAt} is null`,
+    ),
+    check(
+      "marketplace_evidence_requests_consumed_order_chk",
+      sql`${table.consumedAt} is null or ${table.consumedAt} >= ${table.issuedAt}`,
+    ),
+    check(
+      "marketplace_evidence_requests_attempt_chk",
+      sql`${table.attemptCount} >= 0 and ${table.maxAttemptCount} > 0 and ${table.attemptCount} <= ${table.maxAttemptCount}`,
+    ),
+    check(
+      "marketplace_evidence_requests_categories_chk",
+      sql`array_length(${table.requestedCategories}, 1) between 1 and 5 and ${table.requestedCategories} <@ array['INVENTORY_SPREADSHEET', 'WAREHOUSE_BUSINESS_EVIDENCE', 'CUSTODY_PART_PHOTO', 'PART_NUMBER_SERIAL_PHOTO', 'RELEASE_SUPPORTING_DOCUMENT']::varchar(40)[]`,
+    ),
+    // A consumed request carries at least one bound file, and an unconsumed one
+    // carries none: the counter cannot drift away from what actually happened.
+    check(
+      "marketplace_evidence_requests_submitted_chk",
+      sql`(${table.consumedAt} is null and ${table.submittedAttachmentCount} = 0) or (${table.consumedAt} is not null and ${table.submittedAttachmentCount} >= 1)`,
+    ),
+  ],
+);
+
 export type MarketplaceContact = typeof marketplaceContacts.$inferSelect;
 export type NewMarketplaceContact = typeof marketplaceContacts.$inferInsert;
 export type BuyRequest = typeof buyRequests.$inferSelect;
@@ -2067,3 +2162,7 @@ export type SupplierResponse = typeof supplierResponses.$inferSelect;
 export type NewSupplierResponse = typeof supplierResponses.$inferInsert;
 export type BuyerOffer = typeof buyerOffers.$inferSelect;
 export type NewBuyerOffer = typeof buyerOffers.$inferInsert;
+export type MarketplaceEvidenceRequest =
+  typeof marketplaceEvidenceRequests.$inferSelect;
+export type NewMarketplaceEvidenceRequest =
+  typeof marketplaceEvidenceRequests.$inferInsert;

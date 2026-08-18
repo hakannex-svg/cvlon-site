@@ -6,6 +6,10 @@ import {
   isInternalReviewState,
   type InternalReviewState,
 } from "../../../db/price-check/domain/internal-review.ts";
+import {
+  normalizeSellEvidenceCategories,
+  type SellEvidenceRequestCategory,
+} from "../../../db/price-check/domain/sell-evidence-request.ts";
 
 /**
  * Strict input validation for the marketplace admin mutations.
@@ -105,6 +109,34 @@ export function validateMarketplaceNote(raw: unknown): ValidationResult<NoteInpu
   if (normalized.length > NOTE_MAX_LENGTH) return reject(`Keep the note under ${NOTE_MAX_LENGTH} characters.`);
   if (CONTROL_CHARACTERS.test(normalized)) return reject("Remove control characters from the note.");
   return { ok: true, data: { body: normalized } };
+}
+
+export type SellEvidenceRequestInput = { categories: SellEvidenceRequestCategory[] };
+
+/**
+ * Follow-up evidence request payload: one `categories` array, nothing else.
+ *
+ * The allowlist is exact and at least one entry is required. A staff member who
+ * sends nothing has not asked for anything, and a category this build does not
+ * recognise is refused rather than dropped — a silently ignored category would
+ * mean a seller is never asked for evidence a staff member believes they
+ * requested. Duplicates and ordering are normalised away, so the same request
+ * made twice is stored identically.
+ */
+export function validateSellEvidenceRequest(
+  raw: unknown,
+): ValidationResult<SellEvidenceRequestInput> {
+  const body = asObject(raw);
+  if (!body) return reject("A request body is required.");
+  const extra = unknownKeys(body, ["categories"]);
+  if (extra.length) return reject("Unexpected fields were rejected.");
+
+  const { categories } = body;
+  if (!Array.isArray(categories)) return reject("Choose at least one kind of evidence.");
+  if (categories.length === 0) return reject("Choose at least one kind of evidence.");
+  const normalized = normalizeSellEvidenceCategories(categories);
+  if (!normalized) return reject("Choose valid kinds of evidence.");
+  return { ok: true, data: { categories: normalized } };
 }
 
 export type InternalReviewInput = { state: InternalReviewState };

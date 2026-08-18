@@ -30,6 +30,10 @@ export type AdminCapability =
   | "transition_marketplace"
   | "write_marketplace_note"
   | "download_marketplace_evidence"
+  // Asking a seller for follow-up evidence on a submission Civilon already
+  // holds. Ordinary marketplace work: it changes nothing about the record and
+  // asserts nothing about the parts, it only sends the seller a scoped link.
+  | "request_marketplace_evidence"
   // Internal business/evidence review. A staff working status only — never a
   // certification, approval, or any customer-facing signal.
   | "review_marketplace"
@@ -67,6 +71,7 @@ export const marketplaceCapabilities = [
   "transition_marketplace",
   "write_marketplace_note",
   "download_marketplace_evidence",
+  "request_marketplace_evidence",
   "review_marketplace",
   "record_supplier_response",
   "manage_buyer_offer",
@@ -76,9 +81,9 @@ export const marketplaceCapabilities = [
 
 const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
   ANALYST: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "draft_ai_explanation", "download_attachment", "extract_attachment", "apply_extraction",
-    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "review_marketplace", "record_supplier_response"],
+    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "request_marketplace_evidence", "review_marketplace", "record_supplier_response"],
   REVIEWER: ["view", "self_assign", "revise", "request_information", "transition", "analyze", "create_observation", "draft_result", "draft_ai_explanation", "approve_result", "send_result", "download_attachment", "extract_attachment", "apply_extraction",
-    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "review_marketplace", "record_supplier_response", "manage_buyer_offer"],
+    "view_marketplace", "assign_marketplace", "transition_marketplace", "write_marketplace_note", "download_marketplace_evidence", "request_marketplace_evidence", "review_marketplace", "record_supplier_response", "manage_buyer_offer"],
   ADMIN: [
     "view",
     "self_assign",
@@ -105,6 +110,7 @@ const capabilities: Record<AdminRole, readonly AdminCapability[]> = {
     "transition_marketplace",
     "write_marketplace_note",
     "download_marketplace_evidence",
+    "request_marketplace_evidence",
     "review_marketplace",
     "record_supplier_response",
     "manage_buyer_offer",

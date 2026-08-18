@@ -66,6 +66,16 @@ test("each handler uses its own capability and checks the origin before mutating
     createNoteRoute: "write_marketplace_note",
     createBusinessReviewRoute: "review_marketplace",
     createAttachmentReviewRoute: "review_marketplace",
+    createEvidenceRequestRoute: "request_marketplace_evidence",
+  };
+  /**
+   * The repository module each factory imports. The evidence request is the one
+   * mutation that does not go through `marketplace-write-repository`: it mints a
+   * credential, so it goes through its own service, which is the layer that
+   * keeps the plaintext out of the route entirely.
+   */
+  const repositoryImport = {
+    createEvidenceRequestRoute: "sell-evidence-request-service",
   };
   for (const [factory, capability] of Object.entries(handlers)) {
     const start = shared.indexOf(`export function ${factory}(`);

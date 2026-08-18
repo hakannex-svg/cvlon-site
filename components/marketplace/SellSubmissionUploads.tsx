@@ -13,8 +13,8 @@ import {
   formatSellUploadSize,
   resolveSellUploadMime,
   sellUploadCeiling,
-  sellUploadOptionByValue,
   sellUploadOptions,
+  type SellUploadOption,
 } from "@/lib/marketplace/sell-upload-options";
 import type { MarketplaceUploadPurpose } from "@/lib/marketplace/uploads/constants";
 
@@ -58,16 +58,34 @@ const MAX_TOTAL_BYTES = SELL_UPLOAD_MAX_TOTAL_BYTES;
 export function SellSubmissionUploads({
   items,
   onChange,
+  options = sellUploadOptions,
+  sourcePage = SELL_SUBMISSION_SOURCE_PAGE,
+  required = false,
 }: {
   items: UploadItem[];
   onChange: (update: (current: UploadItem[]) => UploadItem[]) => void;
+  /**
+   * Which purposes may be chosen. Defaults to the whole seller-facing policy,
+   * which is what the initial intake offers. A follow-up evidence request
+   * narrows it to exactly what staff asked for, so the seller cannot file a
+   * file under a category nobody requested and the server would refuse anyway.
+   */
+  options?: readonly SellUploadOption[];
+  /** Analytics page label. Never carries a file, purpose, size or handle. */
+  sourcePage?: string;
+  /**
+   * True where at least one finished file is the point of the surface. Changes
+   * the copy only: this component never blocks anything, and the server is the
+   * one that decides whether a submission is acceptable.
+   */
+  required?: boolean;
 }) {
-  const [purpose, setPurpose] = useState<SellUploadPurpose>("INVENTORY_SPREADSHEET");
+  const [purpose, setPurpose] = useState<SellUploadPurpose>(options[0]!.value);
   const [notice, setNotice] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const startedTracking = useRef(false);
 
-  const selected = sellUploadOptionByValue.get(purpose)!;
+  const selected = options.find((option) => option.value === purpose) ?? options[0]!;
   const totalBytes = items.reduce((sum, item) => sum + item.size, 0);
 
   function patch(localId: string, changes: Partial<UploadItem>) {
@@ -125,7 +143,7 @@ export function SellSubmissionUploads({
       // whole file in memory for the rest of the session for no purpose.
       patch(item.localId, { status: "ready", error: "", file: null });
       trackCivilonEvent("sell_submission_upload_completed", {
-        source_page: SELL_SUBMISSION_SOURCE_PAGE,
+        source_page: sourcePage,
       });
     } catch {
       patch(item.localId, {
@@ -183,7 +201,7 @@ export function SellSubmissionUploads({
     if (!startedTracking.current) {
       startedTracking.current = true;
       trackCivilonEvent("sell_submission_upload_started", {
-        source_page: SELL_SUBMISSION_SOURCE_PAGE,
+        source_page: sourcePage,
       });
     }
 
@@ -213,9 +231,9 @@ export function SellSubmissionUploads({
     <div className="marketplace-upload-panel">
       <div className="marketplace-upload-intro">
         <p>
-          Files are optional. They help Civilon review an offer faster, and you
-          can send the submission without any. Use files you already have—no
-          camera, location or live capture is required or requested.
+          {required
+            ? "Civilon already has your submission—this only adds what was asked for. Use files you already have; photos you took earlier are fine, and no camera, location or live capture is required or requested."
+            : "Files are optional. They help Civilon review an offer faster, and you can send the submission without any. Use files you already have—no camera, location or live capture is required or requested."}
         </p>
         <p className="field-help">
           Accepted: JPG, PNG, WebP, PDF, CSV and macro-free XLSX. Up to{" "}
@@ -235,7 +253,7 @@ export function SellSubmissionUploads({
               setNotice("");
             }}
           >
-            {sellUploadOptions.map((entry) => (
+            {options.map((entry) => (
               <option key={entry.value} value={entry.value}>{entry.label}</option>
             ))}
           </select>
@@ -292,8 +310,12 @@ export function SellSubmissionUploads({
 
       <p className="field-help">
         {pending
-          ? "You can keep filling in the form while files upload. Only files that finish are attached—sending before then submits without them."
-          : "You can send your submission with or without files."}{" "}
+          ? required
+            ? "Only files that finish uploading are attached—sending before then leaves them out."
+            : "You can keep filling in the form while files upload. Only files that finish are attached—sending before then submits without them."
+          : required
+            ? "Send at least one file that has finished uploading."
+            : "You can send your submission with or without files."}{" "}
         Uploading evidence is not certification, regulatory approval, airworthiness
         approval, or a guarantee of authenticity or fitness.
       </p>

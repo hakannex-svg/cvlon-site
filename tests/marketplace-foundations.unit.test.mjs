@@ -240,10 +240,11 @@ test("the shipped registry owns every notification type and exposes its reserved
     "BUY_REQUEST_INTERNAL_RECEIVED",
     "SELL_SUBMISSION_VERIFY_EMAIL",
     "SELL_SUBMISSION_INTERNAL_RECEIVED",
+    "SELL_SUBMISSION_EVIDENCE_REQUEST",
     "BUYER_OFFER_TO_BUYER",
     "BUYER_OFFER_RESPONSE_INTERNAL",
   ]);
-  assert.equal(civilonNotificationHandlers.length, 7);
+  assert.equal(civilonNotificationHandlers.length, 8);
   assert.equal(
     civilonNotificationHandlers.filter((handler) => handler.workflow === "price-check").length,
     1,

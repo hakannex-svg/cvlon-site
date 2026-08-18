@@ -7,7 +7,13 @@ import type {
 import { MarketplaceDetailActions } from "./MarketplaceDetailActions";
 import type { MarketplaceActionContext } from "@/lib/price-check/admin/marketplace-access";
 import { summarizeEvidenceCategories } from "@/db/price-check/domain/internal-review";
+import {
+  isSellEvidenceRequestCategory,
+  sellEvidenceRequestCategories,
+  sellEvidenceRequestState,
+} from "@/db/price-check/domain/sell-evidence-request";
 import { MarketplaceEvidenceReview } from "./MarketplaceEvidenceReview";
+import { SellEvidenceRequestPanel } from "./SellEvidenceRequestPanel";
 import {
   AssignmentPanel,
   AttributionPanel,
@@ -108,6 +114,34 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
   const submission = detail.sellSubmission;
   const bulk = submission.submissionKind === "bulk_inventory";
   const evidenceSummary = summarizeEvidenceCategories(detail.attachments);
+  // Pre-checked in the request control. Derived from the same summary the table
+  // above renders, so what staff are asked to request is exactly what the table
+  // shows as missing — no second definition of "missing" anywhere.
+  const missingCategories = sellEvidenceRequestCategories.filter((category) => (
+    evidenceSummary.some((entry) => entry.purpose === category && entry.state === "missing")
+  ));
+  // Requesting evidence needs a confirmed seller address and a record Civilon
+  // has not ended. Both are re-decided against the stored record by the route.
+  const terminal = ["declined", "closed", "spam", "withdrawn"].includes(submission.status);
+  const contactVerified = detail.contact.verificationState === "VERIFIED";
+  // The lifecycle is decided here, on the server, from the stored timestamps.
+  // A client-side clock would let a browser disagree with the row about whether
+  // a link is still live.
+  const latestEvidenceRequest = detail.evidenceRequest && {
+    state: sellEvidenceRequestState(detail.evidenceRequest, new Date()),
+    categories: detail.evidenceRequest.categories.filter(isSellEvidenceRequestCategory),
+    requestedByEmail: detail.evidenceRequest.requestedByEmail,
+    issuedAt: formatDateTime(detail.evidenceRequest.issuedAt),
+    expiresAt: formatDateTime(detail.evidenceRequest.expiresAt),
+    submittedAttachmentCount: detail.evidenceRequest.submittedAttachmentCount,
+  };
+  const blockedReason = !actions.canRequestEvidence
+    ? "You do not have permission to ask a seller for evidence."
+    : terminal
+      ? "This submission is closed, so Civilon does not ask the seller for more evidence."
+      : !contactVerified
+        ? "The seller has not confirmed their email address, so there is no address to send a request to."
+        : null;
   return <section className="admin-page">
     {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate plain anchor for resilient admin navigation */}
     <a className="admin-back" href="/admin/sell-submissions">← Sell Submissions</a>
@@ -194,6 +228,14 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
                 <tbody>{detail.attachments.map(attachment => <EvidenceRow key={attachment.id} attachment={attachment} submissionId={submission.id} canDownload={canDownloadEvidence} canReview={actions.canReview} />)}</tbody>
               </table></div>}
         </section>
+
+        <SellEvidenceRequestPanel
+          submissionId={submission.id}
+          missingCategories={missingCategories}
+          latest={latestEvidenceRequest}
+          canRequest={blockedReason === null}
+          blockedReason={blockedReason}
+        />
 
         <MarketplaceContactPanel contact={detail.contact} />
         <MarketplaceNotesPanel notes={detail.notes} />
