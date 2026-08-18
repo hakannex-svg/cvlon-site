@@ -38,6 +38,18 @@ export function VerificationChip({ state }: { state: "verified" | "pending" }) {
     : <span className="admin-status status-pending_verification">Awaiting verification</span>;
 }
 
+export const internalReviewLabels: Record<string, string> = {
+  not_reviewed: "Not reviewed",
+  reviewed: "Reviewed",
+  concern: "Concern",
+};
+
+export function InternalReviewChip({ state }: { state: string }) {
+  return <span className={`admin-status internal-review-${state}`}>
+    {internalReviewLabels[state] ?? state}
+  </span>;
+}
+
 export function AssignmentPanel({ assignee, status, verificationState }: {
   assignee: MarketplaceAssignee;
   status: ReactNode;
@@ -56,7 +68,8 @@ export function AssignmentPanel({ assignee, status, verificationState }: {
 
 export function MarketplaceContactPanel({ contact }: { contact: MarketplaceContactSummary }) {
   return <section className="admin-panel" aria-label="Company and contact">
-    <div className="admin-panel-heading"><h2>Company &amp; contact</h2><span>Submitted by the customer</span></div>
+    <div className="admin-panel-heading"><h2>Company &amp; contact</h2><span>Customer details and internal review</span></div>
+    <p className="admin-muted">Contact e-mail verification and Civilon&apos;s internal business review are separate. Internal review is not certification, regulatory approval, supplier approval, or a guarantee.</p>
     <dl className="admin-definition-grid">
       <Field label="Company">{value(contact.companyName)}</Field>
       <Field label="Contact">{value(`${contact.firstName} ${contact.lastName}`.trim())}</Field>
@@ -72,6 +85,9 @@ export function MarketplaceContactPanel({ contact }: { contact: MarketplaceConta
       <Field label="Acts as seller">{value(contact.actsAsSeller)}</Field>
       <Field label="Contact verification state">{value(contact.verificationState)}</Field>
       <Field label="Contact verified at">{value(contact.verifiedAt)}</Field>
+      <Field label="Internal business review"><InternalReviewChip state={contact.businessReviewState} /></Field>
+      <Field label="Business reviewed by">{staffDisplayName(contact.businessReviewedByEmail)}</Field>
+      <Field label="Business reviewed at">{value(contact.businessReviewedAt)}</Field>
       <Field label="Deletion requested">{value(contact.deletionRequestedAt)}</Field>
       <Field label="Deleted">{value(contact.deletedAt)}</Field>
     </dl>

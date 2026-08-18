@@ -536,6 +536,16 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 /* Phase 1F slice 4: authenticated seller evidence download */
 .admin-evidence-open{font-weight:800}
 .admin-evidence-unavailable{color:#5a6b78;font-size:11px}
+.admin-status.internal-review-reviewed,.admin-status.evidence-summary-reviewed{border-color:#5e9c7d;background:#edf8f2;color:#245c40}
+.admin-status.internal-review-concern,.admin-status.evidence-summary-concern{border-color:#b56f5e;background:#fff1ed;color:#742615}
+.admin-status.internal-review-not_reviewed,.admin-status.evidence-summary-not_reviewed,.admin-status.evidence-summary-missing{border-color:#9ba9b3;background:#f1f3f4;color:#42505b}
+.admin-evidence-review{display:grid;gap:6px;min-width:170px}
+.admin-evidence-review>small{color:#52687a;line-height:1.4}
+.admin-evidence-review-form{display:flex;gap:6px;align-items:center}
+.admin-evidence-review-form select{min-height:34px;min-width:104px;border:1px solid #9eb1c0;border-radius:3px;background:#fff;padding:0 7px;color:#10283e;font-size:11px}
+.admin-evidence-review-form button{min-height:34px;border:0;border-radius:3px;background:#145fae;color:#fff;padding:0 9px;font-weight:750;cursor:pointer}
+.admin-evidence-review-form button:disabled{opacity:.55;cursor:not-allowed}
+.admin-evidence-review .admin-error,.admin-evidence-review .admin-success{margin:0;padding:6px 8px;font-size:10px}
 
 /* Phase 1F slice 3: marketplace status, assignment and internal notes */
 .admin-actions-panel{display:grid;gap:16px}

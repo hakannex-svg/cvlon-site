@@ -7,6 +7,7 @@ import {
   NOTE_MAX_LENGTH,
   UNASSIGNED_VALUE,
   isRecordId,
+  validateInternalReview,
   validateMarketplaceAssignment,
   validateMarketplaceNote,
   validateMarketplaceStatusChange,
@@ -63,6 +64,8 @@ test("each handler uses its own capability and checks the origin before mutating
     createStatusRoute: "transition_marketplace",
     createAssignmentRoute: "assign_marketplace",
     createNoteRoute: "write_marketplace_note",
+    createBusinessReviewRoute: "review_marketplace",
+    createAttachmentReviewRoute: "review_marketplace",
   };
   for (const [factory, capability] of Object.entries(handlers)) {
     const start = shared.indexOf(`export function ${factory}(`);
@@ -82,7 +85,7 @@ test("each handler uses its own capability and checks the origin before mutating
       `${factory}: origin must be verified before any repository import`,
     );
   }
-  assert.equal((shared.match(/verifyAdminMutationOrigin\(request\)/g) ?? []).length, 3);
+  assert.equal((shared.match(/verifyAdminMutationOrigin\(request\)/g) ?? []).length, 5);
 });
 
 test("the exceptional capability is enforced on the route, not just in the repository", () => {
@@ -106,7 +109,7 @@ test("no write surface depends on any public product flag", () => {
 test("every client-visible error is generic and private", () => {
   // No provider, driver or record detail escapes.
   assert.doesNotMatch(shared, /error\.message|error\.name|String\(error\)|JSON\.stringify\(error\)|console\./);
-  assert.equal((shared.match(/\} catch \{/g) ?? []).length, 3);
+  assert.equal((shared.match(/\} catch \{/g) ?? []).length, 5);
   // Every response is privateJson or an access error, never a bare Response.
   const bare = shared.match(/return new Response\(/g) ?? [];
   assert.equal(bare.length, 1, "only the 405 helper constructs a Response directly");
@@ -192,15 +195,24 @@ test("note validation bounds the text and rejects control characters", () => {
   assert.equal(validateMarketplaceNote({ body: "x", id: ULID }).ok, false);
 });
 
+test("internal review validation accepts only the three internal states", () => {
+  for (const state of ["not_reviewed", "reviewed", "concern"]) {
+    assert.deepEqual(validateInternalReview({ state }), { ok: true, data: { state } });
+  }
+  for (const body of [null, {}, { state: "verified" }, { state: "reviewed", score: 5 }, { state: 1 }]) {
+    assert.equal(validateInternalReview(body).ok, false);
+  }
+});
+
 /* ------------------------------------------------- write-path invariants */
 
 test("the write repository is the only module that mutates, and it is transactional", () => {
   // The read repository stays read-only.
   assert.doesNotMatch(detailRepo, /db\.insert|db\.update|db\.delete|\.transaction\(/);
-  // Each of the three writes opens exactly one transaction.
-  assert.equal((writeRepo.match(/return db\.transaction\(async \(tx\) => \{/g) ?? []).length, 3);
+  // Each write opens exactly one transaction.
+  assert.equal((writeRepo.match(/return db\.transaction\(async \(tx\) => \{/g) ?? []).length, 5);
   // The audit insert happens inside the transaction, on the tx handle.
-  assert.equal((writeRepo.match(/await appendAudit\(tx, \{/g) ?? []).length, 3);
+  assert.equal((writeRepo.match(/await appendAudit\(tx, \{/g) ?? []).length, 5);
   assert.match(writeRepo, /await tx\.insert\(auditEvents\)\.values\(\{/);
   assert.doesNotMatch(writeRepo, /await db\.insert\(auditEvents\)/);
 });
@@ -213,7 +225,7 @@ test("optimistic concurrency is in the update predicate, not only the read", () 
 
 test("intake columns are never rewritten", () => {
   const forbidden = [
-    "submittedAt:", "publicReference:", "idempotencyHash:", "contactId:",
+    "submittedAt:", "publicReference:", "idempotencyHash:",
     "originalPartNumber:", "normalizedPartNumber:", "description:", "sourcePage:",
     "landingPage:", "referrerOrigin:", "utmSource:", "notes:", "documentsSummary:",
     "askingUnitPrice:", "quantity:",
@@ -223,18 +235,24 @@ test("intake columns are never rewritten", () => {
   }
   // The only aggregate columns it sets.
   const sets = writeRepo.match(/\.set\(\{[\s\S]*?\}\)/g) ?? [];
-  assert.equal(sets.length, 2, "status change and assignment are the only updates");
+  assert.equal(sets.length, 4, "status, assignment and the two internal review writes are the only updates");
   for (const block of sets) {
     assert.doesNotMatch(block, /submittedAt|publicReference|idempotency|contactId/);
   }
 });
 
-test("the manual override stamps the aggregate only, never the contact record", () => {
+test("the manual override remains separate from internal business review", () => {
   assert.match(writeRepo, /\.\.\.\(manualVerification && !current\.verifiedAt \? \{ verifiedAt: now \} : \{\}\)/);
   assert.match(writeRepo, /verificationOverride: true, contactVerificationUnchanged: true/);
-  // The contacts table is not imported, so it cannot be written.
-  assert.doesNotMatch(writeRepo, /marketplaceContacts/);
-  assert.doesNotMatch(writeRepo, /verificationState|verificationRequestedAt|verificationRevokedAt/);
+  const statusStart = writeRepo.indexOf("export async function changeMarketplaceStatus(");
+  const statusEnd = writeRepo.indexOf("export type AssignmentResult", statusStart);
+  const statusWrite = writeRepo.slice(statusStart, statusEnd);
+  assert.doesNotMatch(statusWrite, /marketplaceContacts|businessReviewState/);
+  const reviewStart = writeRepo.indexOf("export async function setContactBusinessReview(");
+  const reviewEnd = writeRepo.indexOf("export async function setAttachmentReview(", reviewStart);
+  const businessReviewWrite = writeRepo.slice(reviewStart, reviewEnd);
+  assert.match(businessReviewWrite, /businessReviewState: input\.state/);
+  assert.doesNotMatch(businessReviewWrite, /verificationState|verificationRequestedAt|verificationRevokedAt|verifiedAt:/);
 });
 
 test("closed_at is set for terminal states only", () => {

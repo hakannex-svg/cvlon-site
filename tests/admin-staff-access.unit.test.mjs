@@ -21,6 +21,7 @@ const ordinaryMarketplaceWork = [
   "transition_marketplace",
   "write_marketplace_note",
   "download_marketplace_evidence",
+  "review_marketplace",
   "record_supplier_response",
 ];
 

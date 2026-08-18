@@ -45,6 +45,7 @@ export type MarketplaceActionContext = {
   canTransition: boolean;
   canAssign: boolean;
   canWriteNote: boolean;
+  canReview: boolean;
 };
 
 export function buildMarketplaceActionContext(input: {
@@ -61,5 +62,6 @@ export function buildMarketplaceActionContext(input: {
     canTransition: can(input.role, "transition_marketplace"),
     canAssign: can(input.role, "assign_marketplace"),
     canWriteNote: can(input.role, "write_marketplace_note"),
+    canReview: can(input.role, "review_marketplace"),
   };
 }

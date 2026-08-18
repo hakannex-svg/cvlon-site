@@ -6,6 +6,8 @@ import type {
 } from "@/db/price-check/repositories/marketplace-admin-repository";
 import { MarketplaceDetailActions } from "./MarketplaceDetailActions";
 import type { MarketplaceActionContext } from "@/lib/price-check/admin/marketplace-access";
+import { summarizeEvidenceCategories } from "@/db/price-check/domain/internal-review";
+import { MarketplaceEvidenceReview } from "./MarketplaceEvidenceReview";
 import {
   AssignmentPanel,
   AttributionPanel,
@@ -28,6 +30,13 @@ const purposeLabels: Record<string, string> = {
   PART_NUMBER_SERIAL_PHOTO: "Part number / serial view",
   RELEASE_SUPPORTING_DOCUMENT: "Supporting documentation",
   OTHER: "Other",
+};
+
+const evidenceSummaryLabels: Record<string, string> = {
+  missing: "Missing",
+  not_reviewed: "Supplied — not reviewed",
+  reviewed: "Reviewed",
+  concern: "Concern",
 };
 
 /**
@@ -55,7 +64,12 @@ function byteSize(input: string) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function EvidenceRow({ attachment, submissionId, canDownload }: { attachment: SellAttachmentMetadata; submissionId: string; canDownload: boolean }) {
+function EvidenceRow({ attachment, submissionId, canDownload, canReview }: {
+  attachment: SellAttachmentMetadata;
+  submissionId: string;
+  canDownload: boolean;
+  canReview: boolean;
+}) {
   const scan = scanStateCopy[attachment.scanState] ?? { label: attachment.scanState, note: "Unrecognised scan state." };
   // Only a stored-clean, undeleted row is offered at all. The route re-reads the
   // live scan tag before signing, so this link is a convenience, not the control.
@@ -73,6 +87,15 @@ function EvidenceRow({ attachment, submissionId, canDownload }: { attachment: Se
     <td data-label="Scan state"><span className={`admin-status scan-${attachment.scanState}`}>{scan.label}</span></td>
     <td data-label="Retention">{value(attachment.retentionClass)}</td>
     <td data-label="Uploaded">{formatDateTime(attachment.createdAt)}</td>
+    <td data-label="Internal review"><MarketplaceEvidenceReview
+      submissionId={submissionId}
+      attachmentId={attachment.id}
+      filename={attachment.displayFilename}
+      currentState={attachment.reviewState}
+      reviewedBy={attachment.reviewedByEmail}
+      reviewedAt={attachment.reviewedAt ? formatDateTime(attachment.reviewedAt) : null}
+      canReview={canReview && storedClean}
+    /></td>
     <td data-label="Availability">{usable
       ? <a className="admin-evidence-open" href={`/api/admin/marketplace/sell-submissions/${submissionId}/attachments/${attachment.id}/download`} rel="noreferrer">Open securely</a>
       : <span className="admin-evidence-unavailable">{storedClean
@@ -84,6 +107,7 @@ function EvidenceRow({ attachment, submissionId, canDownload }: { attachment: Se
 export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: { detail: SellSubmissionAdminDetail; actions: MarketplaceActionContext; canDownloadEvidence: boolean }) {
   const submission = detail.sellSubmission;
   const bulk = submission.submissionKind === "bulk_inventory";
+  const evidenceSummary = summarizeEvidenceCategories(detail.attachments);
   return <section className="admin-page">
     {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate plain anchor for resilient admin navigation */}
     <a className="admin-back" href="/admin/sell-submissions">← Sell Submissions</a>
@@ -156,12 +180,18 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
         <section className="admin-panel" aria-label="Seller evidence">
           <div className="admin-panel-heading"><h2>Evidence ({detail.attachments.length})</h2><span>Metadata only</span></div>
           <p className="admin-muted">Evidence is what the seller supplied: warehouse or business evidence, part and custody photos, part number or serial views, supporting documentation, and bulk inventory files. It does not certify, authenticate or approve any part, it is not an airworthiness approval, it does not guarantee authenticity or fitness, and staff review is not regulatory approval. Files are held privately: opening one is authenticated, recorded, and only offered while the malware scan is clean and your role permits it.</p>
+          <dl className="admin-definition-grid" aria-label="Evidence category summary">
+            {evidenceSummary.map(category => <Field key={category.purpose} label={purposeLabels[category.purpose] ?? category.purpose}>
+              <span className={`admin-status evidence-summary-${category.state}`}>{evidenceSummaryLabels[category.state] ?? category.state}</span>
+              {category.count > 0 ? ` (${category.count})` : ""}
+            </Field>)}
+          </dl>
           {detail.attachments.length === 0
             ? <p className="admin-muted">No evidence was attached to this submission.</p>
             : <div className="admin-table-wrap"><table className="admin-queue-table">
                 <caption className="sr-only">Seller evidence metadata</caption>
-                <thead><tr><th>File</th><th>Purpose</th><th>Size</th><th>Declared type</th><th>Detected type</th><th>Scan state</th><th>Retention</th><th>Uploaded</th><th>Availability</th></tr></thead>
-                <tbody>{detail.attachments.map(attachment => <EvidenceRow key={attachment.id} attachment={attachment} submissionId={submission.id} canDownload={canDownloadEvidence} />)}</tbody>
+                <thead><tr><th>File</th><th>Purpose</th><th>Size</th><th>Declared type</th><th>Detected type</th><th>Scan state</th><th>Retention</th><th>Uploaded</th><th>Internal review</th><th>Availability</th></tr></thead>
+                <tbody>{detail.attachments.map(attachment => <EvidenceRow key={attachment.id} attachment={attachment} submissionId={submission.id} canDownload={canDownloadEvidence} canReview={actions.canReview} />)}</tbody>
               </table></div>}
         </section>
 
@@ -174,6 +204,7 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
           basePath="/api/admin/marketplace/sell-submissions"
           recordId={submission.id}
           currentStatus={submission.status}
+          businessReviewState={detail.contact.businessReviewState}
           statusOptions={actions.statusOptions}
           statusLabels={marketplaceStatusLabels}
           assigneeId={detail.assignee?.id ?? null}
@@ -182,6 +213,7 @@ export function SellSubmissionDetail({ detail, actions, canDownloadEvidence }: {
           canAssign={actions.canAssign}
           canTransition={actions.canTransition}
           canWriteNote={actions.canWriteNote}
+          canReview={actions.canReview}
         />
       <div className="admin-detail-aside">
         <AssignmentPanel

@@ -24,10 +24,11 @@ export default async function AdminHelpPage() {
         <ul className="admin-help-list">
           <li><b>Where to work</b> — <b>All Work</b> is every workflow in one queue; <b>Buy Requests</b> and <b>Sell Submissions</b> are the same records filtered to one side. Open a record by its BR- or SS- reference.</li>
           <li><b>Verification</b> — a record starts at <i>Pending verification</i> until the customer or supplier confirms their own email. An ADMIN may override that to <i>Verified</i>, which is audited under its own action and leaves the contact still marked unconfirmed. Do not read an override as a confirmed address.</li>
+          <li><b>Internal business review</b> — keep this separate from email verification. Use <i>Reviewed</i> only after staff checked the business information available to Civilon; use <i>Concern</i> when follow-up is needed. It is not certification, supplier approval, or regulatory approval.</li>
           <li><b>Status, assignment, notes</b> — move status only along the offered options, assign an active staff owner, and keep working detail in internal notes. Notes are staff-only, append-only, and never reach a customer or a supplier.</li>
           <li><b>Supplier responses</b> — internal sourcing only. Record what a supplier told you, including a nonregistered supplier Civilon simply telephoned. Nothing here contacts anyone.</li>
           <li><b>Civilon offers</b> — a buyer offer is Civilon&apos;s own separate sale terms. It carries no supplier identity, no supplier cost and no internal routing. Send Civilon Offer emails the verified buyer a secure accept/decline link; staff cannot record the buyer&apos;s response.</li>
-          <li><b>Seller evidence</b> — a file can be opened only while its malware scan is clean and your role permits it. Every opening is authenticated and recorded. If a file is not clean, do not chase it — it is not reviewable.</li>
+          <li><b>Seller evidence</b> — the category summary is derived from the files actually supplied. Missing means no live file in that category; supplied does not mean approved. A file can be reviewed or opened only while its malware scan is clean and your role permits it. Use <i>Concern</i> for follow-up, never as an authenticity or airworthiness decision.</li>
         </ul>
       </section>
 

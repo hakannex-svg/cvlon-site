@@ -5,7 +5,8 @@ import { useState } from "react";
 import { NOTE_MAX_LENGTH, UNASSIGNED_VALUE } from "@/lib/marketplace/admin/validation";
 
 /**
- * The only write surface on a marketplace detail page.
+ * The record-level write surface on a marketplace detail page. Seller evidence
+ * rows use their own narrowly scoped review control beside the relevant file.
  *
  * Kept in its own client component so the detail views stay server-rendered and
  * free of any mutation path. Nothing here notifies a buyer or a supplier, sends
@@ -17,7 +18,8 @@ type Staff = { id: string; displayEmail: string };
 
 export function MarketplaceDetailActions({
   basePath, recordId, currentStatus, statusOptions, statusLabels,
-  assigneeId, staff, exceptionalStatuses, canAssign, canTransition, canWriteNote,
+  businessReviewState, assigneeId, staff, exceptionalStatuses,
+  canAssign, canTransition, canWriteNote, canReview,
 }: {
   /** `/api/admin/marketplace/buy-requests` or the Sell equivalent. */
   basePath: string;
@@ -26,6 +28,7 @@ export function MarketplaceDetailActions({
   /** Only the transitions this staff member is actually authorized to make. */
   statusOptions: readonly string[];
   statusLabels: Record<string, string>;
+  businessReviewState: string;
   assigneeId: string | null;
   staff: readonly Staff[];
   /** Rendered with a warning; they end or override a customer's record. */
@@ -33,12 +36,14 @@ export function MarketplaceDetailActions({
   canAssign: boolean;
   canTransition: boolean;
   canWriteNote: boolean;
+  canReview: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [nextStatus, setNextStatus] = useState("");
+  const [nextBusinessReview, setNextBusinessReview] = useState("");
   const [note, setNote] = useState("");
 
   async function post(action: string, path: string, body: unknown, successMessage: string, onDone?: () => void) {
@@ -69,6 +74,11 @@ export function MarketplaceDetailActions({
 
   const label = (status: string) => statusLabels[status] ?? status.replaceAll("_", " ");
   const busy = pending !== null;
+  const businessReviewLabels: Record<string, string> = {
+    not_reviewed: "Not reviewed",
+    reviewed: "Reviewed",
+    concern: "Concern",
+  };
 
   return <section className="admin-panel admin-actions-panel" aria-label="Record actions">
     <div className="admin-panel-heading"><h2>Actions</h2><span>Recorded in the audit trail</span></div>
@@ -94,6 +104,32 @@ export function MarketplaceDetailActions({
         <button type="submit" disabled={busy || !nextStatus}>{pending === "status" ? "Saving…" : "Apply"}</button>
       </form>
     ) : <p className="admin-muted">You do not have permission to change this record&apos;s status, or it has reached a final state.</p>}
+
+    {canReview ? (
+      <form className="admin-inline-form" onSubmit={(event) => {
+        event.preventDefault();
+        if (!nextBusinessReview) return;
+        void post(
+          "business-review",
+          "business-review",
+          { state: nextBusinessReview },
+          `Internal business review changed to ${businessReviewLabels[nextBusinessReview] ?? nextBusinessReview}.`,
+          () => setNextBusinessReview(""),
+        );
+      }}>
+        <label>
+          <span>Internal business review</span>
+          <select value={nextBusinessReview} onChange={(event) => setNextBusinessReview(event.target.value)} disabled={busy}>
+            <option value="">Keep {businessReviewLabels[businessReviewState] ?? businessReviewState}</option>
+            {Object.entries(businessReviewLabels)
+              .filter(([state]) => state !== businessReviewState)
+              .map(([state, reviewLabel]) => <option key={state} value={state}>{reviewLabel}</option>)}
+          </select>
+          <small>Internal only. This is not certification or regulatory approval.</small>
+        </label>
+        <button type="submit" disabled={busy || !nextBusinessReview}>{pending === "business-review" ? "Saving…" : "Save review"}</button>
+      </form>
+    ) : null}
 
     {canAssign ? (
       <form className="admin-inline-form" onSubmit={(event) => {

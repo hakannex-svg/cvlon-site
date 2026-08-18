@@ -389,8 +389,12 @@ test("a pending-verification Sell Submission detail loads with items, evidence, 
     assert.deepEqual(Object.keys(detail.attachments[0]).sort(), [
       "byteSize", "createdAt", "declaredMime", "deletedAt", "deletionDueAt",
       "detectedMime", "displayFilename", "id", "purpose", "quarantineReleasedAt",
-      "retentionClass", "scanState", "uploadedByType",
+      "retentionClass", "reviewState", "reviewedAt", "reviewedByEmail",
+      "scanState", "uploadedByType",
     ]);
+    assert.ok(detail.attachments.every(attachment => attachment.reviewState === "not_reviewed"));
+    assert.ok(detail.attachments.every(attachment => attachment.reviewedAt === null));
+    assert.ok(detail.attachments.every(attachment => attachment.reviewedByEmail === null));
 
     assert.equal(detail.notes.length, 1);
     assert.equal(detail.audit.length, 1);
