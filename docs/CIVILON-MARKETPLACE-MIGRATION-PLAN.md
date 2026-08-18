@@ -215,7 +215,61 @@ the route flags remain the immediate rollback control if it recurs.
 
 ---
 
-## 6. Rollback
+## 6. Internal review additive release (completed 2026-08-18)
+
+PR #24 added private, staff-only business and seller-evidence review controls.
+It did not change public intake fields, expose a score or badge, or represent
+certification, airworthiness approval, regulatory approval, authenticity or
+fitness. E-mail verification remains a separate customer-contact fact.
+
+| Evidence | Result |
+| --- | --- |
+| Merge | PR #24; merge commit `c88323c52945574a6e07fefce21f9c8603df8c5c` |
+| Production deploy | Netlify deploy `6a847b38aba2560008a333dc`, published from the exact merge commit at `2026-08-18T15:33:50.079Z` |
+| Restore point | Netlify created the automatic production-publish backup for deploy `6a847b38aba2560008a333dc` |
+| Applied artifact | `20260818120000_internal_review_layer`, SHA256 `8218a65a0a7b7967b726e192a0e728c2b813b93b000e2473d322f2e126e54145` |
+| Read-only preflight | Exact production host/database confirmed; 9 statements; 0 review objects present; safe to apply |
+| Transaction result | 9 statements committed atomically under an advisory transaction lock |
+| Post-apply inventory | `internal_review_state` with 3 approved labels; 6 review columns; 2 reviewer foreign keys |
+| Read-only verification | All 9 expected objects present; artifact already applied; no partial state |
+| Public smoke | Homepage, Price Check, marketplace hub, Buy and Sell each returned HTTP 200 |
+
+The guarded runner is
+`scripts/apply-internal-review-production-migration.mjs`. It binds preflight and
+apply to the approved production host, port and database; permits only the
+read-only or owner role as appropriate; verifies the artifact digest and
+statement count; refuses a partial or repeated apply; and confirms the enum,
+column and foreign-key inventory before commit. Connection strings were copied
+from Netlify's production branch, held only for the running command, then
+cleared from the clipboard and process environment.
+
+The live admin smoke used only the previously approved, closed synthetic
+records `BR-BACNB6V4FR` and `SS-FMRB89WT4S`:
+
+- Buy business review persisted `Reviewed`, displayed the staff reviewer and
+  review time, added an audit event, and reset to `Not reviewed` with reviewer
+  metadata cleared.
+- Seller business review passed the same transition and reset.
+- The clean synthetic CSV evidence moved from `Supplied — not reviewed` to
+  `Reviewed`, displayed reviewer/time, updated its category summary, added an
+  audit event, and reset to `Supplied — not reviewed` with reviewer metadata
+  cleared.
+- Contact e-mail verification remained `VERIFIED`. No customer or supplier was
+  contacted and no purchase, payment, shipment or new public submission was
+  created.
+
+### Deployment-order observation
+
+Netlify continuous deployment published the merge automatically before the
+manual migration was applied. The deviation was detected from the production
+database dashboard, the new production backup was confirmed, and the additive
+migration was applied immediately. Future schema-bearing releases should pause
+automatic publishing or use a two-release backward-compatible rollout so the
+production migration is complete before code begins reading new columns.
+
+---
+
+## 7. Rollback
 
 The migration is purely additive, so the failure modes are narrow.
 
