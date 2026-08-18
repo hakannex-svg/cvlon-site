@@ -683,6 +683,7 @@ export type BuyRequestAdminDetail = {
     utmContent: string | null;
     utmTerm: string | null;
     sourcePriceCheckId: string | null;
+    sourceResultId: string | null;
     verificationRequestedAt: Date | null;
     verifiedAt: Date | null;
     submittedAt: Date;
@@ -739,6 +740,7 @@ export async function getBuyRequestAdminDetail(db: PriceCheckDb, id: string): Pr
       utmContent: buyRequests.utmContent,
       utmTerm: buyRequests.utmTerm,
       sourcePriceCheckId: buyRequests.sourcePriceCheckId,
+      sourceResultId: buyRequests.sourceResultId,
       verificationRequestedAt: buyRequests.verificationRequestedAt,
       verifiedAt: buyRequests.verifiedAt,
       submittedAt: buyRequests.submittedAt,

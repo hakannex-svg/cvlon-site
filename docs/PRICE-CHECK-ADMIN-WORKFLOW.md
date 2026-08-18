@@ -151,9 +151,9 @@ Sending is an explicit action after approval. It creates an outbox item and toke
 4. Re-run deterministic analysis and human review.
 5. Revoke the old result token when the new result is sent.
 
-### Civilon quote request
+### Civilon Buy Request conversion
 
-The result CTA creates a separate `sourcing_opportunity` linked to the Price Check. It does not alter the approved conclusion and does not post into the existing `quick-rfq` Netlify Form. The customer sees a clear confirmation; internal owners can track conversion without exposing transaction detail to external analytics.
+The secure result CTA now collects a short requirement confirmation and creates one verified Buy Request linked to the exact Price Check and result version. It also preserves the legacy `sourcing_opportunity` marker for historical workflow continuity. It does not alter the approved conclusion, publish the requirement, or post into the existing `quick-rfq` Netlify Form. Repeat submissions return the same `BR-…` record, and the conversion stays outside external analytics.
 
 ## 10. Administrative controls
 

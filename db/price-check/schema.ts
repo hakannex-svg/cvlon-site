@@ -1327,6 +1327,7 @@ export const buyRequests = pgTable(
   (table) => [
     uniqueIndex("buy_requests_public_reference_uidx").on(table.publicReference),
     uniqueIndex("buy_requests_idempotency_hash_uidx").on(table.idempotencyHash),
+    uniqueIndex("buy_requests_source_result_uidx").on(table.sourceResultId),
     index("buy_requests_status_idx").on(table.status),
     index("buy_requests_contact_idx").on(table.contactId),
     index("buy_requests_assignee_idx").on(table.assignedAdminUserId),

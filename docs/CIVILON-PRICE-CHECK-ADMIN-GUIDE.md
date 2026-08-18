@@ -73,7 +73,7 @@ Analysts and reviewers may self-assign. Administrators may assign any active sta
 | Human review | Result content awaits authorized review | Edit, verify, and approve |
 | Approved | Result is frozen for delivery | Send and monitor delivery |
 | Sent | Provider delivery succeeded and result is available | Respond to questions; monitor sourcing request |
-| Quote requested | Customer selected Get a Civilon Quote | Follow sourcing opportunity |
+| Quote requested | Customer created a linked Buy Request, or used the legacy quote action | Open the linked Buy Request; older records may retain only a sourcing opportunity |
 | Converted | Sourcing opportunity converted | Close when complete |
 | Closed | Completed terminal state | No further workflow action |
 | Spam | Terminal exception | No further Price Check action |
@@ -95,9 +95,9 @@ Review the immutable submission → create a documented revision only if require
 
 Wait for **Clean** → trigger extraction only if useful → verify every proposed field → apply supported fields as a revision → select comparables → analyze and prepare the result.
 
-**C. Customer requested a Civilon quote**
+**C. Customer created a Buy Request**
 
-Open the linked sourcing opportunity → contact the customer through the approved channel → begin sourcing follow-up → close only when the operational work is complete.
+Open the linked Buy Request → confirm its requirement and delivery fields → continue Civilon sourcing and offer work in the Buy Request workflow → close only when the operational work is complete. For a historical record with only a legacy sourcing opportunity, use the preserved legacy follow-up until the customer completes the current confirmation.
 
 ## 4. Request more information
 
@@ -268,9 +268,9 @@ The secure credential expires after 14 days; a successful redemption creates a s
 
 ![Synthetic secure customer result](admin-guide/screenshots/16-customer-result.png)
 
-**Get a Civilon Quote** creates one sourcing opportunity linked to the exact result version; it does not automatically submit another form or call a CRM. In the admin workflow, confirm the customer requested contact, follow the authorized sourcing process, and avoid duplicating the opportunity.
+**Create a Buy Request** uses a short confirmation on the secure result page. It creates one verified `BR-…` record linked to the exact Price Check and result version, preserves the legacy sourcing marker for historical continuity, and enters the normal Civilon Buy Request workflow. It does not publish the requirement, expose supplier identity, place an order, submit a Netlify form, or call a CRM. Repeat submissions return the same linked Buy Request.
 
-![Synthetic sourcing opportunity](admin-guide/screenshots/17-sourcing-opportunity.png)
+![Historical synthetic sourcing opportunity](admin-guide/screenshots/17-sourcing-opportunity.png)
 
 ## 13. Audit timeline and job visibility
 

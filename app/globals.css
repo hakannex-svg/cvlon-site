@@ -589,3 +589,32 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-concerns-alert nav span{font-size:11px;font-weight:750}
 .admin-concerns-alert nav strong{font-size:18px}
 @media(max-width:700px){.admin-concerns-alert{display:block}.admin-concerns-alert nav{min-width:0;margin-top:12px}}
+
+/* Secure Price Check -> Buy Request confirmation */
+.result-sourcing.result-buy-request{display:block;padding:32px 38px}
+.result-buy-request>header{margin-bottom:22px}
+.result-buy-request>header h2{margin:0 0 7px}
+.result-buy-request form{display:grid;gap:17px}
+.result-buy-request-part{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:12px 14px;border:1px solid #52748c;background:#12344d}
+.result-buy-request-part span{color:#b9cfdd;font-size:11px}
+.result-buy-request-part strong{max-width:65%;color:#fff;overflow-wrap:anywhere}
+.result-buy-request-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
+.result-buy-request label{display:grid;gap:6px;color:#d9e7f0;font-size:11px;font-weight:750}
+.result-buy-request label>small{color:#a9c0cf;font-weight:500}
+.result-buy-request input:not([type="checkbox"]),.result-buy-request select,.result-buy-request textarea{width:100%;min-height:44px;border:1px solid #7892a4;border-radius:3px;background:#fff;color:#10283e;padding:10px 11px;font:600 13px var(--font-geist-sans),Arial,sans-serif}
+.result-buy-request textarea{min-height:84px;resize:vertical}
+.result-buy-request input[aria-invalid="true"],.result-buy-request textarea[aria-invalid="true"]{border:2px solid #e19583}
+.result-buy-request label>small:last-child,.result-buy-request-ack>small{color:#ffd0c5;font-weight:700}
+.result-buy-request-wide{display:grid!important}
+.result-buy-request-phone-note{margin:0!important;color:#bde8cf!important;font:600 11px/1.5 var(--font-geist-sans),Arial,sans-serif!important;text-transform:none!important;letter-spacing:0!important}
+.result-buy-request-ack{display:grid;grid-template-columns:auto 1fr;gap:2px 9px;align-items:start}
+.result-buy-request-ack input{width:17px;height:17px;margin-top:1px;accent-color:#2374e1}
+.result-buy-request-ack label{display:block;font-weight:600;line-height:1.5}
+.result-buy-request-ack a{color:#a9d6ff;text-decoration:underline}
+.result-buy-request-ack>small{grid-column:2}
+.result-buy-request-error{padding:11px 13px;border-left:3px solid #e19583;background:#4a2527;color:#ffe2dc;font-size:12px;font-weight:700}
+.result-buy-request-submit{display:flex;align-items:center;gap:16px;padding-top:3px}
+.result-buy-request-submit button{flex:0 0 auto}
+.result-buy-request-submit span{font-size:10px;line-height:1.5}
+.result-buy-request-complete{grid-template-columns:1fr}
+@media(max-width:600px){.result-sourcing.result-buy-request{padding:24px 21px}.result-buy-request-grid{grid-template-columns:1fr}.result-buy-request-submit{display:grid}.result-buy-request-submit button{width:100%}}

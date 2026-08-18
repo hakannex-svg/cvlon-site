@@ -20,7 +20,7 @@ test("every persisted Price Check status maps to the five read-only workflow pha
     assert.ok(guidance.nextAction.length > 20, status);
     assert.ok(guidance.phases.every((phase) => ["completed", "current", "upcoming", "attention"].includes(phase.state)), status);
   }
-  assert.match(getPriceCheckWorkflowGuidance("quote_requested", true).nextAction, /requested a Civilon quote/i);
+  assert.match(getPriceCheckWorkflowGuidance("quote_requested", true).nextAction, /linked Buy Request/i);
   assert.match(getPriceCheckWorkflowGuidance("submitted", false).nextAction, /^Assign the request/);
 });
 
@@ -59,6 +59,7 @@ test("authenticated help and request guidance remain read-only and use normal an
     assert.match(detail, new RegExp(`<a href="#${anchor}">`), anchor);
   }
   assert.doesNotMatch(overview, /fetch\(|useRouter|onClick|<button/);
-  assert.match(detail, /Customer requested a Civilon quote/);
+  assert.match(detail, /Customer created a Civilon Buy Request/);
+  assert.match(detail, /\/admin\/buy-requests\/\$\{resultData\.linkedBuyRequest\.id\}/);
   assert.match(detail, /<details className="admin-panel admin-history-disclosure">/);
 });

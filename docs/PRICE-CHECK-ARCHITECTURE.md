@@ -272,7 +272,7 @@ Email types:
 - customer submission acknowledgment;
 - customer request-more-information;
 - customer result-ready;
-- optional Civilon quote follow-up;
+- optional Civilon Buy Request conversion and sourcing follow-up;
 - internal new Price Check;
 - internal AOG Price Check;
 - internal analysis-ready-for-review.

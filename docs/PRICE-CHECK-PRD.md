@@ -49,7 +49,7 @@ Measurements should be defined before launch, but reasonable initial product mea
 - median analyst handling time;
 - percentage of results approved without material redrafting;
 - customer result-view rate;
-- customer-initiated Civilon quote-request rate;
+- customer-initiated Price Check-to-Buy Request conversion rate;
 - number and quality of verified observations added through analyst governance;
 - error, spam, duplicate, and abandoned-processing rates.
 
@@ -99,7 +99,7 @@ flowchart LR
   E --> F[Accepted reference]
   F --> G[Civilon review queue]
   G --> H[Secure result delivery]
-  H --> I[Optional Civilon quote request]
+  H --> I[Optional Civilon Buy Request]
 ```
 
 ### Step 1 — transaction
@@ -240,7 +240,7 @@ Recommended result format:
 7. Factors that influenced the review
 8. Civilon-written or Civilon-approved explanation
 9. Informational disclaimer
-10. Primary CTA: Get a Civilon Quote
+10. Primary CTA: Create a Buy Request
 11. Secondary CTA: Ask Civilon to Review This Result
 
 Possible factors include condition, transaction type, documentation, recency, AOG urgency, core obligation, warranty, and freight. Do not display a factor unless it actually influenced the approved analysis.
@@ -360,7 +360,7 @@ In scope:
 - optional AI extraction proposal and explanation draft;
 - mandatory human approval;
 - secure tokenized result page and transactional emails;
-- conversion to a distinct Civilon sourcing opportunity;
+- short secure conversion to one full Civilon Buy Request linked to the exact Price Check result;
 - observability, rate limiting, security, accessibility, and failure recovery.
 
 ## 13. Explicitly deferred

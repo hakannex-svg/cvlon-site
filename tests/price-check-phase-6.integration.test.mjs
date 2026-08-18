@@ -89,13 +89,75 @@ test("draft, approval, secure delivery, redemption, and sourcing conversion are 
     const customer = await repository.getCustomerResult(db, { ...redeemed, now: new Date("2026-08-16T12:05:00Z") });
     assert.equal(customer.analysis.marketMedian, "1150.0000");
     assert.equal(customer.result.approvedExplanation.includes("six exact"), true);
-    const conversion = await repository.createResultSourcingOpportunity(db, { ...redeemed, now: new Date("2026-08-16T12:06:00Z") });
+    assert.equal(customer.requester.businessEmail, "phase6-result@example.com");
+    assert.equal(customer.linkedBuyRequest, null);
+    const conversionInput = {
+      ...redeemed,
+      submission: {
+        quantity: "2",
+        acceptableCondition: "SV",
+        urgency: "standard",
+        neededByDate: "2026-08-25",
+        deliveryCountry: "US",
+        deliveryPostalCode: "07632",
+        deliveryCity: "Englewood Cliffs",
+        fulfillmentPreference: "door_delivery",
+        applicationNotes: "Synthetic conversion; no real sourcing required.",
+        phone: null,
+        serviceAcknowledged: true,
+        legalAcknowledged: true,
+      },
+      privacyVersion: "privacy-test-v1",
+      termsVersion: "terms-test-v1",
+    };
+    const conversion = await repository.createResultBuyRequest(db, { ...conversionInput, now: new Date("2026-08-16T12:06:00Z") });
     assert.equal(conversion.created, true);
+    assert.match(conversion.publicReference, /^BR-[0-9A-HJKMNP-TV-Z]{10}$/);
+    const repeated = await repository.createResultBuyRequest(db, { ...conversionInput, now: new Date("2026-08-16T12:07:00Z") });
+    assert.equal(repeated.created, false);
+    assert.equal(repeated.publicReference, conversion.publicReference);
     assert.equal((await repository.createResultSourcingOpportunity(db, { ...redeemed, now: new Date("2026-08-16T12:07:00Z") })).created, false);
+
+    const [buyRequest] = await db.select().from(schema.buyRequests);
+    assert.equal(buyRequest.publicReference, conversion.publicReference);
+    assert.equal(buyRequest.status, "verified");
+    assert.equal(buyRequest.verifiedAt.toISOString(), "2026-08-16T12:06:00.000Z");
+    assert.equal(buyRequest.verificationRequestedAt, null);
+    assert.equal(buyRequest.sourcePriceCheckId, request.priceCheckId);
+    assert.equal(buyRequest.sourceResultId, draft.id);
+    assert.equal(buyRequest.sourcePage, "/price-check/result");
+    assert.equal(buyRequest.originalPartNumber, "TEST-PHASE6-100");
+    assert.equal(buyRequest.quantity, "2.000");
+    assert.equal(buyRequest.acceptableCondition, "SV");
+    assert.equal(buyRequest.deliveryPostalCode, "07632");
+
+    const [marketplaceContact] = await db.select().from(schema.marketplaceContacts);
+    assert.equal(marketplaceContact.id, buyRequest.contactId);
+    assert.equal(marketplaceContact.businessEmail, "phase6-result@example.com");
+    assert.equal(marketplaceContact.verificationState, "VERIFIED");
+    assert.equal(marketplaceContact.phone, "+1 202 555 0166", "the server inherits the requester phone without exposing it to the form");
+    assert.equal((await db.select().from(schema.emailVerificationTokens)).length, 0, "secure result access must not create a redundant verification token");
+
+    const buyMessages = await db.select().from(schema.notificationOutbox).where(eq(schema.notificationOutbox.aggregateId, buyRequest.id));
+    assert.equal(buyMessages.length, 1);
+    assert.equal(buyMessages[0].messageType, "BUY_REQUEST_INTERNAL_RECEIVED");
+    assert.equal(buyMessages[0].recipientReference, "civilon-marketplace-internal");
+    const refreshed = await repository.getCustomerResult(db, { ...redeemed, now: new Date("2026-08-16T12:08:00Z") });
+    assert.equal(refreshed.linkedBuyRequest.publicReference, conversion.publicReference);
     const [finalResult] = await db.select().from(schema.priceCheckResults).where(eq(schema.priceCheckResults.id, draft.id));
     assert.equal(finalResult.state, "SENT");
     const actions = await db.select({ action: schema.auditEvents.action }).from(schema.auditEvents).where(eq(schema.auditEvents.aggregateId, request.priceCheckId));
-    for (const action of ["RESULT_DRAFT_CREATED", "RESULT_APPROVED", "RESULT_TOKEN_ISSUED", "RESULT_DELIVERY_QUEUED", "RESULT_DELIVERY_SUCCEEDED", "RESULT_VIEWED", "SOURCING_OPPORTUNITY_CREATED"]) assert.ok(actions.some((item) => item.action === action), action);
+    for (const action of ["RESULT_DRAFT_CREATED", "RESULT_APPROVED", "RESULT_TOKEN_ISSUED", "RESULT_DELIVERY_QUEUED", "RESULT_DELIVERY_SUCCEEDED", "RESULT_VIEWED", "SOURCING_OPPORTUNITY_CREATED", "BUY_REQUEST_CREATED_FROM_PRICE_CHECK_RESULT"]) assert.ok(actions.some((item) => item.action === action), action);
+    const buyActions = await db.select().from(schema.auditEvents).where(eq(schema.auditEvents.aggregateId, buyRequest.id));
+    assert.deepEqual(buyActions.map((item) => item.action).sort(), [
+      "BUY_REQUEST_CONTACT_VERIFIED_FROM_PRICE_CHECK_RESULT",
+      "BUY_REQUEST_LEGAL_ACKNOWLEDGED",
+      "BUY_REQUEST_SUBMITTED",
+    ]);
+    const auditText = JSON.stringify(buyActions);
+    for (const privateValue of ["phase6-result@example.com", "+1 202", "TEST-PHASE6-100", "Englewood"]) {
+      assert.equal(auditText.includes(privateValue), false, `conversion audit must not contain ${privateValue}`);
+    }
     delete process.env.PRICE_CHECK_RESULT_TOKEN_KEY; delete process.env.URL; delete process.env.PRICE_CHECK_EMAIL_FROM;
   });
 });
@@ -119,6 +181,73 @@ test("provider failure stays approved and remains retryable without losing the r
     assert.equal(message.state, "failed");
     assert.equal(message.sanitizedFailureCode, "POSTMARK_TIMEOUT");
     delete process.env.PRICE_CHECK_RESULT_TOKEN_KEY; delete process.env.URL;
+  });
+});
+
+test("a historical sourcing opportunity can be completed into one full Buy Request", async () => {
+  await withDatabase(async ({ db, schema }) => {
+    const { eq } = await import("drizzle-orm");
+    const repository = await import("../db/price-check/repositories/result-delivery-repository.ts");
+    const { processOneResultNotification } = await import("../lib/price-check/email/worker.ts");
+    const { deriveResultToken } = await import("../db/price-check/domain/customer-result.ts");
+    const { actor, request, analysis } = await seedReadyAnalysis(db);
+    const tokenKey = "phase6-legacy-conversion-key-with-at-least-thirty-two-characters";
+    const draft = await repository.createCustomerResultDraft(db, {
+      priceCheckId: request.priceCheckId,
+      analysisId: analysis.analysis.id,
+      actor,
+      explanation: "Civilon completed a human review before this synthetic legacy conversion test.",
+      factorCodes: [],
+      displayRange: true,
+      displayEvidenceCount: true,
+      limitedEvidenceStatement: null,
+    });
+    await repository.approveCustomerResult(db, { priceCheckId: request.priceCheckId, resultId: draft.id, actor });
+    await repository.queueCustomerResultDelivery(db, { priceCheckId: request.priceCheckId, resultId: draft.id, actor, tokenKey, now: new Date("2026-08-16T14:00:00Z") });
+    process.env.PRICE_CHECK_RESULT_TOKEN_KEY = tokenKey;
+    process.env.URL = "https://deploy-preview-6--cvlon.netlify.app";
+    await processOneResultNotification(db, {
+      provider: { async send() { return { providerMessageId: "legacy-test-message", submittedAt: "2026-08-16T14:01:00Z" }; } },
+      now: new Date("2026-08-16T14:01:00Z"),
+      leaseOwner: "legacy-worker",
+    });
+    const [token] = await db.select().from(schema.resultAccessTokens).where(eq(schema.resultAccessTokens.resultId, draft.id));
+    const redeemed = await repository.redeemResultToken(db, {
+      token: deriveResultToken(tokenKey, token.tokenDerivationNonce),
+      tokenKey,
+      now: new Date("2026-08-16T14:02:00Z"),
+    });
+    const legacy = await repository.createResultSourcingOpportunity(db, { ...redeemed, now: new Date("2026-08-16T14:03:00Z") });
+    assert.equal(legacy.created, true);
+    const before = await repository.getCustomerResult(db, { ...redeemed, now: new Date("2026-08-16T14:04:00Z") });
+    assert.equal(before.sourcingRequested, true);
+    assert.equal(before.linkedBuyRequest, null);
+
+    const converted = await repository.createResultBuyRequest(db, {
+      ...redeemed,
+      submission: {
+        quantity: "1",
+        acceptableCondition: "SV",
+        urgency: "standard",
+        neededByDate: null,
+        deliveryCountry: "US",
+        deliveryPostalCode: null,
+        deliveryCity: null,
+        fulfillmentPreference: "not_sure",
+        applicationNotes: null,
+        phone: null,
+        serviceAcknowledged: true,
+        legalAcknowledged: true,
+      },
+      privacyVersion: "privacy-test-v1",
+      termsVersion: "terms-test-v1",
+      now: new Date("2026-08-16T14:05:00Z"),
+    });
+    assert.equal(converted.created, true);
+    assert.equal((await db.select().from(schema.sourcingOpportunities)).length, 1, "the legacy marker is reused, not duplicated");
+    assert.equal((await db.select().from(schema.buyRequests)).length, 1);
+    delete process.env.PRICE_CHECK_RESULT_TOKEN_KEY;
+    delete process.env.URL;
   });
 });
 

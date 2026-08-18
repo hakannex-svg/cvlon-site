@@ -5,7 +5,7 @@
 
 ## Daily flow
 
-**New Price Check → Assign → Review submission → Review clean document → Extract if useful → Confirm/create revision → Select comparables → Create analysis → Draft explanation → Human review → Preview result → Approve → Send → Follow sourcing opportunity if requested**
+**New Price Check → Assign → Review submission → Review clean document → Extract if useful → Confirm/create revision → Select comparables → Create analysis → Draft explanation → Human review → Preview result → Approve → Send → Follow the linked Buy Request if created**
 
 1. Sign in at `/admin/login`; open `/admin/price-checks`.
 2. Triage new/old unassigned requests and assign ownership.
@@ -19,7 +19,7 @@
 10. Preview the exact customer result. Use only Below/Within/Above Observed Range or Insufficient Comparable Evidence.
 11. Reviewer/Admin approves. Any material change requires a new approval.
 12. Send; verify Postmark success. Approved is not Sent.
-13. If **Get a Civilon Quote** is selected, follow the single linked sourcing opportunity.
+13. If the customer creates a Buy Request from the secure result, open the linked `BR-…` record and continue through the normal Buy Request workflow. An older result may show only a legacy sourcing opportunity until the customer completes the short confirmation.
 
 ## Stop checks
 
