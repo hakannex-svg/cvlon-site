@@ -1,3 +1,5 @@
+import type { SellInventoryFreshnessFilter } from "@/db/price-check/domain/sell-inventory-freshness";
+
 export const statusLabels: Record<string, string> = {
   submitted: "Submitted",
   upload_processing: "Upload processing",
@@ -29,6 +31,22 @@ export const marketplaceStatusLabels: Record<string, string> = {
   closed: "Closed",
   spam: "Spam",
   withdrawn: "Withdrawn",
+};
+
+/**
+ * The four bulk-inventory freshness states a Sell Submission list can be
+ * narrowed to, labelled exactly as the All Work counters label them, so a staff
+ * member who clicked "Backoff" lands on a control that still says "Backoff".
+ *
+ * Each names stored workflow state and nothing Civilon has concluded about the
+ * parts. Delivery concerns is absent on purpose: it counts queued emails rather
+ * than records, so it is not a state a record list can be narrowed to.
+ */
+export const sellInventoryFreshnessFilterLabels: Record<SellInventoryFreshnessFilter, string> = {
+  due: "Due now",
+  live: "Live links",
+  backoff: "Backoff",
+  seller_changes: "Seller changes",
 };
 
 export const unifiedTypeLabels: Record<string, string> = {

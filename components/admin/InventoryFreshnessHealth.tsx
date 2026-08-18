@@ -1,18 +1,26 @@
+import Link from "next/link";
 import {
   SELL_INVENTORY_FRESHNESS_CADENCE_DAYS,
   SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC,
   SELL_INVENTORY_FRESHNESS_TTL_DAYS,
+  type SellInventoryFreshnessFilter,
 } from "@/db/price-check/domain/sell-inventory-freshness";
 import type { SellInventoryFreshnessHealthCounts } from "@/db/price-check/repositories/marketplace-admin-repository";
 
 /**
  * The bulk-inventory freshness workflow, as five numbers on the All Work page.
  *
- * A summary rather than a view: it says how much of the workflow is waiting, how
- * much has stopped and why, and nothing about which records those are. There is
- * deliberately no link on any counter — All Work has no freshness filter, and a
- * link to a filter that does not exist would take a staff member somewhere that
- * cannot show them what the number counted.
+ * A summary that can be opened: it says how much of the workflow is waiting, how
+ * much has stopped and why, and each of the four record counters links to the
+ * Sell Submission list narrowed to exactly the records it counted. The link is
+ * honest because the filter behind it is the same predicate the counter is — the
+ * producer's own, restated once in `marketplace-admin-repository.ts` and held
+ * against the pure cadence rule by the tests.
+ *
+ * Delivery concerns is deliberately not a link, and the section says so. It
+ * counts queued e-mails rather than Sell Submissions, so there is no list of
+ * records it could open without answering a different question from the one the
+ * number asked.
  *
  * Two populations are counted, and the caption says which is which. Due, Live
  * links, Backoff and Seller changes count Sell Submissions; Delivery concerns
@@ -34,7 +42,7 @@ const counterDetails: Record<keyof SellInventoryFreshnessHealthCounts, string> =
   liveLinks: "Records where a seller is holding a link that still works. Nothing on a timer touches one of these.",
   backoff: "Records where two automatic asks in a row expired unanswered. Automation has stopped there until a staff member asks by hand.",
   sellerChanges: "Records where the seller's latest answer was that some or all of the inventory changed. Automation stops until someone asks again.",
-  deliveryConcerns: "Freshness emails Civilon has not managed to send. The checks themselves are still recorded.",
+  deliveryConcerns: "Freshness emails Civilon has not managed to send. The checks themselves are still recorded. It counts emails rather than records, so there is no record list to open.",
 };
 
 const counterLabels: Record<keyof SellInventoryFreshnessHealthCounts, string> = {
@@ -44,6 +52,28 @@ const counterLabels: Record<keyof SellInventoryFreshnessHealthCounts, string> = 
   sellerChanges: "Seller changes",
   deliveryConcerns: "Delivery concerns",
 };
+
+/**
+ * Which Sell Submission freshness filter each counter opens, or `null` for the
+ * one that counts messages instead of records and therefore opens nothing.
+ *
+ * The values are the repository's own allowlist, so a counter cannot link to a
+ * filter that does not exist, and the four links are the only navigation this
+ * section has.
+ */
+const counterFilters: Record<
+  keyof SellInventoryFreshnessHealthCounts,
+  SellInventoryFreshnessFilter | null
+> = {
+  dueNow: "due",
+  liveLinks: "live",
+  backoff: "backoff",
+  sellerChanges: "seller_changes",
+  deliveryConcerns: null,
+};
+
+/** The one list these counters drill into. Sell Submissions and nowhere else. */
+const SELL_SUBMISSION_LIST_PATH = "/admin/sell-submissions";
 
 /** Fixed order, so the section reads the same way on every load. */
 const counterOrder = [
@@ -83,18 +113,28 @@ export function InventoryFreshnessHealth({ counts }: { counts: SellInventoryFres
     </div>
 
     <dl aria-label="Inventory freshness counters">
-      {counterOrder.map(key => <div key={key} className={`counter-${key}`}>
-        <dt>{counterLabels[key]}</dt>
-        <dd><strong>{counts[key]}</strong><span>{counterDetails[key]}</span></dd>
-      </div>)}
+      {counterOrder.map(key => {
+        const filter = counterFilters[key];
+        return <div key={key} className={`counter-${key}`}>
+          <dt>{counterLabels[key]}</dt>
+          <dd>{filter
+            ? <Link
+              href={`${SELL_SUBMISSION_LIST_PATH}?freshness=${filter}`}
+              aria-label={`${counterLabels[key]}: open ${counts[key]} in Sell Submissions`}
+            ><strong>{counts[key]}</strong></Link>
+            : <strong>{counts[key]}</strong>
+          }<span>{counterDetails[key]}</span></dd>
+        </div>;
+      })}
     </dl>
 
     <p className="admin-freshness-health-scope">
       Due now, Live links, Backoff and Seller changes each count bulk-inventory
       Sell Submissions Civilon may still ask about, and no record is counted twice.
-      Delivery concerns counts queued emails instead, so it is not comparable with
-      the other four. A record inside its {SELL_INVENTORY_FRESHNESS_CADENCE_DAYS}{" "}
-      days appears in none of them.
+      Each of those four opens the Sell Submissions list narrowed to exactly the
+      records it counted. Delivery concerns counts queued emails instead, so it is not comparable with
+      the other four and opens nothing. A record inside its{" "}
+      {SELL_INVENTORY_FRESHNESS_CADENCE_DAYS} days appears in none of them.
     </p>
   </aside>;
 }

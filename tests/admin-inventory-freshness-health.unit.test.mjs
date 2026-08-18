@@ -366,10 +366,23 @@ test("the five labels are the agreed ones and the counting choice is stated", ()
   assert.match(section, /appears in none of them/);
 });
 
-test("no counter is a link, because All Work has no freshness filter to link to", () => {
-  assert.doesNotMatch(section, /<a\b|<Link\b|href=/);
-  assert.doesNotMatch(section, /next\/link/);
-  // …and the page did not grow a filter control for it either.
+test("the four record counters link out and Delivery concerns does not", () => {
+  // Exactly four links, and each one is a Sell Submission freshness drill-down.
+  const hrefs = [...section.matchAll(/href=\{`([^`]+)`\}/g)].map((match) => match[1]);
+  assert.deepEqual(hrefs, ["${SELL_SUBMISSION_LIST_PATH}?freshness=${filter}"]);
+  assert.match(section, /const SELL_SUBMISSION_LIST_PATH = "\/admin\/sell-submissions";/);
+  assert.match(section, /dueNow: "due",\s*liveLinks: "live",\s*backoff: "backoff",\s*sellerChanges: "seller_changes",\s*deliveryConcerns: null,/);
+  // Delivery concerns counts messages, so it renders a bare number and the copy
+  // says why rather than leaving a staff member hunting for a link.
+  assert.match(section, /: <strong>\{counts\[key\]\}<\/strong>/);
+  assert.match(section, /It counts emails rather than records, so there is no record list to open\./);
+  assert.match(section, /opens nothing/);
+  // The section links to that one list and nowhere else — no detail route, no
+  // Buy Request, no Price Check, no external destination.
+  assert.doesNotMatch(section, /<a\b/);
+  assert.doesNotMatch(section, /https?:\/\//);
+  assert.doesNotMatch(section, /buy-requests|price-checks|queue\?/);
+  // All Work itself still grew no freshness control of its own.
   assert.doesNotMatch(queuePage, /name="freshness"|freshness=|\?due=/);
 });
 
@@ -395,7 +408,14 @@ test("the section is a labelled region with a definition list", () => {
   assert.match(section, /<h2 id="inventory-freshness-health-heading">Inventory freshness<\/h2>/);
   assert.match(section, /<dl aria-label="Inventory freshness counters">/);
   assert.match(section, /<dt>\{counterLabels\[key\]\}<\/dt>/);
-  assert.match(section, /<dd><strong>\{counts\[key\]\}<\/strong><span>\{counterDetails\[key\]\}<\/span><\/dd>/);
+  // The number is still the term's definition and the sentence still follows it;
+  // four of the five wrap the number in a link with its own accessible name, so
+  // "12" in a link list reads as "Backoff: open 12 in Sell Submissions".
+  assert.match(section, /<strong>\{counts\[key\]\}<\/strong>\s*\}<span>\{counterDetails\[key\]\}<\/span><\/dd>/);
+  assert.match(
+    section,
+    /aria-label=\{`\$\{counterLabels\[key\]\}: open \$\{counts\[key\]\} in Sell Submissions`\}/,
+  );
 });
 
 /* --------------------------------------------------------------------- styles */

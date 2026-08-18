@@ -3,6 +3,7 @@ import {
   formatAge,
   formatDateTime,
   marketplaceStatusLabels,
+  sellInventoryFreshnessFilterLabels,
   staffDisplayName,
   unifiedStatusLabel,
 } from "@/lib/price-check/admin/display";
@@ -13,6 +14,10 @@ import {
   type UnifiedQueueRecord,
   type UnifiedQueueType,
 } from "@/db/price-check/repositories/marketplace-admin-repository";
+import {
+  isSellInventoryFreshnessFilter,
+  sellInventoryFreshnessFilters,
+} from "@/db/price-check/domain/sell-inventory-freshness";
 import type { InternalReviewState } from "@/db/price-check/domain/internal-review";
 import { InternalReviewChip } from "@/components/admin/MarketplaceShared";
 
@@ -22,7 +27,7 @@ import { InternalReviewChip } from "@/components/admin/MarketplaceShared";
  * two views can never disagree about what a staff member is allowed to see.
  */
 export function MarketplaceListView({
-  type, basePath, title, lede, statuses, records, reviewCounts, admins, filters, rawAssignee,
+  type, basePath, title, lede, statuses, records, reviewCounts, admins, filters, rawAssignee, freshness,
 }: {
   type: UnifiedQueueType;
   basePath: string;
@@ -34,6 +39,14 @@ export function MarketplaceListView({
   admins: { id: string; displayEmail: string }[];
   filters: { status?: string; verification?: string; review?: InternalReviewState; age?: string; search?: string };
   rawAssignee: string;
+  /**
+   * The bulk-inventory freshness filter, as the URL supplied it. Present only on
+   * Sell Submissions: Buy Requests and Price Check have no bulk-inventory
+   * freshness cadence, and offering the control there would name a state those
+   * records cannot be in. Omitting it renders no control and preserves no
+   * parameter.
+   */
+  freshness?: { value: string };
 }) {
   const reviewHref = (review?: InternalReviewState) => {
     const params = new URLSearchParams();
@@ -41,6 +54,10 @@ export function MarketplaceListView({
     if (filters.status) params.set("status", filters.status);
     if (filters.verification) params.set("verification", filters.verification);
     if (isAssigneeFilter(rawAssignee)) params.set("assignee", rawAssignee);
+    // Only an allowlisted value survives a chip: carrying a malformed one
+    // forward would keep a staff member on a list the repository fails closed on
+    // without ever showing them why.
+    if (freshness && isSellInventoryFreshnessFilter(freshness.value)) params.set("freshness", freshness.value);
     if (filters.age) params.set("age", filters.age);
     if (review) params.set("review", review);
     const query = params.toString();
@@ -81,6 +98,7 @@ export function MarketplaceListView({
       <label><span>Status</span><select name="status" defaultValue={filters.status ?? ""}><option value="">All statuses</option>{statuses.map(status => <option key={status} value={status}>{marketplaceStatusLabels[status] ?? status.replaceAll("_", " ")}</option>)}</select></label>
       <label><span>Verification</span><select name="verification" defaultValue={filters.verification ?? ""}><option value="">All</option><option value="verified">Verified</option><option value="pending">Awaiting verification</option></select></label>
       <label><span>Assignee</span><select name="assignee" defaultValue={isAssigneeFilter(rawAssignee) ? rawAssignee : ""}><option value="">All assignees</option><option value={UNASSIGNED_FILTER}>Unassigned</option>{admins.map(admin => <option key={admin.id} value={admin.id}>{staffDisplayName(admin.displayEmail)}</option>)}</select></label>
+      {freshness && <label><span>Freshness</span><select name="freshness" defaultValue={isSellInventoryFreshnessFilter(freshness.value) ? freshness.value : ""}><option value="">Any freshness</option>{sellInventoryFreshnessFilters.map(value => <option key={value} value={value}>{sellInventoryFreshnessFilterLabels[value]}</option>)}</select></label>}
       <label><span>Age</span><select name="age" defaultValue={filters.age ?? ""}><option value="">Any age</option><option value="day">Last 24 hours</option><option value="week">Last 7 days</option><option value="older">Older than 7 days</option></select></label>
       <div className="admin-filter-actions"><button type="submit">Apply filters</button><Link href={basePath}>Clear</Link></div>
     </form>
