@@ -24,6 +24,7 @@ import {
   unifiedQueueTypes,
   unifiedQueueUrgencies,
   unifiedQueueVerificationStates,
+  type MarketplaceReviewCounts,
   type UnifiedQueueAge,
   type UnifiedQueueRecord,
   type UnifiedQueueType,
@@ -90,19 +91,25 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
 
   let records: UnifiedQueueRecord[];
   let admins: { id: string; displayEmail: string; role: string }[];
+  let buyReviewCounts: MarketplaceReviewCounts;
+  let sellReviewCounts: MarketplaceReviewCounts;
   try {
     const [{ priceCheckDb }, repository] = await Promise.all([
       import("@/db/price-check"),
       import("@/db/price-check/repositories/marketplace-admin-repository"),
     ]);
     const adminRepository = await import("@/db/price-check/repositories/admin-repository");
-    [records, admins] = await Promise.all([
+    [records, admins, buyReviewCounts, sellReviewCounts] = await Promise.all([
       repository.listUnifiedAdminQueue(priceCheckDb, filters),
       adminRepository.listActiveAdmins(priceCheckDb),
+      repository.countMarketplaceReviewStates(priceCheckDb, { type: "buy_request" }),
+      repository.countMarketplaceReviewStates(priceCheckDb, { type: "sell_submission" }),
     ]);
   } catch {
     return <AdminAccessDenied unavailable />;
   }
+
+  const concernTotal = buyReviewCounts.concern + sellReviewCounts.concern;
 
   return <AdminChrome user={access.user} active="queue">
     <section className="admin-page admin-queue-page">
@@ -115,6 +122,18 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
         </div>
         <div className="admin-queue-count"><strong>{records.length}</strong><span>records shown</span></div>
       </div>
+
+      <aside className={`admin-concerns-alert${concernTotal > 0 ? " has-concerns" : ""}`} aria-labelledby="marketplace-concerns-heading">
+        <div>
+          <span>Internal review</span>
+          <h2 id="marketplace-concerns-heading">Concerns <strong>{concernTotal}</strong></h2>
+          <p>Business-review flags needing staff follow-up. This is not certification or an airworthiness decision.</p>
+        </div>
+        <nav aria-label="Open concerned marketplace records">
+          <Link href="/admin/buy-requests?review=concern"><span>Buy requests</span><strong>{buyReviewCounts.concern}</strong></Link>
+          <Link href="/admin/sell-submissions?review=concern"><span>Sell submissions</span><strong>{sellReviewCounts.concern}</strong></Link>
+        </nav>
+      </aside>
 
       <form className="admin-filters" method="get" aria-label="Filter unified operations queue">
         <label className="admin-search"><span>Search authorized fields</span><input name="search" defaultValue={filters.search} placeholder="Reference, part, company, contact" /></label>

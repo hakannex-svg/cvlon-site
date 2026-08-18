@@ -218,6 +218,16 @@ test("page filters are strict allowlists", () => {
   assert.match(queuePage, /one\("search"\)\.trim\(\)\.slice\(0, 120\)/);
 });
 
+test("All Work shows exact, filter-independent Buy and Sell concern links", () => {
+  assert.match(queuePage, /countMarketplaceReviewStates\(priceCheckDb, \{ type: "buy_request" \}\)/);
+  assert.match(queuePage, /countMarketplaceReviewStates\(priceCheckDb, \{ type: "sell_submission" \}\)/);
+  assert.match(queuePage, /const concernTotal = buyReviewCounts\.concern \+ sellReviewCounts\.concern/);
+  assert.match(queuePage, /href="\/admin\/buy-requests\?review=concern"/);
+  assert.match(queuePage, /href="\/admin\/sell-submissions\?review=concern"/);
+  assert.match(queuePage, /Business-review flags needing staff follow-up\. This is not certification or an airworthiness decision\./);
+  assert.doesNotMatch(queuePage, /countMarketplaceReviewStates\(priceCheckDb, filters\)/);
+});
+
 test("no analytics is emitted from the admin surface", () => {
   for (const source of [queuePage, chrome, repository, read("app", "admin", "page.tsx")]) {
     assert.doesNotMatch(source, /trackCivilonEvent|dataLayer|civilonAnalytics/);
