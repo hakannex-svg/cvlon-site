@@ -465,10 +465,17 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .marketplace-verify-panel .field-help{display:block;margin-top:12px;color:#52687a;font-size:12px}
 .marketplace-verify-panel .button{margin-top:6px}
 .marketplace-verify-actions{display:flex;flex-wrap:wrap;gap:10px}
+.buyer-offer-terms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;margin:24px 0;background:#d8e2e9;border:1px solid #d8e2e9}
+.buyer-offer-terms>div{padding:14px 16px;background:#f8fafc}
+.buyer-offer-terms>div.full{grid-column:1/-1}
+.buyer-offer-terms dt{margin:0 0 5px;color:#52687a;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.04em}
+.buyer-offer-terms dd{margin:0;color:#15344e;font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+.buyer-offer-response-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:22px}
+.buyer-offer-response-actions .button{min-height:49px;margin:0}
 .marketplace-verify-aside{padding:30px;border-left:4px solid #1765c1;background:#eef5fb}
 .marketplace-verify-aside p{margin:14px 0 0;color:#435d72;font-size:13px;line-height:1.65}
 @media(max-width:900px){.marketplace-choice-grid,.marketplace-verify-shell{grid-template-columns:1fr}.marketplace-verify-shell{gap:26px}}
-@media(max-width:600px){.marketplace-choice{padding:24px}.marketplace-choice h3{font-size:22px}.marketplace-choice .button{align-self:stretch;text-align:center}.marketplace-verify-panel{padding:26px 20px}.marketplace-verify-aside{padding:22px}.marketplace-verify-actions .button{width:100%;text-align:center}}
+@media(max-width:600px){.marketplace-choice{padding:24px}.marketplace-choice h3{font-size:22px}.marketplace-choice .button{align-self:stretch;text-align:center}.marketplace-verify-panel{padding:26px 20px}.marketplace-verify-aside{padding:22px}.marketplace-verify-actions .button,.buyer-offer-response-actions>*{width:100%;text-align:center}.buyer-offer-terms{grid-template-columns:1fr}.buyer-offer-terms>div.full{grid-column:auto}}
 .marketplace-choice-toggle{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0 0 22px}
 .marketplace-choice-toggle label{display:grid;grid-template-columns:auto 1fr;gap:2px 11px;align-items:start;margin:0;padding:15px 16px;border:1px solid #c5d5e1;border-radius:6px;background:#fff;cursor:pointer}
 .marketplace-choice-toggle label:has(input:checked){border-color:#1765c1;background:#eef5fb;box-shadow:inset 0 0 0 1px #1765c1}
@@ -547,3 +554,5 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-offer-actions{display:grid;gap:14px;margin-top:18px;padding-top:18px;border-top:1px solid #d7e1e8}
 .admin-offer-actions .admin-details-action{border:1px solid #bdccd7;background:#fdfefe}
 .admin-offer-actions .admin-inline-form{margin:0}
+.admin-offer-actions .admin-inline-form>div{display:grid;gap:4px}
+.admin-offer-actions .admin-inline-form>div small{color:#52687a;line-height:1.45}

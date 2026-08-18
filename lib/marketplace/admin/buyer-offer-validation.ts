@@ -162,6 +162,16 @@ export function validateBuyerOffer(raw: unknown): ValidationResult<BuyerOfferInp
 
 export type BuyerOfferStatusInput = { expectedStatus: BuyerOfferStatusValue; to: BuyerOfferStatusValue };
 
+export type BuyerOfferDeliveryInput = { expectedStatus: "draft" };
+
+export function validateBuyerOfferDelivery(raw: unknown): ValidationResult<BuyerOfferDeliveryInput> {
+  const body = asObject(raw);
+  if (!body) return reject("A request body is required.");
+  if (unknownKeys(body, ["expectedStatus"]).length) return reject("Unexpected fields were rejected.");
+  if (body.expectedStatus !== "draft") return reject("Only a draft offer can be sent.");
+  return { ok: true, data: { expectedStatus: "draft" } };
+}
+
 export function validateBuyerOfferStatus(raw: unknown): ValidationResult<BuyerOfferStatusInput> {
   const body = asObject(raw);
   if (!body) return reject("A request body is required.");

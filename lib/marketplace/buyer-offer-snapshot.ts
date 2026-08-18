@@ -6,12 +6,10 @@ import {
 /**
  * The buyer-facing shape of a Civilon offer.
  *
- * A pure function with a frozen key set. Nothing calls it yet — there is no
- * buyer endpoint, no template and no e-mail in this stage — but having the
- * boundary written down and asserted means the first thing that does render an
- * offer to a buyer starts from a structure that provably cannot carry supplier
- * identity, supplier cost, supplier documents, internal routing, or the
- * internal `selected_supplier_response_id` pointer.
+ * A pure function with a frozen key set. It is the only offer object accepted
+ * by the customer email and public response surface, so neither can receive
+ * supplier identity, supplier cost, supplier documents, internal routing, or
+ * the internal `selected_supplier_response_id` pointer.
  *
  * The key set is the guarantee. A test freezes it and compares exactly, so
  * adding a field here is a deliberate, visible act rather than a mistake.

@@ -92,7 +92,7 @@ async function insertContact(db, schema, overrides = {}) {
   return row;
 }
 
-async function insertBuyRequest(db, schema, contactId) {
+async function insertBuyRequest(db, schema, contactId, overrides = {}) {
   const row = {
     id: ulid("BR"),
     publicReference: reference("BR"),
@@ -103,6 +103,7 @@ async function insertBuyRequest(db, schema, contactId) {
     sourcePage: "/buy-sell-aircraft-parts/buy",
     idempotencyHash: `hash-${ulid("H")}`,
     submittedAt: SUBMITTED_AT,
+    ...overrides,
   };
   await db.insert(schema.buyRequests).values(row);
   return row;
@@ -571,5 +572,261 @@ test("a failed audit rolls the offer write back", async () => {
     assert.equal(threw, true);
     assert.equal((await offersFor(db, schema, buyRequest.id)).length, 0, "the offer rolls back with its audit row");
     assert.equal((await auditFor(db, schema, buyRequest.id)).length, 0);
+  });
+});
+
+/* -------------------------------------- delivery, secure view and response */
+
+test("delivery requires verified buyer email and a future expiry", async () => {
+  await withDatabase(async ({ db, schema, offers }) => {
+    const admin = await insertAdmin(db, schema);
+    const contact = await insertContact(db, schema);
+    const buyRequest = await insertBuyRequest(db, schema, contact.id);
+    const created = await offers.createBuyerOffer(db, {
+      buyRequestId: buyRequest.id,
+      offer: { ...OFFER, expiresAt: new Date("2026-09-01T00:00:00Z") },
+      actor: ACTOR(admin),
+    });
+    const unverified = await offers.queueBuyerOfferDelivery(db, {
+      buyRequestId: buyRequest.id,
+      buyerOfferId: created.data.buyerOfferId,
+      expectedStatus: "draft",
+      actor: ACTOR(admin),
+      now: new Date("2026-08-18T00:00:00Z"),
+    });
+    assert.deepEqual(unverified, { ok: false, reason: "buyer_unverified" });
+    assert.equal((await offersFor(db, schema, buyRequest.id))[0].status, "draft");
+    assert.equal((await db.select().from(schema.notificationOutbox)).length, 0);
+
+    await db.update(schema.marketplaceContacts).set({
+      verificationState: "VERIFIED",
+      verifiedAt: new Date("2026-08-17T12:05:00Z"),
+    });
+    await db.update(schema.buyRequests).set({
+      status: "verified",
+      verifiedAt: new Date("2026-08-17T12:05:00Z"),
+    });
+    const queued = await offers.queueBuyerOfferDelivery(db, {
+      buyRequestId: buyRequest.id,
+      buyerOfferId: created.data.buyerOfferId,
+      expectedStatus: "draft",
+      actor: ACTOR(admin),
+      now: new Date("2026-08-18T00:00:00Z"),
+    });
+    assert.equal(queued.ok, true);
+    const [stored] = await offersFor(db, schema, buyRequest.id);
+    assert.equal(stored.status, "sent");
+    assert.equal(stored.sentAt.toISOString(), "2026-08-18T00:00:00.000Z");
+    const [message] = await db.select().from(schema.notificationOutbox);
+    assert.equal(message.messageType, "BUYER_OFFER_TO_BUYER");
+    assert.equal(message.aggregateType, "buyer_offer");
+    assert.equal(message.aggregateId, stored.id);
+    const audit = await auditFor(db, schema, buyRequest.id);
+    assert.equal(audit.filter((row) => row.action === "BUYER_OFFER_DELIVERY_QUEUED").length, 1);
+    assert.equal(JSON.stringify(audit).includes("2400.00"), false);
+  });
+});
+
+test("one exact token-bound offer can be accepted once and only one internal notice is queued", async () => {
+  await withDatabase(async ({ db, schema, offers }) => {
+    const admin = await insertAdmin(db, schema);
+    const contact = await insertContact(db, schema, {
+      verificationState: "VERIFIED",
+      verifiedAt: new Date("2026-08-17T12:05:00Z"),
+    });
+    const buyRequest = await insertBuyRequest(db, schema, contact.id, {
+      status: "verified",
+      verifiedAt: new Date("2026-08-17T12:05:00Z"),
+    });
+    const created = await offers.createBuyerOffer(db, {
+      buyRequestId: buyRequest.id,
+      offer: { ...OFFER, expiresAt: new Date("2026-09-01T00:00:00Z") },
+      actor: ACTOR(admin),
+    });
+    await offers.queueBuyerOfferDelivery(db, {
+      buyRequestId: buyRequest.id,
+      buyerOfferId: created.data.buyerOfferId,
+      expectedStatus: "draft",
+      actor: ACTOR(admin),
+      now: new Date("2026-08-18T00:00:00Z"),
+    });
+    const record = await offers.loadBuyerOfferCustomerRecord(db, created.data.buyerOfferId, new Date("2026-08-18T01:00:00Z"));
+    assert.ok(record);
+    const { deriveBuyerOfferToken } = await import("../lib/marketplace/buyer-offer-token.ts");
+    const { viewBuyerOffer, respondToBuyerOffer } = await import("../lib/marketplace/buyer-offer-service.ts");
+    const key = "buyer-offer-test-signing-key-at-least-32-characters";
+    const token = deriveBuyerOfferToken(key, {
+      buyerOfferId: record.buyerOfferId,
+      version: record.version,
+      sentAt: record.sentAt,
+      expiresAt: record.expiresAt,
+    });
+    const viewed = await viewBuyerOffer(db, { token, tokenKey: key, now: new Date("2026-08-18T01:00:00Z") });
+    assert.equal(viewed.outcome, "available");
+    assert.equal(viewed.status, "awaiting_response");
+    assert.deepEqual(Object.keys(viewed.offer).sort(), [
+      "currencyCode", "deliveryOption", "disclosure", "documentsSummary", "expiresAt",
+      "leadTimeDays", "quantity", "reference", "saleUnitPrice", "shippingAndExportScope",
+      "statedCondition", "version",
+    ].sort());
+    for (const secret of ["Acme Rotables", "1800.00", "selectedSupplierResponseId", "supplier"] ) {
+      assert.equal(JSON.stringify(viewed.offer).includes(secret), false, secret);
+    }
+
+    const accepted = await respondToBuyerOffer(db, {
+      token, tokenKey: key, decision: "accepted", now: new Date("2026-08-18T01:05:00Z"),
+    });
+    assert.deepEqual(accepted, { outcome: "recorded", decision: "accepted" });
+    const replay = await respondToBuyerOffer(db, {
+      token, tokenKey: key, decision: "accepted", now: new Date("2026-08-18T01:06:00Z"),
+    });
+    assert.deepEqual(replay, { outcome: "already_recorded", decision: "accepted" });
+    const opposite = await respondToBuyerOffer(db, {
+      token, tokenKey: key, decision: "declined", now: new Date("2026-08-18T01:07:00Z"),
+    });
+    assert.deepEqual(opposite, { outcome: "unavailable" });
+
+    const [stored] = await offersFor(db, schema, buyRequest.id);
+    assert.equal(stored.status, "accepted");
+    assert.equal(stored.respondedAt.toISOString(), "2026-08-18T01:05:00.000Z");
+    const messages = await db.select().from(schema.notificationOutbox);
+    assert.equal(messages.filter((message) => message.messageType === "BUYER_OFFER_RESPONSE_INTERNAL").length, 1);
+    const responseAudit = (await auditFor(db, schema, buyRequest.id))
+      .filter((row) => row.action === "BUYER_OFFER_BUYER_RESPONDED");
+    assert.equal(responseAudit.length, 1);
+    assert.deepEqual(responseAudit[0].sanitizedMetadata, {
+      buyerOfferId: stored.id, version: 1, decision: "accepted",
+    });
+    assert.equal(responseAudit[0].actorType, "SYSTEM");
+  });
+});
+
+test("tampered, expired and superseded offer credentials cannot respond", async () => {
+  await withDatabase(async ({ db, schema, offers }) => {
+    const admin = await insertAdmin(db, schema);
+    const contact = await insertContact(db, schema, {
+      verificationState: "VERIFIED", verifiedAt: SUBMITTED_AT,
+    });
+    const buyRequest = await insertBuyRequest(db, schema, contact.id, {
+      status: "verified", verifiedAt: SUBMITTED_AT,
+    });
+    const first = await offers.createBuyerOffer(db, {
+      buyRequestId: buyRequest.id,
+      offer: { ...OFFER, expiresAt: new Date("2026-08-25T00:00:00Z") }, actor: ACTOR(admin),
+    });
+    await offers.queueBuyerOfferDelivery(db, {
+      buyRequestId: buyRequest.id, buyerOfferId: first.data.buyerOfferId,
+      expectedStatus: "draft", actor: ACTOR(admin), now: new Date("2026-08-18T00:00:00Z"),
+    });
+    const firstRecord = await offers.loadBuyerOfferCustomerRecord(db, first.data.buyerOfferId, new Date("2026-08-18T01:00:00Z"));
+    const { deriveBuyerOfferToken } = await import("../lib/marketplace/buyer-offer-token.ts");
+    const { respondToBuyerOffer } = await import("../lib/marketplace/buyer-offer-service.ts");
+    const key = "buyer-offer-test-signing-key-at-least-32-characters";
+    const token = deriveBuyerOfferToken(key, {
+      buyerOfferId: firstRecord.buyerOfferId,
+      version: firstRecord.version,
+      sentAt: firstRecord.sentAt,
+      expiresAt: firstRecord.expiresAt,
+    });
+    const tampered = `${token.slice(0, -1)}${token.endsWith("A") ? "B" : "A"}`;
+    assert.deepEqual(await respondToBuyerOffer(db, {
+      token: tampered, tokenKey: key, decision: "accepted", now: new Date("2026-08-18T02:00:00Z"),
+    }), { outcome: "unavailable" });
+
+    const second = await offers.createBuyerOffer(db, {
+      buyRequestId: buyRequest.id,
+      offer: { ...OFFER, expiresAt: new Date("2026-08-26T00:00:00Z"), civilonSaleUnitPrice: "2600.00" },
+      actor: ACTOR(admin),
+    });
+    await offers.queueBuyerOfferDelivery(db, {
+      buyRequestId: buyRequest.id, buyerOfferId: second.data.buyerOfferId,
+      expectedStatus: "draft", actor: ACTOR(admin), now: new Date("2026-08-18T03:00:00Z"),
+    });
+    assert.deepEqual(await respondToBuyerOffer(db, {
+      token, tokenKey: key, decision: "accepted", now: new Date("2026-08-18T04:00:00Z"),
+    }), { outcome: "unavailable" });
+    assert.deepEqual(await respondToBuyerOffer(db, {
+      token, tokenKey: key, decision: "accepted", now: new Date("2026-08-26T00:00:00Z"),
+    }), { outcome: "unavailable" });
+  });
+});
+
+test("registered preview handlers deliver the buyer offer and the internal response notice", async () => {
+  await withDatabase(async ({ db, schema, offers }) => {
+    const priorKey = process.env.MARKETPLACE_VERIFY_TOKEN_KEY;
+    const priorOrigin = process.env.MARKETPLACE_PREVIEW_ORIGIN;
+    process.env.MARKETPLACE_VERIFY_TOKEN_KEY = "preview-buyer-offer-signing-key-at-least-32-characters";
+    process.env.MARKETPLACE_PREVIEW_ORIGIN = "https://deploy-preview-21--cvlon.netlify.app";
+    try {
+      const admin = await insertAdmin(db, schema);
+      const contact = await insertContact(db, schema, {
+        verificationState: "VERIFIED", verifiedAt: SUBMITTED_AT,
+      });
+      const buyRequest = await insertBuyRequest(db, schema, contact.id, {
+        status: "verified", verifiedAt: SUBMITTED_AT,
+      });
+      const created = await offers.createBuyerOffer(db, {
+        buyRequestId: buyRequest.id,
+        offer: { ...OFFER, expiresAt: new Date("2026-09-01T00:00:00Z") }, actor: ACTOR(admin),
+      });
+      await offers.queueBuyerOfferDelivery(db, {
+        buyRequestId: buyRequest.id, buyerOfferId: created.data.buyerOfferId,
+        expectedStatus: "draft", actor: ACTOR(admin), now: new Date("2026-08-18T00:00:00Z"),
+      });
+      const delivered = [];
+      const provider = {
+        async send(email) {
+          delivered.push(email);
+          return { providerMessageId: `test-message-${delivered.length}` };
+        },
+      };
+      const { processNextNotification } = await import("../lib/notifications/outbox-worker.ts");
+      const { marketplaceNotificationHandlers, registeredNotificationTypes } = await import("../lib/notifications/registry.ts");
+      const first = await processNextNotification(db, {
+        handlers: marketplaceNotificationHandlers,
+        reservedMessageTypes: registeredNotificationTypes(),
+        provider,
+        now: new Date("2026-08-18T00:01:00Z"),
+        leaseOwner: "buyer-offer-test-worker-1",
+      });
+      assert.equal(first.status, "succeeded");
+      assert.equal(delivered.length, 1);
+      assert.equal(delivered[0].to, contact.businessEmail);
+      for (const secret of ["Acme Rotables", "1800.00", "sourcing@acme", "selectedSupplierResponseId"]) {
+        assert.equal(JSON.stringify(delivered[0]).includes(secret), false, secret);
+      }
+      const link = delivered[0].textBody.match(/Review and respond: (https:\/\/\S+)/)?.[1];
+      assert.ok(link);
+      const token = new URLSearchParams(new URL(link).hash.slice(1)).get("token");
+      assert.ok(token);
+      const { respondToBuyerOffer } = await import("../lib/marketplace/buyer-offer-service.ts");
+      const response = await respondToBuyerOffer(db, {
+        token,
+        tokenKey: process.env.MARKETPLACE_VERIFY_TOKEN_KEY,
+        decision: "declined",
+        now: new Date("2026-08-18T00:02:00Z"),
+      });
+      assert.deepEqual(response, { outcome: "recorded", decision: "declined" });
+      const second = await processNextNotification(db, {
+        handlers: marketplaceNotificationHandlers,
+        reservedMessageTypes: registeredNotificationTypes(),
+        provider,
+        now: new Date("2026-08-18T00:03:00Z"),
+        leaseOwner: "buyer-offer-test-worker-2",
+      });
+      assert.equal(second.status, "succeeded");
+      assert.equal(delivered.length, 2);
+      assert.match(delivered[1].to, /sales@cvlon\.com/);
+      assert.match(delivered[1].to, /hakan@shipnex\.com/);
+      assert.match(delivered[1].to, /david@cvlon\.com/);
+      assert.match(delivered[1].textBody, /Buyer response: declined/);
+      const outbox = await db.select().from(schema.notificationOutbox);
+      assert.equal(outbox.every((row) => row.state === "succeeded"), true);
+    } finally {
+      if (priorKey === undefined) delete process.env.MARKETPLACE_VERIFY_TOKEN_KEY;
+      else process.env.MARKETPLACE_VERIFY_TOKEN_KEY = priorKey;
+      if (priorOrigin === undefined) delete process.env.MARKETPLACE_PREVIEW_ORIGIN;
+      else process.env.MARKETPLACE_PREVIEW_ORIGIN = priorOrigin;
+    }
   });
 });

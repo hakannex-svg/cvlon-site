@@ -535,7 +535,7 @@ test("pending-verification records remain queryable and verification is a normal
       contactId: contact.id,
       tokenDerivationNonce: "nonce",
       issuedAt: SUBMITTED_AT,
-      expiresAt: new Date("2026-08-18T12:00:00Z"),
+      expiresAt: new Date("2027-08-18T12:00:00Z"),
     };
     await db.insert(schema.emailVerificationTokens).values({
       ...tokenBase,
@@ -648,7 +648,7 @@ test("marketplace upload tables expose no cross-workflow claim path", async () =
       id: ulid("US"),
       tokenHash: "session-hash",
       intendedAggregateType: "sell_submission",
-      expiresAt: new Date("2026-08-18T12:00:00Z"),
+      expiresAt: new Date("2027-08-18T12:00:00Z"),
     };
     await db.insert(schema.marketplaceUploadSessions).values(session);
 

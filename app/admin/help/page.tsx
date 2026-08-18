@@ -26,7 +26,7 @@ export default async function AdminHelpPage() {
           <li><b>Verification</b> — a record starts at <i>Pending verification</i> until the customer or supplier confirms their own email. An ADMIN may override that to <i>Verified</i>, which is audited under its own action and leaves the contact still marked unconfirmed. Do not read an override as a confirmed address.</li>
           <li><b>Status, assignment, notes</b> — move status only along the offered options, assign an active staff owner, and keep working detail in internal notes. Notes are staff-only, append-only, and never reach a customer or a supplier.</li>
           <li><b>Supplier responses</b> — internal sourcing only. Record what a supplier told you, including a nonregistered supplier Civilon simply telephoned. Nothing here contacts anyone.</li>
-          <li><b>Civilon offers</b> — a buyer offer is Civilon&apos;s own separate sale terms. It carries no supplier identity, no supplier cost and no internal routing, and none may be added. Marking an offer sent records that you sent it by your own means.</li>
+          <li><b>Civilon offers</b> — a buyer offer is Civilon&apos;s own separate sale terms. It carries no supplier identity, no supplier cost and no internal routing. Send Civilon Offer emails the verified buyer a secure accept/decline link; staff cannot record the buyer&apos;s response.</li>
           <li><b>Seller evidence</b> — a file can be opened only while its malware scan is clean and your role permits it. Every opening is authenticated and recorded. If a file is not clean, do not chase it — it is not reviewable.</li>
         </ul>
       </section>

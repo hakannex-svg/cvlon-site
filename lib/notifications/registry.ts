@@ -8,6 +8,7 @@ import {
   sellSubmissionInternalNotificationHandler,
   sellSubmissionVerifyNotificationHandler,
 } from "../marketplace/email/sell-submission-handlers.ts";
+import { buyerOfferNotificationHandlers } from "../marketplace/email/buyer-offer-handlers.ts";
 
 /**
  * The marketplace half of the registry, on its own.
@@ -22,6 +23,7 @@ export const marketplaceNotificationHandlers: readonly NotificationHandler[] = [
   buyRequestInternalNotificationHandler,
   sellSubmissionVerifyNotificationHandler,
   sellSubmissionInternalNotificationHandler,
+  ...buyerOfferNotificationHandlers,
 ];
 
 /**
