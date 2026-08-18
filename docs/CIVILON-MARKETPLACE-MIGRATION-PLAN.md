@@ -1,12 +1,10 @@
 # Civilon marketplace migration plan (Buy / Sell intake schema)
 
-Status: **preparation and local rehearsal only.**
+Status: **production migration applied and verified; public feature flags remain off.**
 
-> **This document does not authorize production migration, production deployment,
-> or marketplace feature enablement.** It describes an approval-ready artifact and
-> the rehearsal evidence behind it. Applying this migration to the production
-> database requires a separate, explicit, written authorization that names the
-> exact production database and the migration SHA256 recorded below.
+The production migration was explicitly authorized and applied on 2026-08-18 to
+the target recorded in section 5. Public route activation remains a separate
+release step and must follow the post-migration deploy and production smoke tests.
 
 This plan operates under the temporary manual-migration mode described in
 `docs/NETLIFY-MANUAL-MIGRATIONS.md`: migration history lives in
@@ -157,53 +155,54 @@ truncated archive fails loudly instead of trivially passing.
 
 ---
 
-## 4. Isolated Netlify preview database procedure (not yet performed)
+## 4. Isolated Netlify preview database rehearsal
 
-**Not performed in this pass.** Requires Netlify access that is out of scope here.
-
-1. Provision or select a Netlify database branch that is **dedicated to this
-   rehearsal**. Never the production branch. Confirm the connection string does
-   not resolve to production before running anything.
-2. Confirm the branch is empty, or is a restorable clone whose restore point has
-   been recorded.
-3. Apply the archive in lexical order, migration 1 through 9, capturing full
-   output to a file.
-4. Verify the resulting schema inventory: expected table count, all 19 new enum
-   types, all constraints and indexes present, and the original Price Check
-   objects structurally unchanged.
-5. Re-run the archive to confirm replay behaves as expected for this mode.
-6. Run synthetic Buy and Sell journeys against the preview, then confirm no
-   supplier identity or supplier cost is reachable from any buyer-facing surface.
-7. Destroy the preview data. Per `docs/PRICE-CHECK-PRODUCTION-RUNBOOK.md`,
-   preview data and preview credentials must never be reused in production.
+Completed against the isolated PR #21 preview environment before production
+authorization. The nine-migration archive applied, the marketplace schema and
+Price Check baseline were verified, and synthetic buyer-offer delivery passed
+without exposing supplier identity or supplier cost on buyer-facing surfaces.
+Preview credentials and data were not reused in production.
 
 ---
 
-## 5. Production preflight (blocked pending authorization)
+## 5. Production apply evidence (completed 2026-08-18)
 
-Do not begin until all of the following are true.
+| Evidence | Result |
+| --- | --- |
+| Netlify site | `cvlon`, site ID `686dfff8-0c61-4d95-8e0f-6cc5ee03fa1e` |
+| Database target | `ep-blue-wind-ax2hag85.c-4.us-east-2.db.netlify.com:5432/netlifydb` |
+| Baseline | 22 public tables and 8 applied historical migrations |
+| Restore point | Automatic production-publish backup `snap-long-moon-ax4m69b2`, created `2026-08-18T13:07:37Z` |
+| Applied artifact | `20260818023551_charming_cable`, SHA256 `ed4290b703e1c1e7977ff5d1315be272feaee58089e4730de69cbdbc06d66b04` |
+| Transaction result | 97 statements committed atomically under an advisory transaction lock |
+| Post-apply inventory | 33 public tables total; 11 marketplace tables; 19 marketplace enum types |
+| Regression guard | Existing-table column signature unchanged |
+| Public flags during apply | `NEXT_PUBLIC_MARKETPLACE_ENABLED=false`; `NEXT_PUBLIC_SELL_SUBMISSIONS_ENABLED=false` |
 
-1. A separate written authorization exists naming the exact production database
-   and the `migration.sql` SHA256 recorded in section 1.
-2. The digests in section 1 re-verify against the working tree.
-3. The production schema state is confirmed to match the original eight
-   migrations. Section 11 of the Phase 1 review flags that the production branch
-   may predate the archiving commit — **resolve which branch and SHA production
-   actually serves before treating this plan as accurate.**
-4. A current backup and a rehearsed restore point exist, with a named owner.
-5. `NEXT_PUBLIC_MARKETPLACE_ENABLED` is **false** in production and stays false
-   until the schema is confirmed present. Schema application and feature
-   enablement are two separate, separately authorized events.
-6. The migration is applied **out-of-band, before** any application deploy, per
-   `docs/NETLIFY-MANUAL-MIGRATIONS.md`.
+The guarded runner in `scripts/apply-marketplace-production-migration.mjs`
+bound the operation to the exact host, port, database, and owner role above;
+verified the artifact digest and additive statement inventory; refused partial
+or repeated application; and verified the post-commit schema inventory.
 
-### Ordering
+Netlify personal-access-token write access was enabled only for the apply and
+was disabled immediately afterward. A post-apply check confirmed the external
+CLI role had returned to `netlifydb_readonly`.
 
-1. Backup / restore point confirmed.
-2. Apply migration 9 out-of-band. Capture full output.
-3. Verify schema inventory against the preview rehearsal result.
-4. Deploy the application with the marketplace flag still off.
-5. Enable the marketplace flag only under its own separate authorization.
+The production Postmark server was renamed `Civilon Parts Production`. Exposed
+and stale server tokens were revoked, one replacement token remains, and direct
+API sends returned HTTP 200 / Postmark `ErrorCode: 0` for the marketplace sender
+and all three configured internal recipients: `sales@cvlon.com`,
+`hakan@shipnex.com`, and `david@cvlon.com`.
+
+### Remaining release ordering
+
+1. Redeploy the application with both marketplace flags still off so the new
+   runtime secrets are active.
+2. Reconfirm Price Check and admin health while marketplace routes remain 404.
+3. Enable Buy first and complete a synthetic production submission.
+4. Enable Sell and complete a synthetic production submission.
+5. Keep both routes live only if the database, admin, notification, and privacy
+   checks pass; otherwise turn the affected flag off without reverting schema.
 
 ---
 
@@ -225,12 +224,12 @@ The migration is purely additive, so the failure modes are narrow.
 
 ---
 
-## 7. Limitations of this plan
+## 7. Remaining limitations
 
-- No production or preview database was contacted. All evidence is from
-  disposable local Postgres.
-- Preview rehearsal (section 4) has not been performed.
-- The production schema baseline is asserted from repository history, not
-  observed. See preflight item 3.
-- Idempotent re-run behaviour was verified only against the local disposable
-  database, not against Netlify's migration ledger.
+- A successful Postmark API acceptance proves the message entered Postmark's
+  delivery pipeline; recipient mailbox placement remains outside application
+  control and must be monitored in Postmark activity.
+- The marketplace production tables are intentionally retained if a public
+  feature flag is turned off; rollback is flag-based, not destructive DDL.
+- The guarded runner refuses a replay after marketplace objects exist. It does
+  not write to or reinterpret Netlify's migration ledger.
