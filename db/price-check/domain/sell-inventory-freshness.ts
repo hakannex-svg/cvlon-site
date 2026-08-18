@@ -504,3 +504,51 @@ export function isSellInventoryFreshnessCadenceOutcome(
   return typeof value === "string"
     && (sellInventoryFreshnessCadenceOutcomes as readonly string[]).includes(value);
 }
+
+/* --------------------------------------------------------- staff drill-down */
+
+/**
+ * The bulk-inventory freshness states a staff member may narrow a Sell
+ * Submission list to.
+ *
+ * A closed allowlist rather than a free string, and deliberately the same four
+ * states the All Work counters already report, so a counter and the list it
+ * opens cannot mean two different things:
+ *
+ *  - `due` — the producer's own eligible-and-due predicate, and nothing else.
+ *    Its batch cap is not part of the predicate: staff are asking which records
+ *    are waiting, not which twenty-five the next run happens to take.
+ *  - `live` — a credential the seller could still use is out.
+ *  - `backoff` — two automatic asks in a row lapsed unanswered, so the cadence
+ *    has stopped for that record until a staff member asks by hand.
+ *  - `seller_changes` — the seller's own latest answer says the inventory moved.
+ *
+ * Delivery concerns is deliberately absent. It counts queued e-mails rather than
+ * records, so there is no set of Sell Submissions it could narrow a list to, and
+ * a filter that pretended otherwise would answer a different question from the
+ * counter a staff member clicked.
+ *
+ * Naming a state here is not a Civilon position on the parts: every one of them
+ * describes stored workflow state, never certification, airworthiness,
+ * authenticity or fitness for any use.
+ */
+export const sellInventoryFreshnessFilters = [
+  "due",
+  "live",
+  "backoff",
+  "seller_changes",
+] as const;
+
+export type SellInventoryFreshnessFilter = (typeof sellInventoryFreshnessFilters)[number];
+
+/**
+ * Strict membership. Everything else — an empty string, a casing variant, a
+ * counter key, a SQL fragment — is malformed, and the repository fails closed on
+ * it rather than dropping the filter and widening the list.
+ */
+export function isSellInventoryFreshnessFilter(
+  value: unknown,
+): value is SellInventoryFreshnessFilter {
+  return typeof value === "string"
+    && (sellInventoryFreshnessFilters as readonly string[]).includes(value);
+}

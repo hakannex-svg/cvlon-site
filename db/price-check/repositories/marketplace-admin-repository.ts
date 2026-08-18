@@ -37,8 +37,10 @@ import {
   SELL_INVENTORY_FRESHNESS_ELIGIBLE_STATUSES,
   SELL_INVENTORY_FRESHNESS_MESSAGE_TYPE,
   SELL_INVENTORY_FRESHNESS_SUBMISSION_KIND,
+  isSellInventoryFreshnessFilter,
   sellInventoryFreshnessDeliveryState,
   sellInventoryFreshnessStopResponses,
+  type SellInventoryFreshnessFilter,
 } from "../domain/sell-inventory-freshness.ts";
 
 /* ========================================================================= */
@@ -121,6 +123,14 @@ export type UnifiedQueueFilters = {
   verification?: UnifiedQueueVerificationState;
   /** Internal Civilon business review of the marketplace contact. */
   review?: InternalReviewState;
+  /**
+   * One `sellInventoryFreshnessFilters` value. Typed as a plain string for the
+   * same reason `assignee` is: the page passes what the URL carried, and this
+   * module fails closed on a malformed value rather than letting a caller widen
+   * the list by dropping it. Only Sell Submissions have a bulk-inventory
+   * freshness cadence, so the other two workflows are excluded when it is set.
+   */
+  freshness?: string;
   age?: UnifiedQueueAge;
   search?: string;
   /**
@@ -200,6 +210,10 @@ function compareQueueRecords(a: UnifiedQueueRecord, b: UnifiedQueueRecord) {
 
 function buyRequestClauses(filters: UnifiedQueueFilters) {
   type BuyRequestStatus = (typeof buyRequestStatuses)[number];
+  // A Buy Request is not a bulk-inventory Sell Submission and has no freshness
+  // cadence, so a freshness filter excludes the workflow rather than inventing a
+  // state for it — the same treatment urgency gets on the Sell side.
+  if (filters.freshness) return null;
   if (filters.status && !buyRequestStatuses.includes(filters.status as BuyRequestStatus)) return null;
 
   const clauses = [];
@@ -238,6 +252,8 @@ function sellSubmissionClauses(filters: UnifiedQueueFilters) {
   if (filters.review) clauses.push(eq(marketplaceContacts.businessReviewState, filters.review));
   const assignee = assigneeClause(sellSubmissions.assignedAdminUserId, filters.assignee);
   if (assignee) clauses.push(assignee);
+  const freshness = sellSubmissionFreshnessClause(filters.freshness);
+  if (freshness) clauses.push(freshness);
   const age = ageClause(sellSubmissions.submittedAt, filters.age);
   if (age) clauses.push(age);
   const search = normalizeSearch(filters.search);
@@ -253,10 +269,128 @@ function sellSubmissionClauses(filters: UnifiedQueueFilters) {
   return clauses;
 }
 
+/* ------------------------------------------------------------------------ */
+/* Bulk-inventory freshness drill-down                                       */
+/*                                                                           */
+/* The counters on All Work say how many records are in each freshness state; */
+/* this is how a staff member opens the records behind one of those numbers.  */
+/* It narrows the existing Sell Submission list and nothing else: no new       */
+/* projection, no new column, no identifier that the list did not already      */
+/* show, and not one write.                                                    */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * The Sell Submissions in one bulk-inventory freshness state.
+ *
+ * Rendered as `sell_submissions.id in (…)` over a self-contained restatement of
+ * the producer's own selection, so the list a counter opens is drawn from the
+ * same rows the schedule reads. The subquery is
+ * `selectDueSellInventoryFreshnessSubmissions`'s statement with two deliberate
+ * differences and no others:
+ *
+ *  1. Its `order by` and its `LIMIT` are gone. The batch cap is how many records
+ *     one scheduled run may ask about, not part of what "due" means, and a list
+ *     that silently stopped at the cap would read as "these are all of them".
+ *  2. `due` keeps the producer's four conditions verbatim; the other three
+ *     states replace them with the single stopping condition each one names —
+ *     exactly the four `count(*) filter (…)` predicates
+ *     `countSellInventoryFreshnessHealth` reports, so a counter and its list
+ *     cannot disagree.
+ *
+ * Eligibility is untouched in every case: the one bulk-inventory kind, the two
+ * live statuses, a contact that confirmed its own address and has not been
+ * deleted. Read-only, like everything else in this module.
+ *
+ * The bound lists and the instants below are the health section's own, declared
+ * further down this file and read here at call time, so the three spellings of
+ * this rule share one source for the statuses, the stop answers and the 45-day
+ * boundary rather than three.
+ *
+ * Only ever reached with a value `listUnifiedAdminQueue` has already validated.
+ * Throws rather than returning null on a malformed value, so a future caller
+ * cannot reintroduce a widening bug by skipping the guard — the same contract
+ * `assigneeClause` holds.
+ */
+function sellSubmissionFreshnessClause(freshness: string | undefined) {
+  if (!freshness) return null;
+  if (!isSellInventoryFreshnessFilter(freshness)) throw new Error("Malformed freshness filter.");
+  const state: SellInventoryFreshnessFilter = freshness;
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+  // The cadence boundary as an instant rather than an interval, off the same
+  // constant the producer and the counters use.
+  const cadenceThreshold = new Date(now.valueOf() - SELL_INVENTORY_FRESHNESS_CADENCE_MS)
+    .toISOString();
+
+  const live = sql`exists (
+          select 1
+          from "sell_inventory_freshness_checks" live
+          where live."sell_submission_id" = s."id"
+            and live."responded_at" is null
+            and live."revoked_at" is null
+            and live."expires_at" > ${nowIso}::timestamptz
+        )`;
+  const lapsed = sql`(
+        select count(*)::int
+        from (
+          select bool_and(
+            k2."requested_by_admin_user_id" is null
+            and k2."responded_at" is null
+            and k2."expires_at" <= ${nowIso}::timestamptz
+          ) over (
+            order by k2."issued_at" desc, k2."id" desc
+            rows between unbounded preceding and current row
+          ) as "lapsed_run"
+          from "sell_inventory_freshness_checks" k2
+          where k2."sell_submission_id" = s."id"
+        ) runs
+        where runs."lapsed_run"
+      )`;
+
+  const selected = state === "due"
+    ? sql`not ${live}
+      and (latest."response" is null or latest."response" not in (${freshnessStopResponseList}))
+      and (
+        latest."id" is null
+        or coalesce(latest."responded_at", latest."issued_at") <= ${cadenceThreshold}::timestamptz
+      )
+      and ${lapsed} < ${SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC}`
+    : state === "live"
+      ? live
+      : state === "backoff"
+        ? sql`${lapsed} >= ${SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC}`
+        : sql`latest."response" in (${freshnessStopResponseList})`;
+
+  return sql`${sellSubmissions.id} in (
+    select s."id"
+    from "sell_submissions" s
+    join "marketplace_contacts" c on c."id" = s."contact_id"
+    left join lateral (
+      select
+        k."id" as "id",
+        k."issued_at" as "issued_at",
+        k."responded_at" as "responded_at",
+        k."response"::text as "response"
+      from "sell_inventory_freshness_checks" k
+      where k."sell_submission_id" = s."id"
+      order by k."issued_at" desc, k."id" desc
+      limit 1
+    ) latest on true
+    where s."submission_kind"::text = ${SELL_INVENTORY_FRESHNESS_SUBMISSION_KIND}
+      and s."status"::text in (${freshnessStatusList})
+      and c."verification_state"::text = ${VERIFIED_CONTACT_STATE}
+      and c."deleted_at" is null
+      and ${selected}
+  )`;
+}
+
 async function listPriceCheckRows(db: PriceCheckDb, filters: UnifiedQueueFilters): Promise<UnifiedQueueRecord[]> {
   // Price Check carries no email-verification state, so a verification filter
-  // excludes the workflow rather than inventing a value for it.
-  if (filters.verification || filters.review) return [];
+  // excludes the workflow rather than inventing a value for it. A bulk-inventory
+  // freshness filter excludes it for the same reason: Price Check has no
+  // freshness cadence at all.
+  if (filters.verification || filters.review || filters.freshness) return [];
   if (filters.status && !priceCheckStatuses.includes(filters.status as PriceCheckStatus)) return [];
 
   const clauses = [];
@@ -414,6 +548,7 @@ export async function listUnifiedAdminQueue(
   // dropped, because dropping it silently widens the view to every assignee.
   if (filters.assignee && !isAssigneeFilter(filters.assignee)) return [];
   if (filters.review && !isInternalReviewState(filters.review)) return [];
+  if (filters.freshness && !isSellInventoryFreshnessFilter(filters.freshness)) return [];
 
   const wanted = (type: UnifiedQueueType) => !filters.type || filters.type === type;
   const branches: Promise<UnifiedQueueRecord[]>[] = [];
@@ -465,6 +600,7 @@ export async function countMarketplaceReviewStates(
   const counts = emptyMarketplaceReviewCounts();
   if (filters.assignee && !isAssigneeFilter(filters.assignee)) return counts;
   if (filters.review && !isInternalReviewState(filters.review)) return counts;
+  if (filters.freshness && !isSellInventoryFreshnessFilter(filters.freshness)) return counts;
 
   const wanted = (type: UnifiedQueueType) => !filters.type || filters.type === type;
   const branches: Promise<MarketplaceReviewCountRow[]>[] = [];

@@ -626,6 +626,9 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-freshness-health dt{color:#29485f;font-size:11px;font-weight:750}
 .admin-freshness-health dd{display:grid;gap:2px;margin:2px 0 0}
 .admin-freshness-health dd strong{color:#17384f;font-size:18px;line-height:1}
+.admin-freshness-health dd a{justify-self:start;color:#17384f;text-decoration:underline;text-underline-offset:3px;border-radius:2px}
+.admin-freshness-health dd a:hover{color:#0f2c40;text-decoration-thickness:2px}
+.admin-freshness-health dd a:focus-visible{outline:2px solid #17384f;outline-offset:2px}
 .admin-freshness-health dd span{color:#536b7e;font-size:10px;line-height:1.45}
 .admin-freshness-health .counter-backoff,.admin-freshness-health .counter-sellerChanges,.admin-freshness-health .counter-deliveryConcerns{border-left:3px solid #b56f5e}
 .admin-freshness-health-scope{color:#5d7181!important;font-size:10px!important}

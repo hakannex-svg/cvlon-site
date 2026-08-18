@@ -27,6 +27,7 @@ export default async function SellSubmissionListPage({ searchParams }: { searchP
   };
   const rawAssignee = one("assignee");
   const rawStatus = one("status");
+  const rawFreshness = one("freshness");
   const search = one("search").trim().slice(0, 120);
 
   const filters = {
@@ -36,6 +37,11 @@ export default async function SellSubmissionListPage({ searchParams }: { searchP
     assignee: rawAssignee || undefined,
     verification: pick<UnifiedQueueVerificationState>("verification", unifiedQueueVerificationStates),
     review: pick<InternalReviewState>("review", internalReviewStates),
+    // Passed through as supplied, for the same reason the assignee is: the
+    // repository rejects anything outside the freshness allowlist and returns
+    // nothing, where dropping it here would quietly widen the list to every
+    // record and read as "there are no records in that state".
+    freshness: rawFreshness || undefined,
     age: pick<UnifiedQueueAge>("age", unifiedQueueAges),
     search: search || undefined,
   };
@@ -70,6 +76,7 @@ export default async function SellSubmissionListPage({ searchParams }: { searchP
       admins={admins}
       filters={filters}
       rawAssignee={rawAssignee}
+      freshness={{ value: rawFreshness }}
     />
   </AdminChrome>;
 }

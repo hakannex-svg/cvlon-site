@@ -478,3 +478,76 @@ test("due now agrees with the cadence rule on every stored state", async () => {
     );
   });
 });
+
+/* =========================================================== list drill-down */
+
+test("each freshness drill-down returns exactly its records and malformed input fails closed", async () => {
+  await withDatabase(async ({ db, schema, repository }) => {
+    const now = new Date();
+    const at = (days) => new Date(now.valueOf() + days * DAY_MS);
+
+    const due = await seedRecord(db, schema);
+
+    const live = await seedRecord(db, schema);
+    await insertCheck(db, schema, live.submission, live.contact, {
+      issuedAt: at(-1),
+      expiresAt: at(13),
+    });
+
+    const backoff = await seedRecord(db, schema);
+    await insertCheck(db, schema, backoff.submission, backoff.contact, {
+      issuedAt: at(-120),
+      expiresAt: at(-106),
+      revokedAt: at(-75),
+    });
+    await insertCheck(db, schema, backoff.submission, backoff.contact, {
+      issuedAt: at(-75),
+      expiresAt: at(-61),
+    });
+
+    const sellerChanges = await seedRecord(db, schema);
+    await insertCheck(db, schema, sellerChanges.submission, sellerChanges.contact, {
+      issuedAt: at(-90),
+      expiresAt: at(-76),
+      respondedAt: at(-80),
+      response: "some_changed",
+    });
+
+    const insideCadence = await seedRecord(db, schema);
+    await insertCheck(db, schema, insideCadence.submission, insideCadence.contact, {
+      issuedAt: at(-10),
+      expiresAt: at(4),
+      respondedAt: at(-9),
+      response: "all_available",
+    });
+
+    const expected = new Map([
+      ["due", [due.submission.id]],
+      ["live", [live.submission.id]],
+      ["backoff", [backoff.submission.id]],
+      ["seller_changes", [sellerChanges.submission.id]],
+    ]);
+
+    for (const [freshness, ids] of expected) {
+      const rows = await repository.listUnifiedAdminQueue(db, {
+        type: "sell_submission",
+        freshness,
+      });
+      assert.deepEqual(rows.map((row) => row.id), ids, freshness);
+    }
+
+    assert.deepEqual(
+      await repository.listUnifiedAdminQueue(db, {
+        type: "sell_submission",
+        freshness: "due'--",
+      }),
+      [],
+      "a malformed filter must not widen to every Sell Submission",
+    );
+
+    const allRows = await repository.listUnifiedAdminQueue(db, {
+      type: "sell_submission",
+    });
+    assert.equal(allRows.length, 5, "the fail-closed assertion must run over a non-empty list");
+  });
+});
