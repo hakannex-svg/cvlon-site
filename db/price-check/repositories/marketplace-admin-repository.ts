@@ -32,7 +32,13 @@ import {
 } from "../domain/sell-evidence-request.ts";
 import {
   SELL_INVENTORY_FRESHNESS_AGGREGATE_TYPE,
+  SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC,
+  SELL_INVENTORY_FRESHNESS_CADENCE_MS,
+  SELL_INVENTORY_FRESHNESS_ELIGIBLE_STATUSES,
   SELL_INVENTORY_FRESHNESS_MESSAGE_TYPE,
+  SELL_INVENTORY_FRESHNESS_SUBMISSION_KIND,
+  sellInventoryFreshnessDeliveryState,
+  sellInventoryFreshnessStopResponses,
 } from "../domain/sell-inventory-freshness.ts";
 
 /* ========================================================================= */
@@ -470,6 +476,207 @@ export async function countMarketplaceReviewStates(
   }
   counts.all = internalReviewStates.reduce((total, state) => total + counts[state], 0);
   return counts;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Bulk-inventory freshness health                                          */
+/*                                                                          */
+/* Five counters and nothing else. No identifier, no reference, no contact,  */
+/* no address, no part, no file, no price, no location, no credential and no */
+/* provider datum reaches this projection, so a number here cannot become a  */
+/* way to read a record the reader would not otherwise be shown.             */
+/* ------------------------------------------------------------------------ */
+
+/**
+ * How the bulk-inventory freshness workflow is doing, as five numbers.
+ *
+ * Four of the five count *Sell Submissions* — one record contributes at most one
+ * to each — and the fifth counts *queued e-mails*, because "how many messages did
+ * Civilon fail to send" is a question about messages rather than about records.
+ * That difference is stated on the page as well as here: two counters over two
+ * populations that were labelled the same way would be read as one.
+ *
+ * The four record counters are disjoint in practice rather than by construction.
+ * `dueNow` names records nothing is stopping; `liveLinks`, `backoff` and
+ * `sellerChanges` name the three things that stop one. They are deliberately not
+ * exhaustive: a record inside its 45 days is in none of them, which is the
+ * ordinary case and needs no counter.
+ */
+export type SellInventoryFreshnessHealthCounts = {
+  /**
+   * Eligible records the automatic producer would ask about right now, with the
+   * batch cap removed. The producer asks at most
+   * `SELL_INVENTORY_FRESHNESS_CADENCE_BATCH_MAX` per run, so this is the size of
+   * the backlog rather than the size of the next run.
+   */
+  dueNow: number;
+  /** Eligible records holding an unanswered, unrevoked check that has not expired. */
+  liveLinks: number;
+  /** Eligible records where two automatic asks in a row lapsed unanswered. */
+  backoff: number;
+  /** Eligible records whose newest check carries a seller stop answer. */
+  sellerChanges: number;
+  /**
+   * Freshness outbox rows Civilon did not deliver — the states the freshness
+   * delivery vocabulary reads as `retrying` and `undeliverable`. A count of
+   * messages, not of records, and never a recipient, a provider id or a failure
+   * code.
+   */
+  deliveryConcerns: number;
+};
+
+/**
+ * The eligible statuses, as a bound SQL list. The producer builds the same list
+ * from the same constant; neither spells a status out.
+ */
+const freshnessStatusList = sql.join(
+  SELL_INVENTORY_FRESHNESS_ELIGIBLE_STATUSES.map((status) => sql`${status}`),
+  sql`, `,
+);
+const freshnessStopResponseList = sql.join(
+  sellInventoryFreshnessStopResponses.map((response) => sql`${response}`),
+  sql`, `,
+);
+
+/**
+ * The outbox states that mean a freshness e-mail has not been delivered and
+ * something went wrong, derived from the schema enum through the workflow's own
+ * delivery vocabulary rather than written out again here.
+ *
+ * `retrying` is the outbox's `failed`; `undeliverable` is its `dead_letter`.
+ * Deriving them means a future outbox state cannot start being silently ignored
+ * by a hardcoded pair.
+ */
+const FRESHNESS_UNDELIVERED_OUTBOX_STATES = notificationOutbox.state.enumValues
+  .filter((state) => {
+    const delivery = sellInventoryFreshnessDeliveryState(state);
+    return delivery === "retrying" || delivery === "undeliverable";
+  });
+const freshnessUndeliveredList = sql.join(
+  FRESHNESS_UNDELIVERED_OUTBOX_STATES.map((state) => sql`${state}`),
+  sql`, `,
+);
+
+/**
+ * Exact counters for the bulk-inventory freshness workflow, in one read-only
+ * statement that returns exactly one row.
+ *
+ * Every predicate below is the producer's, restated against the same constants:
+ * eligibility is `sell-inventory-freshness-cadence-repository.ts`'s
+ * (`bulk_inventory`, the two live statuses, a contact that confirmed its own
+ * address and has not been deleted), and the four freshness tests are the four
+ * the cadence rule makes — a live credential, a stop answer, a two-deep trailing
+ * run of lapsed automatic asks, and the 45-day anchor. What is *not* restated is
+ * the producer's `LIMIT`: staff are being shown the size of the backlog, and a
+ * number that silently stopped at 25 would read as "there are 25" rather than
+ * "there are at least 25".
+ *
+ * Read-only, and it must stay that way: nothing here writes, locks or retires
+ * anything, so opening a queue page can never move the schedule's own state.
+ * The statement returns one row of five integers, so its cost does not grow with
+ * what a staff member is looking at.
+ */
+export async function countSellInventoryFreshnessHealth(
+  db: PriceCheckDb,
+  input: { now?: Date } = {},
+): Promise<SellInventoryFreshnessHealthCounts> {
+  const now = input.now ?? new Date();
+  const nowIso = now.toISOString();
+  // The cadence boundary as an instant rather than an interval, off the same
+  // constant the producer uses, so the two cannot answer "due" differently.
+  const cadenceThreshold = new Date(now.valueOf() - SELL_INVENTORY_FRESHNESS_CADENCE_MS)
+    .toISOString();
+
+  const result = await db.execute(sql`
+    with "eligible" as (
+      select s."id" as "id"
+      from "sell_submissions" s
+      join "marketplace_contacts" c on c."id" = s."contact_id"
+      where s."submission_kind"::text = ${SELL_INVENTORY_FRESHNESS_SUBMISSION_KIND}
+        and s."status"::text in (${freshnessStatusList})
+        and c."verification_state"::text = ${VERIFIED_CONTACT_STATE}
+        and c."deleted_at" is null
+    ),
+    "reading" as (
+      select
+        latest."id" is not null as "has_history",
+        latest."response" as "latest_response",
+        coalesce(latest."responded_at", latest."issued_at") as "anchor",
+        exists (
+          select 1
+          from "sell_inventory_freshness_checks" live
+          where live."sell_submission_id" = e."id"
+            and live."responded_at" is null
+            and live."revoked_at" is null
+            and live."expires_at" > ${nowIso}::timestamptz
+        ) as "live",
+        (
+          select count(*)::int
+          from (
+            select bool_and(
+              k2."requested_by_admin_user_id" is null
+              and k2."responded_at" is null
+              and k2."expires_at" <= ${nowIso}::timestamptz
+            ) over (
+              order by k2."issued_at" desc, k2."id" desc
+              rows between unbounded preceding and current row
+            ) as "lapsed_run"
+            from "sell_inventory_freshness_checks" k2
+            where k2."sell_submission_id" = e."id"
+          ) runs
+          where runs."lapsed_run"
+        ) as "lapsed"
+      from "eligible" e
+      left join lateral (
+        select
+          k."id" as "id",
+          k."issued_at" as "issued_at",
+          k."responded_at" as "responded_at",
+          k."response"::text as "response"
+        from "sell_inventory_freshness_checks" k
+        where k."sell_submission_id" = e."id"
+        order by k."issued_at" desc, k."id" desc
+        limit 1
+      ) latest on true
+    )
+    select
+      count(*) filter (
+        where not "live"
+          and ("latest_response" is null or "latest_response" not in (${freshnessStopResponseList}))
+          and (not "has_history" or "anchor" <= ${cadenceThreshold}::timestamptz)
+          and "lapsed" < ${SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC}
+      )::int as "due_now",
+      count(*) filter (where "live")::int as "live_links",
+      count(*) filter (
+        where "lapsed" >= ${SELL_INVENTORY_FRESHNESS_CADENCE_MAX_LAPSED_AUTOMATIC}
+      )::int as "backoff",
+      count(*) filter (
+        where "latest_response" in (${freshnessStopResponseList})
+      )::int as "seller_changes",
+      (
+        select count(*)::int
+        from "notification_outbox" o
+        where o."message_type" = ${SELL_INVENTORY_FRESHNESS_MESSAGE_TYPE}
+          and o."aggregate_type" = ${SELL_INVENTORY_FRESHNESS_AGGREGATE_TYPE}
+          and o."state"::text in (${freshnessUndeliveredList})
+      ) as "delivery_concerns"
+    from "reading"
+  `);
+
+  // A driver that hands back the aggregate as a string rather than a number must
+  // not turn a counter into a concatenation on the page.
+  const row = (result.rows[0] ?? {}) as Record<string, unknown>;
+  const count = (value: unknown) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  return {
+    dueNow: count(row.due_now),
+    liveLinks: count(row.live_links),
+    backoff: count(row.backoff),
+    sellerChanges: count(row.seller_changes),
+    deliveryConcerns: count(row.delivery_concerns),
+  };
 }
 
 /* ========================================================================= */
