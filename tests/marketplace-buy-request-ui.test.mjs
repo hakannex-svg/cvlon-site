@@ -21,6 +21,7 @@ import {
 import { buyRequestVerifyEmail } from "../lib/marketplace/email/buy-request-templates.ts";
 import { isMarketplaceEnabled } from "../lib/marketplace/feature.ts";
 import { isPriceCheckEnabled } from "../lib/price-check/feature.ts";
+import { isPrivateAnalyticsRoute } from "../lib/analytics-private-routes.ts";
 
 const root = path.resolve(import.meta.dirname, "..");
 const read = (...parts) => readFileSync(path.join(root, ...parts), "utf8");
@@ -36,6 +37,34 @@ const hubView = read("components", "marketplace", "MarketplaceHubView.tsx");
 const buyPage = read("app", "buy-sell-aircraft-parts", "buy", "page.tsx");
 const buyForm = read("components", "marketplace", "BuyRequestForm.tsx");
 const TOKEN_KEY = "civilon-marketplace-verify-token-key-for-tests";
+
+/**
+ * Every trackCivilonEvent(...) call, matched with balanced parentheses.
+ *
+ * A non-greedy `\(...\);` regex stops at the first ");", which for a call
+ * wrapped in an arrow handler never arrives — the match then runs on through
+ * whatever JSX follows and reports its prose as if it were a payload key. The
+ * Sell suite already reads its calls this way; this is the same reader.
+ */
+function analyticsCalls(source) {
+  const calls = [];
+  const marker = "trackCivilonEvent";
+  for (let index = source.indexOf(marker); index >= 0; index = source.indexOf(marker, index + 1)) {
+    if (source[index + marker.length] !== "(") continue;
+    let depth = 0;
+    for (let cursor = index + marker.length; cursor < source.length; cursor += 1) {
+      if (source[cursor] === "(") depth += 1;
+      else if (source[cursor] === ")") {
+        depth -= 1;
+        if (depth === 0) {
+          calls.push(source.slice(index, cursor + 1));
+          break;
+        }
+      }
+    }
+  }
+  return calls;
+}
 
 /* -------------------------------------------------------------------------
  * Redemption is POST-only and the credential never reaches the server as a URL
@@ -313,6 +342,13 @@ test("every public marketplace surface is gated and the private one refuses when
   for (const [name, source] of [["hub", hubPage], ["buy", buyPage], ["verify", verifyPage]]) {
     assert.match(source, /isMarketplaceEnabled\(\)/, name);
     assert.match(source, /notFound\(\)/, name);
+    assert.doesNotMatch(source, /isPriceCheckEnabled\(\)\)?\s*notFound/, `${name} must not be gated on the Price Check flag`);
+  }
+  // The hub shows a Price Check card when that flag is on, so it reads the flag
+  // — but its own availability still turns on the marketplace flag alone.
+  assert.match(hubPage, /if \(!isMarketplaceEnabled\(\)\) notFound\(\);/);
+  assert.match(hubPage, /priceCheckEnabled=\{isPriceCheckEnabled\(\)\}/);
+  for (const [name, source] of [["buy", buyPage], ["verify", verifyPage]]) {
     assert.doesNotMatch(source, /isPriceCheckEnabled/, `${name} must not depend on the Price Check flag`);
   }
 });
@@ -335,20 +371,26 @@ test("navigation, footer and sitemap expose the marketplace only when it is enab
   }
 });
 
-test("the verification surface is excluded from both analytics private-route lists", () => {
+test("the verification surface is excluded from the shared analytics private-route list", () => {
+  // The two hand-maintained lists became one shared helper, so the exclusion is
+  // asserted through the helper and each surface is asserted to consult it.
+  assert.equal(isPrivateAnalyticsRoute(BUY_REQUEST_VERIFY_PATH), true);
+  assert.equal(isPrivateAnalyticsRoute(`${BUY_REQUEST_VERIFY_PATH}/anything`), true);
+  // The existing Price Check and admin exclusions are unchanged.
+  assert.equal(isPrivateAnalyticsRoute("/price-check/result"), true);
+  assert.equal(isPrivateAnalyticsRoute("/admin/queue"), true);
+  // And the public parents stay public.
+  assert.equal(isPrivateAnalyticsRoute(MARKETPLACE_HUB_PAGE), false);
+  assert.equal(isPrivateAnalyticsRoute(BUY_REQUEST_SOURCE_PAGE), false);
   for (const file of ["AnalyticsBootstrap.tsx", "ConsentPreferences.tsx"]) {
     const source = read("components", file);
-    assert.ok(source.includes(`path === "${BUY_REQUEST_VERIFY_PATH}"`), file);
-    assert.ok(source.includes(`path.startsWith("${BUY_REQUEST_VERIFY_PATH}/")`), file);
-    // The existing Price Check and admin exclusions are unchanged.
-    assert.ok(source.includes('"/price-check/result"'), file);
-    assert.ok(source.includes('"/admin/"'), file);
+    assert.ok(source.includes("isPrivateAnalyticsRoute(window.location.pathname)"), file);
+    assert.ok(source.includes('from "@/lib/analytics-private-routes"'), file);
   }
 });
 
 test("analytics events carry only page and CTA context", () => {
-  const calls = [hubView, buyForm, verifyComponent]
-    .flatMap((source) => source.match(/trackCivilonEvent\([\s\S]*?\);/g) ?? []);
+  const calls = [hubView, buyForm, verifyComponent].flatMap(analyticsCalls);
   assert.ok(calls.length >= 5, `expected the documented events, found ${calls.length}`);
 
   for (const call of calls) {

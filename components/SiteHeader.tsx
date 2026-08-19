@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { navigation, siteConfig } from "@/lib/site-config";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
+import { partSearchHref } from "@/lib/part-search-cta";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 
 export function SiteHeader() {
@@ -57,6 +58,10 @@ export function SiteHeader() {
     }
     : group);
 
+  // An ordinary part search is a Buy Request wherever Buy intake is open; the
+  // legacy contact anchor remains only while the marketplace flag is off.
+  const searchHref = partSearchHref();
+
   return <header>
     <div className="topbar">
       <div className="shell topbar-inner">
@@ -85,11 +90,11 @@ export function SiteHeader() {
             <div className={`nav-menu ${open === group.label ? "is-open" : ""}`}>{group.items.map((item) => <a href={item.href} key={item.href} onClick={() => closeMobile(false)}>{item.label}</a>)}</div>
           </div>)}
           <div className="mobile-menu-actions">
-            <a className="button button-primary" href="/contact-us#rfq" onClick={() => closeMobile(false)}>Start a part search</a>
+            <a className="button button-primary" href={searchHref} onClick={() => closeMobile(false)}>Start a part search</a>
             <div><CallAogAction source_page="navigation">Call AOG desk</CallAogAction><WhatsAppAogAction source_page="navigation">WhatsApp AOG</WhatsAppAogAction></div>
           </div>
         </div>
-        <a className="nav-cta" href="/contact-us#rfq">Start a part search <span>→</span></a>
+        <a className="nav-cta" href={searchHref}>Start a part search <span>→</span></a>
         <button ref={toggleRef} className={`menu-toggle ${mobile ? "is-open" : ""}`} type="button" aria-expanded={mobile} aria-controls="mobile-navigation" aria-label={mobile ? "Close navigation" : "Open navigation"} onClick={() => mobile ? closeMobile() : setMobile(true)}><span /><span /><span /></button>
       </div>
     </nav>

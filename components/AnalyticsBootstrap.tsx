@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { isPrivateAnalyticsRoute } from "@/lib/analytics-private-routes";
 
 declare global {
   interface Window {
@@ -26,15 +27,9 @@ export function AnalyticsBootstrap() {
   useEffect(() => {
     const mode = process.env.NEXT_PUBLIC_ANALYTICS_MODE;
     const gtmId = process.env.NEXT_PUBLIC_GTM_CONTAINER_ID;
-    const path = window.location.pathname;
-    const isPrivateRoute = path === "/price-check/result" || path.startsWith("/price-check/result/")
-      || path === "/buy-sell-aircraft-parts/verify" || path.startsWith("/buy-sell-aircraft-parts/verify/")
-      || path === "/buy-sell-aircraft-parts/sell/verify"
-      || path.startsWith("/buy-sell-aircraft-parts/sell/verify/")
-      || path === "/buy-sell-aircraft-parts/offer"
-      || path.startsWith("/buy-sell-aircraft-parts/offer/")
-      || path === "/admin" || path.startsWith("/admin/");
-    if (mode !== "consent-required" || !gtmId || isPrivateRoute) return;
+    // Private routes are named once, in the shared list, so this loader and the
+    // consent UI can never disagree about which pages are private.
+    if (mode !== "consent-required" || !gtmId || isPrivateAnalyticsRoute(window.location.pathname)) return;
 
     const setGoogleConsent = (granted: boolean) => {
       window.dataLayer = window.dataLayer ?? [];

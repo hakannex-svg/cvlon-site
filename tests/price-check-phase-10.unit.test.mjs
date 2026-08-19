@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { isPreviewResultDeliveryWorkerEnabled } from "../lib/price-check/email/preview-worker.ts";
+import { isPrivateAnalyticsRoute } from "../lib/analytics-private-routes.ts";
 
 test("Phase 10 legal pages, acknowledgement and promotion remain controlled", async () => {
   const [privacy, terms, form, validation, repository, header, footer, home, parts, category, sitemap] = await Promise.all([
@@ -59,8 +60,11 @@ test("Phase 10 analytics remains consent-gated, excludes private routes, and exc
   assert.match(form, /price_check_upload_started/);
   assert.match(form, /price_check_upload_completed/);
   assert.doesNotMatch(resultAction, /trackCivilonEvent|price_check_quote_request/);
-  assert.match(bootstrap, /\/price-check\/result/);
-  assert.match(bootstrap, /\/admin\//);
+  // The private-route list is now the one shared helper the bootstrap and the
+  // consent UI both read; the exclusions themselves are asserted through it.
+  assert.match(bootstrap, /isPrivateAnalyticsRoute\(window\.location\.pathname\)/);
+  assert.equal(isPrivateAnalyticsRoute("/price-check/result"), true);
+  assert.equal(isPrivateAnalyticsRoute("/admin/queue"), true);
 });
 
 test("Phase 10 preview configuration remains explicit and production fails closed", async () => {
