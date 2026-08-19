@@ -74,8 +74,10 @@ export function PublicChoices() {
           <span className="section-label">CHOOSE / DIRECTION</span>
           <h2 id="public-choices-title">Which of these do you need?</h2>
           <p>
-            Civilon is the counterparty on every one of them. Nothing here is a
-            public listing, and nothing is agreed until Civilon confirms it.
+            Civilon handles each request directly. Buy and Sell are private
+            Civilon transactions; Price Check is a confidential review. Nothing
+            here is a public listing, and no transaction is agreed until Civilon
+            confirms it.
           </p>
         </div>
         <div className={`marketplace-choice-grid${choices.length === 3 ? " choice-grid-three" : ""}`}>
