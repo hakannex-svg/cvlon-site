@@ -580,6 +580,11 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-actions-panel .admin-form-grid{grid-template-columns:1fr;padding:0;gap:10px}
 .admin-actions-panel .admin-form-grid textarea{min-height:96px}
 .admin-actions-panel .admin-error,.admin-actions-panel .admin-success{margin:0}
+/* Accepted-deal note template: a secondary control, never mistaken for Add note */
+.admin-note-template{display:grid;gap:4px}
+.admin-note-template button{justify-self:start;min-height:38px;border:1px solid #9eb1c0;border-radius:3px;background:#eef3f7;color:#153a58;padding:0 13px;font-weight:750;cursor:pointer}
+.admin-note-template button:disabled{opacity:.55;cursor:not-allowed}
+.admin-note-template small{color:#52687a;line-height:1.45}
 
 /* Phase 1F slice 5: internal supplier responses */
 .admin-supplier-actions{display:grid;gap:14px;margin-top:18px;padding-top:18px;border-top:1px solid #d7e1e8}

@@ -20,6 +20,7 @@ export function MarketplaceDetailActions({
   basePath, recordId, currentStatus, statusOptions, statusLabels,
   businessReviewState, assigneeId, staff, exceptionalStatuses,
   canAssign, canTransition, canWriteNote, canReview,
+  noteTemplate, noteTemplateLabel,
 }: {
   /** `/api/admin/marketplace/buy-requests` or the Sell equivalent. */
   basePath: string;
@@ -37,6 +38,19 @@ export function MarketplaceDetailActions({
   canTransition: boolean;
   canWriteNote: boolean;
   canReview: boolean;
+  /**
+   * Optional starting text for the internal note box, offered by a detail view
+   * that has a workflow worth prompting for. Absent on every surface that has
+   * none, and its absence is the whole feature being off: no control renders,
+   * and the note form behaves exactly as it did before.
+   *
+   * It fills the box and stops there. It never submits, and it is refused while
+   * the box holds text, so a template can never replace something a staff
+   * member wrote. Saving remains the one existing audited note route.
+   */
+  noteTemplate?: string;
+  /** What the control is called. Only read when `noteTemplate` is present. */
+  noteTemplateLabel?: string;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -80,7 +94,12 @@ export function MarketplaceDetailActions({
     concern: "Concern",
   };
 
-  return <section className="admin-panel admin-actions-panel" aria-label="Record actions">
+  // Refused on any text at all, not merely on text that survives trimming: the
+  // cheapest rule to state is the one a reader can be sure of, and a staff
+  // member who wants the template can empty the box.
+  const templateBlocked = note.length > 0;
+
+  return <section className="admin-panel admin-actions-panel" id="record-actions" aria-label="Record actions">
     <div className="admin-panel-heading"><h2>Actions</h2><span>Recorded in the audit trail</span></div>
 
     {error ? <p className="admin-error" role="alert">{error}</p> : null}
@@ -166,6 +185,16 @@ export function MarketplaceDetailActions({
             disabled={busy}
           />
         </label>
+        {noteTemplate ? <div className="admin-note-template">
+          <button
+            type="button"
+            disabled={busy || templateBlocked}
+            onClick={() => { if (templateBlocked || !noteTemplate) return; setNote(noteTemplate); }}
+          >{noteTemplateLabel ?? "Insert template"}</button>
+          <small>{templateBlocked
+            ? "Clear the note box first. The template will not replace text you have written."
+            : "Fills the box only. It saves nothing, and it never replaces text you have written."}</small>
+        </div> : null}
         <button type="submit" disabled={busy || !note.trim()}>{pending === "note" ? "Saving…" : "Add note"}</button>
       </form>
     ) : null}

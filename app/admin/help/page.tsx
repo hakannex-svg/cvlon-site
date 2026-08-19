@@ -15,7 +15,7 @@ export default async function AdminHelpPage() {
 
   return <AdminChrome user={access.user} active="help"><section className="admin-page admin-help-page">
     <header className="admin-help-hero"><p className="admin-eyebrow">Civilon operations guide</p><h1>Civilon operator help</h1><p>Quick guidance for the three workflows this console covers: Buy Requests, Sell Submissions, and Price Check. This page never changes record data.</p></header>
-    <nav className="admin-help-jump" aria-label="Guide sections"><a href="#marketplace">Buy &amp; Sell</a><a href="#marketplace-limits">What Civilon never claims</a><a href="#workflow">Price Check workflow</a><a href="#page-map">Page map</a><a href="#roles">Roles</a><a href="#rules">Key rules</a><a href="#extraction">Extraction</a><a href="#comparables">Comparables</a><a href="#confidence">Confidence</a><a href="#result">Result</a><a href="#troubleshooting">Troubleshooting</a></nav>
+    <nav className="admin-help-jump" aria-label="Guide sections"><a href="#marketplace">Buy &amp; Sell</a><a href="#accepted-deal">Accepted deals</a><a href="#marketplace-limits">What Civilon never claims</a><a href="#workflow">Price Check workflow</a><a href="#page-map">Page map</a><a href="#roles">Roles</a><a href="#rules">Key rules</a><a href="#extraction">Extraction</a><a href="#comparables">Comparables</a><a href="#confidence">Confidence</a><a href="#result">Result</a><a href="#troubleshooting">Troubleshooting</a></nav>
 
     <div className="admin-help-grid">
       <section id="marketplace" className="admin-panel">
@@ -29,6 +29,17 @@ export default async function AdminHelpPage() {
           <li><b>Supplier responses</b> — internal sourcing only. Record what a supplier told you, including a nonregistered supplier Civilon simply telephoned. Nothing here contacts anyone.</li>
           <li><b>Civilon offers</b> — a buyer offer is Civilon&apos;s own separate sale terms. It carries no supplier identity, no supplier cost and no internal routing. Send Civilon Offer emails the verified buyer a secure accept/decline link; staff cannot record the buyer&apos;s response.</li>
           <li><b>Seller evidence</b> — the category summary is derived from the files actually supplied. Missing means no live file in that category; supplied does not mean approved. A file can be reviewed or opened only while its malware scan is clean and your role permits it. Use <i>Concern</i> for follow-up, never as an authenticity or airworthiness decision.</li>
+        </ul>
+      </section>
+
+      <section id="accepted-deal" className="admin-panel">
+        <p className="admin-eyebrow">Accepted deals</p>
+        <h2>When a buyer accepts a Civilon offer</h2>
+        <p>The panel appears only for the newest accepted offer. An older acceptance underneath a newer draft or sent offer is history. The panel stays visible on a Converted request until staff closes it.</p>
+        <ul className="admin-help-list">
+          <li><b>Act</b> — assign an owner, reconfirm the supplier claim, handle customer terms outside the console, choose the internal route, coordinate shipping/export, Convert when execution begins, then note the outcome and Close.</li>
+          <li><b>Keep boundaries</b> — acceptance is not payment, procurement, supplier reconfirmation, shipment, documentation acceptance, certification, airworthiness approval, or an authenticity/fitness guarantee. Availability remains subject to confirmation. Supplier direct versus Civilon New Jersey stays internal. Never enter payment credentials.</li>
+          <li><b>Keep records</b> — the checklist is guidance: it stores nothing and proves nothing. The stored facts remain the request status, the assignment, the supplier responses, the Civilon offer, the internal notes and the audit trail. The template fills only an empty note box. It never saves, never submits, and is refused while the box already holds text.</li>
         </ul>
       </section>
 
