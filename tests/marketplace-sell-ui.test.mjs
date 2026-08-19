@@ -16,6 +16,7 @@ import {
 } from "../lib/marketplace/sell-contract.ts";
 import { validateSellSubmission } from "../lib/marketplace/sell-validation.ts";
 import { isMarketplaceEnabled, isSellSubmissionEnabled } from "../lib/marketplace/feature.ts";
+import { isPrivateAnalyticsRoute } from "../lib/analytics-private-routes.ts";
 import {
   SELL_UPLOAD_MAX_BYTES,
   SELL_UPLOAD_MAX_FILES,
@@ -107,8 +108,9 @@ test("the Sell surfaces are gated on the Sell flag, not just the marketplace fla
 test("the hub card opens only when the server resolves the Sell flag", () => {
   // The flag is resolved server-side and passed down; a client component reading
   // the env var itself would bake the card's state into the build.
-  assert.match(hubPage, /<MarketplaceHubView sellEnabled=\{isSellSubmissionEnabled\(\)\} \/>/);
+  assert.match(hubPage, /<MarketplaceHubView sellEnabled=\{isSellSubmissionEnabled\(\)\} priceCheckEnabled=\{isPriceCheckEnabled\(\)\} \/>/);
   assert.match(hubView, /sellEnabled = false/, "the card must fail closed when nothing is passed");
+  assert.match(hubView, /priceCheckEnabled = false/, "the third card must fail closed too");
   assert.match(hubView, /\{sellEnabled \? \(/);
   assert.doesNotMatch(hubView, /process\.env/);
 
@@ -134,15 +136,20 @@ test("only the public Sell intake enters the sitemap, never the verification pag
   }
 });
 
-test("the Sell verification surface is excluded from both analytics private-route lists", () => {
+test("the Sell verification surface is excluded from the shared analytics private-route list", () => {
+  // Both surfaces now read one shared helper instead of keeping a copy each.
+  assert.equal(isPrivateAnalyticsRoute(SELL_SUBMISSION_VERIFY_PATH), true);
+  assert.equal(isPrivateAnalyticsRoute(`${SELL_SUBMISSION_VERIFY_PATH}/anything`), true);
+  // The Buy, Price Check and admin exclusions are unchanged.
+  assert.equal(isPrivateAnalyticsRoute("/buy-sell-aircraft-parts/verify"), true);
+  assert.equal(isPrivateAnalyticsRoute("/price-check/result"), true);
+  assert.equal(isPrivateAnalyticsRoute("/admin/queue"), true);
+  // The public Sell intake it hangs off is not made private by its children.
+  assert.equal(isPrivateAnalyticsRoute(SELL_SUBMISSION_SOURCE_PAGE), false);
   for (const file of ["AnalyticsBootstrap.tsx", "ConsentPreferences.tsx"]) {
     const source = read("components", file);
-    assert.ok(source.includes(`path === "${SELL_SUBMISSION_VERIFY_PATH}"`), file);
-    assert.ok(source.includes(`path.startsWith("${SELL_SUBMISSION_VERIFY_PATH}/")`), file);
-    // The Buy, Price Check and admin exclusions are unchanged.
-    assert.ok(source.includes('"/buy-sell-aircraft-parts/verify"'), file);
-    assert.ok(source.includes('"/price-check/result"'), file);
-    assert.ok(source.includes('"/admin/"'), file);
+    assert.ok(source.includes("isPrivateAnalyticsRoute(window.location.pathname)"), file);
+    assert.ok(source.includes('from "@/lib/analytics-private-routes"'), file);
   }
 });
 

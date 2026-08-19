@@ -5,7 +5,7 @@ import { trackCivilonEvent } from "@/lib/analytics";
 import { MARKETPLACE_HUB_PAGE } from "@/lib/marketplace/contract";
 
 /**
- * The two hub cards.
+ * The hub cards.
  *
  * Selling opens only when the server says its own flag is on. Until then the
  * card stays a controlled preview with no form and no submission path: a card
@@ -13,14 +13,19 @@ import { MARKETPLACE_HUB_PAGE } from "@/lib/marketplace/contract";
  * inventory would be worse than no card at all. The flag is resolved on the
  * server and passed in, because a client-side read of a public env var would
  * make the card's state a build artefact rather than a deploy decision.
+ *
+ * Price Check is the third card, under its own independent flag. It belongs
+ * here because a visitor holding a supplier quote arrives asking a question
+ * neither Buy nor Sell answers; it carries no analytics of its own, because a
+ * click on it says nothing the hub view event does not already record.
  */
-export function MarketplaceHubView({ sellEnabled = false }: { sellEnabled?: boolean }) {
+export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = false }: { sellEnabled?: boolean; priceCheckEnabled?: boolean }) {
   useEffect(() => {
     trackCivilonEvent("buy_sell_hub_view", { source_page: MARKETPLACE_HUB_PAGE });
   }, []);
 
   return (
-    <div className="marketplace-choice-grid">
+    <div className={`marketplace-choice-grid${priceCheckEnabled ? " choice-grid-three" : ""}`}>
       <article className="marketplace-choice is-open">
         <span className="marketplace-choice-index">01</span>
         <h3>Buy a Part from Civilon</h3>
@@ -94,6 +99,27 @@ export function MarketplaceHubView({ sellEnabled = false }: { sellEnabled?: bool
             })}
           >
             Contact the Civilon team <span aria-hidden="true">→</span>
+          </a>
+        </article>
+      )}
+
+      {priceCheckEnabled && (
+        <article className="marketplace-choice is-open">
+          <span className="marketplace-choice-index">03</span>
+          <h3>Check a quoted or purchased price</h3>
+          <p>
+            Neither buying nor selling yet? If you already hold a supplier quote
+            or have already bought the part, Civilon reviews the transaction
+            against available comparable evidence and returns a confidential,
+            human-reviewed Price Check.
+          </p>
+          <ul>
+            <li>Informational and human-reviewed</li>
+            <li>Not an appraisal, an instant result or a price guarantee</li>
+            <li>The result stays private to you</li>
+          </ul>
+          <a className="button button-ghost" href="/price-check">
+            Check a part price <span aria-hidden="true">→</span>
           </a>
         </article>
       )}

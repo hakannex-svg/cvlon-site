@@ -1,19 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { isPrivateAnalyticsRoute } from "@/lib/analytics-private-routes";
 
 const STORAGE_KEY = "civilon_analytics_consent_v1";
 type Preference = "granted" | "denied";
-
-function isPrivateRoute(path: string) {
-  return path === "/admin" || path.startsWith("/admin/")
-    || path === "/price-check/result" || path.startsWith("/price-check/result/")
-    || path === "/buy-sell-aircraft-parts/verify" || path.startsWith("/buy-sell-aircraft-parts/verify/")
-    || path === "/buy-sell-aircraft-parts/sell/verify"
-    || path.startsWith("/buy-sell-aircraft-parts/sell/verify/")
-    || path === "/buy-sell-aircraft-parts/offer"
-    || path.startsWith("/buy-sell-aircraft-parts/offer/");
-}
 
 function publishConsent(preference: Preference) {
   window.dispatchEvent(new CustomEvent("civilon:analytics-consent", { detail: { granted: preference === "granted" } }));
@@ -23,7 +14,10 @@ export function ConsentPreferences() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (isPrivateRoute(window.location.pathname)) return;
+    // Nothing runs on a private route — not the dialog, and not the republish
+    // of a stored preference, which is what would otherwise re-arm the loader
+    // on a page reached only from a link Civilon sent to one recipient.
+    if (isPrivateAnalyticsRoute(window.location.pathname)) return;
     const stored = window.localStorage.getItem(STORAGE_KEY);
     if (stored === "granted" || stored === "denied") publishConsent(stored);
     else queueMicrotask(() => setOpen(true));

@@ -685,3 +685,65 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .result-buy-request-submit span{font-size:10px;line-height:1.5}
 .result-buy-request-complete{grid-template-columns:1fr}
 @media(max-width:600px){.result-sourcing.result-buy-request{padding:24px 21px}.result-buy-request-grid{grid-template-columns:1fr}.result-buy-request-submit{display:grid}.result-buy-request-submit button{width:100%}}
+
+/* Three public choices: the two-column choice grid takes a third column on the
+   homepage and on the hub when Price Check is enabled. The compound selector
+   matches the specificity of the existing responsive rule and follows it, so a
+   narrow viewport still collapses to one column. */
+.marketplace-choice-grid.choice-grid-three{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media(max-width:1150px){.marketplace-choice-grid.choice-grid-three{grid-template-columns:1fr}}
+.public-choices{background:var(--ice)}
+.public-choices .interior-heading{margin-bottom:0}
+.public-choices-note{margin:26px 0 0;color:#52677a;font-size:13px;line-height:1.7}
+.public-choices-note a{color:#1765c1;font-weight:750;text-decoration:underline;text-underline-offset:3px}
+
+/* Compact entry into the Buy Request flow, replacing the legacy homepage form
+   wherever Buy intake is open. Dark on the hero photograph, light in a section. */
+.buy-request-panel{display:flex;flex-direction:column;border-radius:8px;padding:30px}
+.buy-request-panel h2,.buy-request-panel h3{margin:12px 0 12px;font-size:26px;letter-spacing:-.03em}
+.buy-request-panel>p{margin:0;font-size:14px;line-height:1.7}
+.buy-request-panel ul{list-style:none;padding:0;margin:22px 0 26px}
+.buy-request-panel li{position:relative;padding:12px 4px 12px 24px;font-size:13px;line-height:1.55}
+.buy-request-panel li:before{content:"→";position:absolute;left:2px}
+.buy-request-panel .button{align-self:flex-start}
+.buy-request-panel .button span{margin-left:12px}
+.buy-request-panel-link{margin-top:16px;font-size:13px;font-weight:750;text-decoration:none}
+.buy-request-panel-link:hover{text-decoration:underline;text-underline-offset:4px}
+.buy-request-panel.tone-dark{border:1px solid rgba(143,202,255,.35);background:rgba(2,18,31,.62);box-shadow:0 30px 80px rgba(0,0,0,.25);backdrop-filter:blur(8px)}
+.buy-request-panel.tone-dark .buy-request-panel-kicker{color:#8fcaff}
+.buy-request-panel.tone-dark h2,.buy-request-panel.tone-dark h3{color:#fff}
+.buy-request-panel.tone-dark>p{color:#c3d6e4}
+.buy-request-panel.tone-dark ul{border-top:1px solid rgba(255,255,255,.18)}
+.buy-request-panel.tone-dark li{border-bottom:1px solid rgba(255,255,255,.14);color:#d3e3ef}
+.buy-request-panel.tone-dark li:before{color:#8fcaff}
+.buy-request-panel.tone-dark .buy-request-panel-link{color:#dff0fc}
+.buy-request-panel.tone-dark .buy-request-panel-link:focus-visible{outline:3px solid rgba(143,202,255,.55);outline-offset:4px}
+.buy-request-panel.tone-light{border:1px solid #8fb8e6;background:#fff;box-shadow:0 22px 55px rgba(15,46,72,.14)}
+.buy-request-panel.tone-light .buy-request-panel-kicker{color:#1765c1}
+.buy-request-panel.tone-light h2,.buy-request-panel.tone-light h3{color:#15344e}
+.buy-request-panel.tone-light>p{color:#496074}
+.buy-request-panel.tone-light ul{border-top:1px solid #d8e2e9}
+.buy-request-panel.tone-light li{border-bottom:1px solid #d8e2e9;color:#3d566b}
+.buy-request-panel.tone-light li:before{color:#1765c1}
+.buy-request-panel.tone-light .buy-request-panel-link{color:#1765c1}
+.buy-request-panel-kicker{font:700 10px var(--font-geist-mono),monospace;letter-spacing:.13em}
+@media(max-width:600px){.buy-request-panel{padding:24px 20px}.buy-request-panel .button{align-self:stretch}}
+
+/* Adjacent paths off the Price Check intake: buy or sell, never a valuation. */
+.adjacent-path-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:30px}
+.adjacent-path-list article{display:flex;flex-direction:column;padding:26px;border:1px solid #c4d3de;border-radius:8px;background:#fff}
+.adjacent-path-list h3{margin:0 0 10px;color:#15344e;font-size:20px;letter-spacing:-.03em}
+.adjacent-path-list p{margin:0 0 20px;color:#496074;font-size:14px;line-height:1.65}
+.adjacent-path-list a{margin-top:auto;align-self:flex-start;color:#1765c1;font-size:14px;font-weight:750;text-decoration:none}
+.adjacent-path-list a:hover{text-decoration:underline;text-underline-offset:4px}
+.adjacent-path-list a span{margin-left:8px}
+
+/* Seller path on the private result. A link, never a second form. */
+.result-sell-path{min-width:0;padding:30px 38px;background:#0f3350;color:#fff;border-top:1px solid #24506f}
+.result-sell-path>p{margin:0 0 8px;color:#8ecbff;font:800 10px var(--font-geist-mono),monospace;letter-spacing:.12em;text-transform:uppercase}
+.result-sell-path h2{max-width:100%;margin:0 0 8px;font-size:22px;letter-spacing:-.03em;overflow-wrap:anywhere}
+.result-sell-path span{display:block;max-width:100%;color:#c3d6e4;font-size:12px;line-height:1.65;overflow-wrap:anywhere}
+.result-sell-path-action{display:inline-flex;align-items:center;min-height:44px;margin-top:16px;padding:0 16px;border:1px solid #7fb6ee;border-radius:3px;color:#dff0fc;font-size:13px;font-weight:850;text-decoration:none}
+.result-sell-path-action:hover{background:rgba(127,182,238,.14)}
+.result-sell-path-action span{margin-left:10px;color:inherit;font-size:13px}
+@media(max-width:600px){.result-sell-path{padding:24px 21px}.result-sell-path-action{width:100%;justify-content:center}}

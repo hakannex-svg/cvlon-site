@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs, SectionHeading } from "@/components/Interior";
 import { MarketplaceHubView } from "@/components/marketplace/MarketplaceHubView";
 import { isMarketplaceEnabled, isSellSubmissionEnabled } from "@/lib/marketplace/feature";
+import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata(
@@ -53,7 +54,7 @@ export default function BuySellAircraftPartsPage() {
             title="Which side of the transaction are you on?"
             intro="Choose the side you are on. Civilon is the counterparty either way, and nothing on either side is published or listed."
           />
-          <MarketplaceHubView sellEnabled={isSellSubmissionEnabled()} />
+          <MarketplaceHubView sellEnabled={isSellSubmissionEnabled()} priceCheckEnabled={isPriceCheckEnabled()} />
         </div>
       </section>
 

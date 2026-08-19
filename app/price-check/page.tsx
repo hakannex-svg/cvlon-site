@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { Breadcrumbs, SectionHeading } from "@/components/Interior";
 import { PriceCheckForm } from "@/components/PriceCheckForm";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
+import { isMarketplaceEnabled, isSellSubmissionEnabled } from "@/lib/marketplace/feature";
+import { BUY_REQUEST_SOURCE_PAGE, SELL_SUBMISSION_PAGE } from "@/lib/marketplace/contract";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata("Aircraft Part Price Check", "Submit aircraft-part transaction details for a confidential, human-reviewed Civilon market-context Price Check.", "/price-check");
@@ -10,6 +12,8 @@ const conditions = [["NE", "New"], ["NS", "New Surplus"], ["OH", "Overhauled"], 
 
 export default function PriceCheckPage() {
   if (!isPriceCheckEnabled()) notFound();
+  const buyEnabled = isMarketplaceEnabled();
+  const sellEnabled = isSellSubmissionEnabled();
 
   return (
     <main id="price-check-form">
@@ -82,6 +86,42 @@ export default function PriceCheckPage() {
           </div>
         </div>
       </section>
+      {(buyEnabled || sellEnabled) && (
+        <section className="section adjacent-paths" aria-labelledby="price-check-adjacent-title">
+          <div className="shell">
+            <SectionHeading
+              label="ADJACENT / OTHER PATHS"
+              title="Came here to buy or to sell instead?"
+              intro="A Price Check reviews one transaction you already have in front of you. Buying and selling are separate requests with their own intake."
+            />
+            <div className="adjacent-path-list">
+              {buyEnabled && (
+                <article>
+                  <h3>You need the part</h3>
+                  <p>
+                    Ask Civilon to source and sell you the part. Availability,
+                    stated condition, documentation, delivery and price remain
+                    subject to confirmation, and your request is not published.
+                  </p>
+                  <a href={BUY_REQUEST_SOURCE_PAGE}>Buy a part from Civilon <span aria-hidden="true">→</span></a>
+                </article>
+              )}
+              {sellEnabled && (
+                <article>
+                  <h3>You are holding the part</h3>
+                  <p>
+                    A Price Check reviews a quoted or purchased transaction; it
+                    does not value your stock or tell you what to ask for it. To
+                    move parts you hold, offer them to Civilon directly—Civilon
+                    buys on its own account and reviews each offer internally.
+                  </p>
+                  <a href={SELL_SUBMISSION_PAGE}>Sell parts to Civilon <span aria-hidden="true">→</span></a>
+                </article>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

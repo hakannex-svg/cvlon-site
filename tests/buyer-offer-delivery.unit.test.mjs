@@ -12,6 +12,7 @@ import {
 } from "../lib/marketplace/buyer-offer-token.ts";
 import { buyerOfferCustomerEmail } from "../lib/marketplace/email/buyer-offer-templates.ts";
 import { buildBuyerOfferSnapshot } from "../lib/marketplace/buyer-offer-snapshot.ts";
+import { isPrivateAnalyticsRoute } from "../lib/analytics-private-routes.ts";
 
 const root = path.resolve(import.meta.dirname, "..");
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), "utf8");
@@ -100,10 +101,14 @@ test("public page and APIs are private, POST-only and contain no checkout", () =
 });
 
 test("the private offer page is excluded from analytics and public discovery", () => {
+  // Both surfaces read the one shared list, so the exclusion is asserted once
+  // through that list and then through each surface actually consulting it.
+  assert.equal(isPrivateAnalyticsRoute("/buy-sell-aircraft-parts/offer"), true);
+  assert.equal(isPrivateAnalyticsRoute("/buy-sell-aircraft-parts/offer/anything"), true);
   for (const file of ["AnalyticsBootstrap.tsx", "ConsentPreferences.tsx"]) {
     const source = read("components", file);
-    assert.ok(source.includes('path === "/buy-sell-aircraft-parts/offer"'), file);
-    assert.ok(source.includes('path.startsWith("/buy-sell-aircraft-parts/offer/")'), file);
+    assert.ok(source.includes("isPrivateAnalyticsRoute(window.location.pathname)"), file);
+    assert.ok(source.includes('from "@/lib/analytics-private-routes"'), file);
   }
 
   for (const file of [
