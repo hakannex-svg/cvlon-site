@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   formatAge,
   formatDateTime,
+  buyerDecisionLabels,
   marketplaceStatusLabels,
   sellInventoryFreshnessFilterLabels,
   staffDisplayName,
@@ -18,6 +19,10 @@ import {
   isSellInventoryFreshnessFilter,
   sellInventoryFreshnessFilters,
 } from "@/db/price-check/domain/sell-inventory-freshness";
+import {
+  buyerDecisions,
+  isBuyerDecision,
+} from "@/db/price-check/domain/buyer-decision";
 import type { InternalReviewState } from "@/db/price-check/domain/internal-review";
 import { InternalReviewChip } from "@/components/admin/MarketplaceShared";
 
@@ -27,7 +32,7 @@ import { InternalReviewChip } from "@/components/admin/MarketplaceShared";
  * two views can never disagree about what a staff member is allowed to see.
  */
 export function MarketplaceListView({
-  type, basePath, title, lede, statuses, records, reviewCounts, admins, filters, rawAssignee, freshness,
+  type, basePath, title, lede, statuses, records, reviewCounts, admins, filters, rawAssignee, freshness, decision,
 }: {
   type: UnifiedQueueType;
   basePath: string;
@@ -37,7 +42,7 @@ export function MarketplaceListView({
   records: UnifiedQueueRecord[];
   reviewCounts: MarketplaceReviewCounts;
   admins: { id: string; displayEmail: string }[];
-  filters: { status?: string; verification?: string; review?: InternalReviewState; age?: string; search?: string };
+  filters: { status?: string; verification?: string; review?: InternalReviewState; decision?: string; age?: string; search?: string };
   rawAssignee: string;
   /**
    * The bulk-inventory freshness filter, as the URL supplied it. Present only on
@@ -47,6 +52,11 @@ export function MarketplaceListView({
    * parameter.
    */
   freshness?: { value: string };
+  /**
+   * The latest Civilon-offer decision filter. Present only on Buy Requests;
+   * Sell Submissions and Price Check have no buyer offer to decide on.
+   */
+  decision?: { value: string };
 }) {
   const reviewHref = (review?: InternalReviewState) => {
     const params = new URLSearchParams();
@@ -58,6 +68,7 @@ export function MarketplaceListView({
     // forward would keep a staff member on a list the repository fails closed on
     // without ever showing them why.
     if (freshness && isSellInventoryFreshnessFilter(freshness.value)) params.set("freshness", freshness.value);
+    if (decision && isBuyerDecision(decision.value)) params.set("decision", decision.value);
     if (filters.age) params.set("age", filters.age);
     if (review) params.set("review", review);
     const query = params.toString();
@@ -99,6 +110,7 @@ export function MarketplaceListView({
       <label><span>Verification</span><select name="verification" defaultValue={filters.verification ?? ""}><option value="">All</option><option value="verified">Verified</option><option value="pending">Awaiting verification</option></select></label>
       <label><span>Assignee</span><select name="assignee" defaultValue={isAssigneeFilter(rawAssignee) ? rawAssignee : ""}><option value="">All assignees</option><option value={UNASSIGNED_FILTER}>Unassigned</option>{admins.map(admin => <option key={admin.id} value={admin.id}>{staffDisplayName(admin.displayEmail)}</option>)}</select></label>
       {freshness && <label><span>Freshness</span><select name="freshness" defaultValue={isSellInventoryFreshnessFilter(freshness.value) ? freshness.value : ""}><option value="">Any freshness</option>{sellInventoryFreshnessFilters.map(value => <option key={value} value={value}>{sellInventoryFreshnessFilterLabels[value]}</option>)}</select></label>}
+      {decision && <label><span>Buyer decision</span><select name="decision" defaultValue={isBuyerDecision(decision.value) ? decision.value : ""}><option value="">Any decision</option>{buyerDecisions.map(value => <option key={value} value={value}>{buyerDecisionLabels[value]}</option>)}</select></label>}
       <label><span>Age</span><select name="age" defaultValue={filters.age ?? ""}><option value="">Any age</option><option value="day">Last 24 hours</option><option value="week">Last 7 days</option><option value="older">Older than 7 days</option></select></label>
       <div className="admin-filter-actions"><button type="submit">Apply filters</button><Link href={basePath}>Clear</Link></div>
     </form>

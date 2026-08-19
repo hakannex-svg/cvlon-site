@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AdminAccessDenied } from "@/components/admin/AdminAccessDenied";
 import { AdminChrome } from "@/components/admin/AdminChrome";
+import { BuyerDecisionAlert } from "@/components/admin/BuyerDecisionAlert";
 import { InventoryFreshnessHealth } from "@/components/admin/InventoryFreshnessHealth";
 import { getAdminAccess } from "@/lib/price-check/admin/auth";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
@@ -25,6 +26,7 @@ import {
   unifiedQueueTypes,
   unifiedQueueUrgencies,
   unifiedQueueVerificationStates,
+  type BuyerDecisionCounts,
   type MarketplaceReviewCounts,
   type SellInventoryFreshnessHealthCounts,
   type UnifiedQueueAge,
@@ -96,13 +98,14 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
   let buyReviewCounts: MarketplaceReviewCounts;
   let sellReviewCounts: MarketplaceReviewCounts;
   let freshnessHealth: SellInventoryFreshnessHealthCounts;
+  let buyerDecisionCounts: BuyerDecisionCounts;
   try {
     const [{ priceCheckDb }, repository] = await Promise.all([
       import("@/db/price-check"),
       import("@/db/price-check/repositories/marketplace-admin-repository"),
     ]);
     const adminRepository = await import("@/db/price-check/repositories/admin-repository");
-    [records, admins, buyReviewCounts, sellReviewCounts, freshnessHealth] = await Promise.all([
+    [records, admins, buyReviewCounts, sellReviewCounts, freshnessHealth, buyerDecisionCounts] = await Promise.all([
       repository.listUnifiedAdminQueue(priceCheckDb, filters),
       adminRepository.listActiveAdmins(priceCheckDb),
       repository.countMarketplaceReviewStates(priceCheckDb, { type: "buy_request" }),
@@ -112,6 +115,10 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
       // the reader happens to be narrowing the table to, and a number that moved
       // with the filters would be read as a total that it is not.
       repository.countSellInventoryFreshnessHealth(priceCheckDb),
+      // Unfiltered for the same reason: what a buyer decided about Civilon's
+      // offer is a property of the Buy Request, not of whatever the reader
+      // happens to be narrowing the table to.
+      repository.countBuyerDecisions(priceCheckDb),
     ]);
   } catch {
     return <AdminAccessDenied unavailable />;
@@ -142,6 +149,8 @@ export default async function UnifiedQueuePage({ searchParams }: { searchParams:
           <Link href="/admin/sell-submissions?review=concern"><span>Sell submissions</span><strong>{sellReviewCounts.concern}</strong></Link>
         </nav>
       </aside>
+
+      <BuyerDecisionAlert counts={buyerDecisionCounts} />
 
       <InventoryFreshnessHealth counts={freshnessHealth} />
 

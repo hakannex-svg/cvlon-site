@@ -1,3 +1,4 @@
+import type { BuyerDecision } from "@/db/price-check/domain/buyer-decision";
 import type { SellInventoryFreshnessFilter } from "@/db/price-check/domain/sell-inventory-freshness";
 
 export const statusLabels: Record<string, string> = {
@@ -47,6 +48,19 @@ export const sellInventoryFreshnessFilterLabels: Record<SellInventoryFreshnessFi
   live: "Live links",
   backoff: "Backoff",
   seller_changes: "Seller changes",
+};
+
+/**
+ * The two buyer decisions a Buy Request list can be narrowed to, labelled
+ * exactly as the All Work counters label them, so a staff member who clicked
+ * "Accepted — act now" lands on a control that still says it.
+ *
+ * Each names what the buyer said and what Civilon owes them next. Neither says
+ * anything Civilon has concluded about the part, the paperwork or the deal.
+ */
+export const buyerDecisionLabels: Record<BuyerDecision, string> = {
+  accepted: "Accepted — act now",
+  declined: "Declined — follow up",
 };
 
 export const unifiedTypeLabels: Record<string, string> = {
