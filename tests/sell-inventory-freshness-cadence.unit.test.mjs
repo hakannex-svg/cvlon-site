@@ -711,11 +711,28 @@ test("no credential, address or identifier can leave the producing path", () => 
   for (const [name, source] of [
     ["cadence repository", cadenceRepository],
     ["cadence service", cadenceService],
+  ]) {
+    // The data-bearing layers never log. A scheduled function's log is read by
+    // operations, which is not the set of people who may read a seller record.
+    assert.doesNotMatch(source, /console\./, name);
+  }
+  // The function emits exactly two JSON log sites: a fixed refusal reason and
+  // the service's count-only summary. No general log call or data-bearing field
+  // is allowed into that operational trace.
+  assert.equal((scheduled.match(/console\.info\(JSON\.stringify\(/g) ?? []).length, 2);
+  assert.doesNotMatch(scheduled, /console\.(?:log|debug|warn|error)/);
+  assert.match(scheduled, /outcome: "completed",\s*\.\.\.summary/);
+  for (const forbidden of [
+    "businessEmail", "normalizedEmail", "publicReference", "keyedTokenHash",
+    "tokenDerivationNonce", "recipientReference", "sellSubmissionId", "checkId",
+  ]) {
+    assert.equal(scheduled.includes(forbidden), false, `scheduled log surface must not name ${forbidden}`);
+  }
+  for (const [name, source] of [
+    ["cadence repository", cadenceRepository],
+    ["cadence service", cadenceService],
     ["scheduled function", scheduled],
   ]) {
-    // Nothing logs. A scheduled function's output is read by whoever can read
-    // deploy logs, which is not the set of people who may read a seller record.
-    assert.doesNotMatch(source, /console\./, name);
     // No layer here derives, re-derives or renders a credential or a link.
     assert.doesNotMatch(source, /deriveSellInventoryFreshnessToken|sellInventoryFreshnessUrl/, name);
     assert.doesNotMatch(source, /businessEmail|normalizedEmail/, name);
@@ -775,11 +792,16 @@ test("the automatic sibling shares minting and leaves the manual export alone", 
 
 /* ------------------------------------------------------------------ schedule */
 
-test("the scheduled function is daily, production-only and gated on both switches", () => {
-  // 13:17 UTC, which is 09:17 in New York while Eastern daylight time is in
-  // force. Not 06:17 UTC, which would be the middle of a US night.
-  assert.match(scheduled, /export const config = \{ schedule: "17 13 \* \* \*" \};/);
+test("the scheduled function has a same-morning retry, is production-only and gated on both switches", () => {
+  // 13:17 and 14:17 UTC, which are 09:17 and 10:17 in New York while Eastern
+  // daylight time is in force. Not 06:17 UTC, which would be the middle of a US
+  // night. The second pass is harmless after success because the due/live-link
+  // policy is re-checked before every write.
+  assert.match(scheduled, /export const config = \{ schedule: "17 13,14 \* \* \*" \};/);
   assert.equal((scheduled.match(/schedule:/g) ?? []).length, 1);
+  assert.match(scheduled, /event: "sell_inventory_freshness_cadence"/);
+  assert.match(scheduled, /outcome: "completed"/);
+  assert.match(scheduled, /outcome: "refused"/);
   // The existing convention: an explicit non-production context is refused, and
   // an absent one may run, because Netlify can omit CONTEXT from the published
   // deploy the schedule actually runs in.
