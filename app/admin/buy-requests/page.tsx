@@ -27,6 +27,7 @@ export default async function BuyRequestListPage({ searchParams }: { searchParam
   };
   const rawAssignee = one("assignee");
   const rawStatus = one("status");
+  const rawDecision = one("decision");
   const search = one("search").trim().slice(0, 120);
 
   const filters = {
@@ -36,6 +37,11 @@ export default async function BuyRequestListPage({ searchParams }: { searchParam
     assignee: rawAssignee || undefined,
     verification: pick<UnifiedQueueVerificationState>("verification", unifiedQueueVerificationStates),
     review: pick<InternalReviewState>("review", internalReviewStates),
+    // Passed through as supplied, for the same reason the assignee is: the
+    // repository rejects anything outside the buyer-decision allowlist and
+    // returns nothing, where dropping it here would quietly widen the list to
+    // every request and read as "no buyer has decided anything".
+    decision: rawDecision || undefined,
     age: pick<UnifiedQueueAge>("age", unifiedQueueAges),
     search: search || undefined,
   };
@@ -70,6 +76,7 @@ export default async function BuyRequestListPage({ searchParams }: { searchParam
       admins={admins}
       filters={filters}
       rawAssignee={rawAssignee}
+      decision={{ value: rawDecision }}
     />
   </AdminChrome>;
 }

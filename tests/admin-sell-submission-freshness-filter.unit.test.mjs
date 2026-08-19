@@ -440,7 +440,7 @@ test("Buy Requests and Price Check grow no freshness surface at all", () => {
   assert.match(repository, /if \(filters\.freshness\) return null;/);
   assert.match(
     repository,
-    /if \(filters\.verification \|\| filters\.review \|\| filters\.freshness\) return \[\];/,
+    /if \(filters\.verification \|\| filters\.review \|\| filters\.freshness \|\| filters\.decision\) return \[\];/,
   );
 });
 

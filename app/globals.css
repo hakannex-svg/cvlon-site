@@ -616,6 +616,23 @@ body:has(.admin-app){background:#eef3f7;color:#10283e}body:has(.admin-app)>.topb
 .admin-concerns-alert nav span{font-size:11px;font-weight:750}
 .admin-concerns-alert nav strong{font-size:18px}
 @media(max-width:700px){.admin-concerns-alert{display:block}.admin-concerns-alert nav{min-width:0;margin-top:12px}}
+.admin-buyer-decisions{margin:0 0 16px;padding:14px 18px;border:1px solid #b9cad6;border-left:4px solid #7d93a3;border-radius:3px;background:#fff;box-shadow:0 5px 16px rgba(18,46,70,.05)}
+.admin-buyer-decisions.needs-attention{border-color:#d2a296;border-left-color:#ad503c;background:#fff7f4}
+.admin-buyer-decisions-intro>span{color:#5d7181;font:750 9px var(--font-geist-mono),monospace;letter-spacing:.1em;text-transform:uppercase}
+.admin-buyer-decisions h2{margin:3px 0 2px;color:#17384f;font-size:18px;letter-spacing:-.02em}
+.admin-buyer-decisions p{margin:0 0 3px;color:#536b7e;font-size:11px;line-height:1.5}
+.admin-buyer-decisions dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:11px 0 9px}
+.admin-buyer-decisions dl>div{min-height:42px;padding:9px 11px;border:1px solid #b9cad6;border-radius:3px;background:#f6f9fb}
+.admin-buyer-decisions .counter-accepted{border-left:3px solid #ad503c}
+.admin-buyer-decisions dt{color:#29485f;font-size:11px;font-weight:750}
+.admin-buyer-decisions dd{display:grid;gap:2px;margin:2px 0 0}
+.admin-buyer-decisions dd strong{color:#17384f;font-size:18px;line-height:1}
+.admin-buyer-decisions dd a{justify-self:start;color:#17384f;text-decoration:underline;text-underline-offset:3px;border-radius:2px}
+.admin-buyer-decisions dd a:hover{color:#0f2c40;text-decoration-thickness:2px}
+.admin-buyer-decisions dd a:focus-visible{outline:2px solid #17384f;outline-offset:2px}
+.admin-buyer-decisions dd span{color:#536b7e;font-size:10px;line-height:1.45}
+.admin-buyer-decisions-scope{color:#5d7181!important;font-size:10px!important}
+@media(max-width:700px){.admin-buyer-decisions{padding:13px 14px}.admin-buyer-decisions dl{grid-template-columns:1fr}}
 .admin-freshness-health{margin:0 0 16px;padding:14px 18px;border:1px solid #b9cad6;border-left:4px solid #7d93a3;border-radius:3px;background:#fff;box-shadow:0 5px 16px rgba(18,46,70,.05)}
 .admin-freshness-health.needs-attention{border-color:#d2a296;border-left-color:#ad503c;background:#fff7f4}
 .admin-freshness-health-intro>span{color:#5d7181;font:750 9px var(--font-geist-mono),monospace;letter-spacing:.1em;text-transform:uppercase}

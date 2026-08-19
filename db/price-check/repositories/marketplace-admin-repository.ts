@@ -22,6 +22,12 @@ import {
 } from "../schema.ts";
 import { priceCheckStatuses, type PriceCheckStatus } from "../domain/status-policy.ts";
 import {
+  BUYER_DECISION_OPEN_BUY_REQUEST_STATUSES,
+  buyerDecisions,
+  isBuyerDecision,
+  type BuyerDecision,
+} from "../domain/buyer-decision.ts";
+import {
   internalReviewStates,
   isInternalReviewState,
   type InternalReviewState,
@@ -131,6 +137,14 @@ export type UnifiedQueueFilters = {
    * freshness cadence, so the other two workflows are excluded when it is set.
    */
   freshness?: string;
+  /**
+   * One `buyerDecisions` value. Typed as a plain string for the same reason
+   * `assignee` and `freshness` are: the page passes what the URL carried, and
+   * this module fails closed on a malformed value rather than letting a caller
+   * widen the list by dropping it. Only a Buy Request can carry a Civilon offer
+   * to a buyer, so the other two workflows are excluded when it is set.
+   */
+  decision?: string;
   age?: UnifiedQueueAge;
   search?: string;
   /**
@@ -225,6 +239,8 @@ function buyRequestClauses(filters: UnifiedQueueFilters) {
   if (filters.review) clauses.push(eq(marketplaceContacts.businessReviewState, filters.review));
   const assignee = assigneeClause(buyRequests.assignedAdminUserId, filters.assignee);
   if (assignee) clauses.push(assignee);
+  const decision = buyRequestDecisionClause(filters.decision);
+  if (decision) clauses.push(decision);
   const age = ageClause(buyRequests.submittedAt, filters.age);
   if (age) clauses.push(age);
   const search = normalizeSearch(filters.search);
@@ -243,6 +259,11 @@ function buyRequestClauses(filters: UnifiedQueueFilters) {
 function sellSubmissionClauses(filters: UnifiedQueueFilters) {
   type SellSubmissionStatus = (typeof sellSubmissionStatuses)[number];
   if (filters.urgency) return null;
+  // Civilon makes an offer to a buyer against a Buy Request. A Sell Submission
+  // has no such offer, so a buyer-decision filter excludes the workflow rather
+  // than inventing a decision for it — the same treatment freshness gets on the
+  // Buy side.
+  if (filters.decision) return null;
   if (filters.status && !sellSubmissionStatuses.includes(filters.status as SellSubmissionStatus)) return null;
 
   const clauses = [];
@@ -388,9 +409,9 @@ function sellSubmissionFreshnessClause(freshness: string | undefined) {
 async function listPriceCheckRows(db: PriceCheckDb, filters: UnifiedQueueFilters): Promise<UnifiedQueueRecord[]> {
   // Price Check carries no email-verification state, so a verification filter
   // excludes the workflow rather than inventing a value for it. A bulk-inventory
-  // freshness filter excludes it for the same reason: Price Check has no
-  // freshness cadence at all.
-  if (filters.verification || filters.review || filters.freshness) return [];
+  // freshness filter and a buyer-decision filter exclude it for the same reason:
+  // Price Check has neither a freshness cadence nor an offer to a buyer.
+  if (filters.verification || filters.review || filters.freshness || filters.decision) return [];
   if (filters.status && !priceCheckStatuses.includes(filters.status as PriceCheckStatus)) return [];
 
   const clauses = [];
@@ -549,6 +570,7 @@ export async function listUnifiedAdminQueue(
   if (filters.assignee && !isAssigneeFilter(filters.assignee)) return [];
   if (filters.review && !isInternalReviewState(filters.review)) return [];
   if (filters.freshness && !isSellInventoryFreshnessFilter(filters.freshness)) return [];
+  if (filters.decision && !isBuyerDecision(filters.decision)) return [];
 
   const wanted = (type: UnifiedQueueType) => !filters.type || filters.type === type;
   const branches: Promise<UnifiedQueueRecord[]>[] = [];
@@ -601,6 +623,7 @@ export async function countMarketplaceReviewStates(
   if (filters.assignee && !isAssigneeFilter(filters.assignee)) return counts;
   if (filters.review && !isInternalReviewState(filters.review)) return counts;
   if (filters.freshness && !isSellInventoryFreshnessFilter(filters.freshness)) return counts;
+  if (filters.decision && !isBuyerDecision(filters.decision)) return counts;
 
   const wanted = (type: UnifiedQueueType) => !filters.type || filters.type === type;
   const branches: Promise<MarketplaceReviewCountRow[]>[] = [];
@@ -611,6 +634,124 @@ export async function countMarketplaceReviewStates(
     for (const row of rows) counts[row.state] += Number(row.count);
   }
   counts.all = internalReviewStates.reduce((total, state) => total + counts[state], 0);
+  return counts;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Buyer decisions                                                          */
+/*                                                                          */
+/* Two counters on All Work, and the Buy Request list filter each of them   */
+/* opens. One reading of one set of rows serves both, so the number and the */
+/* list behind it are the same population by construction rather than by    */
+/* agreement.                                                               */
+/*                                                                          */
+/* The counter returns integers and the filter is a where-clause on the     */
+/* list the Buy Request page already runs, so neither can carry a supplier, */
+/* a cost, a document, an internal routing datum, a buyer address, a sale   */
+/* price, a delivery term, a credential or a message body onto a page.      */
+/* ------------------------------------------------------------------------ */
+
+/** One integer per decision. A count of Buy Requests, never of offers. */
+export type BuyerDecisionCounts = Record<BuyerDecision, number>;
+
+/**
+ * The open statuses and the decision vocabulary as bound SQL lists, off the
+ * shared domain module rather than written out here, so the counter, the filter
+ * and the pure rule cannot come to disagree about what "open" or "a decision"
+ * means.
+ */
+const buyerDecisionOpenStatusList = sql.join(
+  BUYER_DECISION_OPEN_BUY_REQUEST_STATUSES.map((status) => sql`${status}`),
+  sql`, `,
+);
+const buyerDecisionList = sql.join(
+  buyerDecisions.map((decision) => sql`${decision}`),
+  sql`, `,
+);
+
+/**
+ * The reading both callers share: open Buy Requests whose newest offer version
+ * carries a buyer decision.
+ *
+ * Three deliberate properties, and the tests hold all three:
+ *
+ *  1. The lateral is ordered by `version` desc and capped at one row, so only
+ *     the newest offer is ever consulted. An older acceptance under a newer
+ *     offer is history, and a stale alert would send staff after something that
+ *     has already been replaced.
+ *  2. That one row per request is also why nothing is counted twice. A request
+ *     with ten offers contributes one row, whichever way it is read.
+ *  3. Passing a decision narrows to that decision; passing `null` admits both,
+ *     which is what lets the counter group the same rows the filter selects
+ *     from instead of restating them.
+ */
+function buyerDecisionReading(decision: BuyerDecision | null) {
+  const selected = decision
+    ? sql`latest."status" = ${decision}`
+    : sql`latest."status" in (${buyerDecisionList})`;
+  return sql`
+    from "buy_requests" b
+    left join lateral (
+      select o."status"::text as "status"
+      from "buyer_offers" o
+      where o."buy_request_id" = b."id"
+      order by o."version" desc
+      limit 1
+    ) latest on true
+    where b."status"::text in (${buyerDecisionOpenStatusList})
+      and ${selected}
+  `;
+}
+
+/**
+ * The Buy Requests carrying one buyer decision, as a clause on the existing
+ * list.
+ *
+ * Only ever reached with a value `listUnifiedAdminQueue` has already validated.
+ * Throws rather than returning null on a malformed value, so a future caller
+ * cannot reintroduce a widening bug by skipping the guard — the same contract
+ * `assigneeClause` and `sellSubmissionFreshnessClause` hold.
+ */
+function buyRequestDecisionClause(decision: string | undefined) {
+  if (!decision) return null;
+  if (!isBuyerDecision(decision)) throw new Error("Malformed buyer decision filter.");
+  return sql`${buyRequests.id} in (
+    select b."id"
+    ${buyerDecisionReading(decision)}
+  )`;
+}
+
+/**
+ * How many open Buy Requests are waiting on each buyer decision, in one
+ * read-only statement.
+ *
+ * Deliberately unfiltered and deliberately uncapped: this is a count of what is
+ * waiting, not of what happens to be on the reader's current page, and a number
+ * that stopped at the queue's own visible limit would read as a total it is not.
+ *
+ * Read-only, and it must stay that way: opening a queue page moves no offer, no
+ * request and no schedule.
+ */
+export async function countBuyerDecisions(db: PriceCheckDb): Promise<BuyerDecisionCounts> {
+  const result = await db.execute(sql`
+    select
+      latest."status" as "decision",
+      count(distinct b."id")::int as "count"
+    ${buyerDecisionReading(null)}
+    group by latest."status"
+  `);
+
+  // A driver that hands the aggregate back as a string rather than a number must
+  // not turn a counter into a concatenation on the page, and a decision this
+  // build does not recognise is dropped rather than shown under a made-up label.
+  const counts: BuyerDecisionCounts = { accepted: 0, declined: 0 };
+  for (const raw of result.rows) {
+    const row = raw as Record<string, unknown>;
+    const decision = row.decision;
+    if (!isBuyerDecision(decision)) continue;
+    const parsed = Number(row.count);
+    counts[decision] = Number.isFinite(parsed) ? parsed : 0;
+  }
   return counts;
 }
 
