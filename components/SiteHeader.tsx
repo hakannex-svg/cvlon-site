@@ -2,12 +2,15 @@
 /* eslint-disable @next/next/no-html-link-for-pages, @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
 import { navigation, siteConfig } from "@/lib/site-config";
-import { isPriceCheckEnabled } from "@/lib/price-check/feature";
-import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
-import { partSearchHref } from "@/lib/part-search-cta";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  marketplaceEnabled: boolean;
+  priceCheckEnabled: boolean;
+  searchHref: string;
+};
+
+export function SiteHeader({ marketplaceEnabled, priceCheckEnabled, searchHref }: SiteHeaderProps) {
   const [open, setOpen] = useState<string | null>(null);
   const [mobile, setMobile] = useState(false);
   const ref = useRef<HTMLElement>(null);
@@ -52,15 +55,11 @@ export function SiteHeader() {
       ...group,
       items: [
         ...group.items,
-        ...(isMarketplaceEnabled() ? [{ label: "Buy & Sell Aircraft Parts", href: "/buy-sell-aircraft-parts" }] : []),
-        ...(isPriceCheckEnabled() ? [{ label: "Aircraft Part Price Check", href: "/price-check" }] : []),
+        ...(marketplaceEnabled ? [{ label: "Buy & Sell Aircraft Parts", href: "/buy-sell-aircraft-parts" }] : []),
+        ...(priceCheckEnabled ? [{ label: "Aircraft Part Price Check", href: "/price-check" }] : []),
       ],
     }
     : group);
-
-  // An ordinary part search is a Buy Request wherever Buy intake is open; the
-  // legacy contact anchor remains only while the marketplace flag is off.
-  const searchHref = partSearchHref();
 
   return <header>
     <div className="topbar">

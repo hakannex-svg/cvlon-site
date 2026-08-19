@@ -34,7 +34,7 @@ test("Phase 10 legal pages, acknowledgement and promotion remain controlled", as
   assert.match(repository, /price_check\.legal_acknowledged/);
   assert.match(repository, /privacyVersion/);
   assert.match(repository, /termsVersion/);
-  assert.match(header, /isPriceCheckEnabled/);
+  assert.match(header, /priceCheckEnabled/);
   assert.match(footer, /privacy-policy/);
   assert.match(footer, /terms-of-use/);
   assert.match(home, /PriceCheckPromotion/);

@@ -358,8 +358,8 @@ test("navigation, footer and sitemap expose the marketplace only when it is enab
   const footer = read("components", "SiteFooter.tsx");
   const sitemap = read("app", "sitemap.ts");
 
-  assert.match(header, /isMarketplaceEnabled\(\) \? \[\{ label: "Buy & Sell Aircraft Parts", href: "\/buy-sell-aircraft-parts" \}\] : \[\]/);
-  assert.match(header, /isPriceCheckEnabled\(\) \? \[\{ label: "Aircraft Part Price Check"/);
+  assert.match(header, /marketplaceEnabled \? \[\{ label: "Buy & Sell Aircraft Parts", href: "\/buy-sell-aircraft-parts" \}\] : \[\]/);
+  assert.match(header, /priceCheckEnabled \? \[\{ label: "Aircraft Part Price Check"/);
   assert.match(footer, /\{marketplaceEnabled && <a href="\/buy-sell-aircraft-parts">/);
   assert.match(footer, /\{priceCheckEnabled && <a href="\/price-check">/);
   assert.match(sitemap, /isMarketplaceEnabled\(\) \? \["\/buy-sell-aircraft-parts", "\/buy-sell-aircraft-parts\/buy"\] : \[\]/);
