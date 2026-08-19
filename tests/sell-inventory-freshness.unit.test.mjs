@@ -304,7 +304,7 @@ test("the manual path stays manual: the producer is an isolated surface", () => 
   assert.doesNotMatch(netlifyToml, /freshness|availability/i);
   assert.match(
     read("netlify", "functions", "process-sell-inventory-freshness-cadence.ts"),
-    /export const config = \{ schedule: "17 13 \* \* \*" \};/,
+    /export const config = \{ schedule: "17 13,14 \* \* \*" \};/,
   );
   // The admin route is still the only staff way in, and the automatic path has
   // no route at all: nothing outside the schedule can trigger it.

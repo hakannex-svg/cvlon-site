@@ -3,7 +3,7 @@ import { isMarketplaceEnabled, isSellSubmissionEnabled } from "../../lib/marketp
 import { runSellInventoryFreshnessCadence } from "../../lib/marketplace/sell-inventory-freshness-cadence-service.ts";
 
 /**
- * The bulk-inventory freshness producer, once a day.
+ * The bulk-inventory freshness producer, twice in the same working morning.
  *
  * Three gates, all failing closed:
  *
@@ -27,18 +27,47 @@ export default async function processSellInventoryFreshnessCadence() {
   const contextRefused = Boolean(process.env.CONTEXT) && process.env.CONTEXT !== "production";
   const featureRefused = !isMarketplaceEnabled() || !isSellSubmissionEnabled();
   if (contextRefused || featureRefused) {
+    console.info(JSON.stringify({
+      event: "sell_inventory_freshness_cadence",
+      outcome: "refused",
+      contextRefused,
+      featureRefused,
+    }));
     return new Response(null, { status: 204 });
   }
 
   // Counts and fixed reason codes. No identifier of any kind reaches this body,
   // which is the same rule the summary itself is built under.
   const summary = await runSellInventoryFreshnessCadence(priceCheckDb);
+  // Scheduled functions do not retain a response body. Keep one sanitized,
+  // count-only log entry so operations can prove a zero-due run as readily as
+  // a run that issued reminders, without logging a seller or submission id.
+  console.info(JSON.stringify({
+    event: "sell_inventory_freshness_cadence",
+    outcome: "completed",
+    scanned: summary.scanned,
+    issued: summary.issued,
+    retired: summary.retired,
+    outcomes: {
+      issued: summary.outcomes.issued,
+      live_check: summary.outcomes.live_check,
+      stop_response: summary.outcomes.stop_response,
+      lapsed_backoff: summary.outcomes.lapsed_backoff,
+      not_due: summary.outcomes.not_due,
+      locked: summary.outcomes.locked,
+      ineligible: summary.outcomes.ineligible,
+    },
+  }));
   return Response.json({ ok: true, ...summary });
 }
 
 /**
- * 13:17 UTC daily — 09:17 in New York while Eastern daylight time is in force.
- * A seller reads it during their working morning rather than overnight, and the
- * odd minute keeps it off the hour every other scheduled job runs on.
+ * 13:17 and 14:17 UTC daily — 09:17 and 10:17 in New York while Eastern
+ * daylight time is in force. The second pass is a same-morning platform retry:
+ * the live-link and due-date guards prevent a duplicate ask for any record the
+ * first pass handled, while a missed first invocation no longer delays the
+ * cadence a day. If more than one 25-record batch is due, the retry may safely
+ * continue the backlog. Both remain in the seller's working morning, and the
+ * odd minute keeps them off the hour every other scheduled job runs on.
  */
-export const config = { schedule: "17 13 * * *" };
+export const config = { schedule: "17 13,14 * * *" };
