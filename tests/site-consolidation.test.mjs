@@ -29,6 +29,7 @@ const read = (...parts) => fs.readFileSync(path.join(root, ...parts), "utf8");
 const text = (source) => source.replace(/\s+/g, " ");
 
 const home = read("app", "page.tsx");
+const layout = read("app", "layout.tsx");
 const header = read("components", "SiteHeader.tsx");
 const footer = read("components", "SiteFooter.tsx");
 const notFound = read("app", "not-found.tsx");
@@ -124,11 +125,17 @@ test("an ordinary part search resolves to the Buy Request page when Buy intake i
 });
 
 test("global header, footer and 404 route their part-search CTA through the helper", () => {
-  for (const [name, source] of [["header", header], ["footer", footer], ["not-found", notFound]]) {
+  for (const [name, source] of [["footer", footer], ["not-found", notFound]]) {
     assert.match(source, /from "@\/lib\/part-search-cta"/, name);
     assert.match(source, /partSearchHref\(\)/, name);
     assert.doesNotMatch(source, /href="\/contact-us#rfq"/, `${name} must not hard-code the legacy anchor`);
   }
+  // SiteHeader hydrates in the browser, where Netlify's runtime-only flags are
+  // unavailable. The server layout resolves and passes the flags and href so
+  // hydration cannot revert the header to its disabled-state navigation.
+  assert.match(layout, /const searchHref = partSearchHref\(\);/);
+  assert.match(layout, /<SiteHeader marketplaceEnabled=\{marketplaceEnabled\} priceCheckEnabled=\{priceCheckEnabled\} searchHref=\{searchHref\} \/>/);
+  assert.doesNotMatch(header, /process\.env|isMarketplaceEnabled|isPriceCheckEnabled|partSearchHref/);
   // Both header CTAs — desktop bar and mobile menu — use the same resolution.
   assert.equal((header.match(/href=\{searchHref\}/g) ?? []).length, 2);
 });
