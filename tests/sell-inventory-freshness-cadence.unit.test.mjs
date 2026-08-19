@@ -721,7 +721,17 @@ test("no credential, address or identifier can leave the producing path", () => 
   // is allowed into that operational trace.
   assert.equal((scheduled.match(/console\.info\(JSON\.stringify\(/g) ?? []).length, 2);
   assert.doesNotMatch(scheduled, /console\.(?:log|debug|warn|error)/);
-  assert.match(scheduled, /outcome: "completed",\s*\.\.\.summary/);
+  const completedLog = scheduled.slice(
+    scheduled.indexOf('outcome: "completed"'),
+    scheduled.indexOf("return Response.json"),
+  );
+  assert.doesNotMatch(completedLog, /\.\.\.summary/);
+  for (const count of [
+    "scanned", "issued", "retired", "live_check", "stop_response",
+    "lapsed_backoff", "not_due", "locked", "ineligible",
+  ]) {
+    assert.match(scheduled, new RegExp(`${count}: summary\\.`));
+  }
   for (const forbidden of [
     "businessEmail", "normalizedEmail", "publicReference", "keyedTokenHash",
     "tokenDerivationNonce", "recipientReference", "sellSubmissionId", "checkId",

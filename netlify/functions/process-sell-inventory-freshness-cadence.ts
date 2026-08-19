@@ -45,7 +45,18 @@ export default async function processSellInventoryFreshnessCadence() {
   console.info(JSON.stringify({
     event: "sell_inventory_freshness_cadence",
     outcome: "completed",
-    ...summary,
+    scanned: summary.scanned,
+    issued: summary.issued,
+    retired: summary.retired,
+    outcomes: {
+      issued: summary.outcomes.issued,
+      live_check: summary.outcomes.live_check,
+      stop_response: summary.outcomes.stop_response,
+      lapsed_backoff: summary.outcomes.lapsed_backoff,
+      not_due: summary.outcomes.not_due,
+      locked: summary.outcomes.locked,
+      ineligible: summary.outcomes.ineligible,
+    },
   }));
   return Response.json({ ok: true, ...summary });
 }
@@ -53,9 +64,10 @@ export default async function processSellInventoryFreshnessCadence() {
 /**
  * 13:17 and 14:17 UTC daily — 09:17 and 10:17 in New York while Eastern
  * daylight time is in force. The second pass is a same-morning platform retry:
- * the live-link and due-date guards make it a no-op after a successful first
- * pass, while a missed first invocation no longer delays the cadence a day.
- * Both remain in the seller's working morning, and the odd minute keeps them
- * off the hour every other scheduled job runs on.
+ * the live-link and due-date guards prevent a duplicate ask for any record the
+ * first pass handled, while a missed first invocation no longer delays the
+ * cadence a day. If more than one 25-record batch is due, the retry may safely
+ * continue the backlog. Both remain in the seller's working morning, and the
+ * odd minute keeps them off the hour every other scheduled job runs on.
  */
 export const config = { schedule: "17 13,14 * * *" };
