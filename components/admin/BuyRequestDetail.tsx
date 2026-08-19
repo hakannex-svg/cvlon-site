@@ -1,7 +1,9 @@
 import { formatDateTime, marketplaceStatusLabels, staffDisplayName, unifiedStatusLabel } from "@/lib/price-check/admin/display";
 import { isMarketplaceTerminalStatus, marketplaceExceptionalTargets } from "@/db/price-check/domain/marketplace-status-policy";
 import { latestBuyerDecision } from "@/db/price-check/domain/buyer-decision";
+import { canStartAcceptedDealExecution } from "@/db/price-check/domain/accepted-deal-policy";
 import type { BuyRequestAdminDetail, BuyerOfferRecord } from "@/db/price-check/repositories/marketplace-admin-repository";
+import { AcceptedDealExecutionAction } from "./AcceptedDealExecutionAction";
 import { MarketplaceDetailActions } from "./MarketplaceDetailActions";
 import { SupplierResponseActions } from "./SupplierResponseActions";
 import { BuyerOfferActions } from "./BuyerOfferActions";
@@ -274,8 +276,12 @@ export function BuyRequestDetail({
             <li><b>Handle the customer&apos;s commercial and payment terms externally</b><span>Agree them on Civilon&apos;s normal commercial channel and record only the outcome in an internal note. Never type payment credentials, banking data, card details, tokens or secrets into this console.</span></li>
             <li><b>Choose and record the internal route</b><span>Supplier direct, or through Civilon New Jersey. It is an internal decision: keep it in the note and never add it to <a href="#civilon-offer">the Civilon offer</a> or to anything the buyer sees.</span></li>
             <li><b>Coordinate shipping and export</b><span>Work the accepted delivery option and export scope with the relevant shipping and export specialists. Documentation varies by part and source, so agree what is actually needed rather than assuming it.</span></li>
-            <li><b>Convert, then close</b><span>Move the request to Converted in <a href="#record-actions">Actions</a> only once execution actually begins. After delivery or cancellation, add a final note and Close the record.</span></li>
+            <li><b>Convert, then close</b><span>Use the execution action below only once Civilon actually begins carrying out the accepted deal. After delivery or cancellation, add a final note and Close the record.</span></li>
           </ol>
+          {actions.canTransition && canStartAcceptedDealExecution(request.status) ? <AcceptedDealExecutionAction
+            buyRequestId={request.id}
+            expectedStatus={request.status}
+          /> : null}
           <p className="admin-muted">This checklist is guidance for staff, not a record of anything. The stored facts stay where they already are: the request status, the assignment, the supplier responses, the Civilon offer, the internal notes and the audit trail. <a href="/admin/help#accepted-deal">Operations guide →</a></p>
         </section> : null}
 
