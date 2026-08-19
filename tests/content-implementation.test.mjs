@@ -8,6 +8,14 @@ const publicDirs=["app","components","content","lib"];
 const files=publicDirs.flatMap(dir=>fs.readdirSync(path.join(root,dir),{recursive:true,withFileTypes:true}).filter(x=>x.isFile()&&/\.(tsx?|mjs)$/.test(x.name)).map(x=>path.join(x.parentPath,x.name)));
 const publicSource=files.map(file=>fs.readFileSync(file,"utf8")).join("\n");
 const read=(...parts)=>fs.readFileSync(path.join(root,...parts),"utf8");
+const hasUnsupportedCivilonCertificationClaim=(source)=>source
+  .split(/[\n.!?;]+/)
+  .filter(clause=>/\bCivilon\b/i.test(clause)&&/\bcertif(?:y|ies|ied|ication)\b/i.test(clause))
+  .some(clause=>{
+    const certificationIndex=clause.search(/\bcertif(?:y|ies|ied|ication)\b/i);
+    const precedingContext=clause.slice(Math.max(0,certificationIndex-80),certificationIndex);
+    return !/(?:\b(?:do|does|did|is|are|was|were|will|would|can|could|shall|should)\s+not\b|\bnever\b|\bneither\b|\bnothing\b|\bnot\b(?:(?!\bonly\b).){0,40}$)/i.test(precedingContext);
+  });
 
 test("public identity and contact details match the approved company information",()=>{
   assert.doesNotMatch(publicSource,/Civilon Air(?!craft)/i);
@@ -29,7 +37,12 @@ test("approved AOG response language and monitored availability are present",()=
 });
 
 test("unsupported certification and blanket trace claims are absent",()=>{
-  assert.doesNotMatch(publicSource,/AS9120|ISO 9001|certified parts|Civilon[- ]certified|Civilon.{0,30}certif(?:y|ies)/i);
+  assert.doesNotMatch(publicSource,/AS9120|ISO 9001|certified parts|Civilon[- ]certified/i);
+  assert.equal(hasUnsupportedCivilonCertificationClaim("Civilon certifies parts."),true);
+  assert.equal(hasUnsupportedCivilonCertificationClaim("Civilon's review certifies a part."),true);
+  assert.equal(hasUnsupportedCivilonCertificationClaim("Civilon does not certify parts."),false);
+  assert.equal(hasUnsupportedCivilonCertificationClaim("Neither the upload nor Civilon's review certifies anything."),false);
+  assert.equal(hasUnsupportedCivilonCertificationClaim(publicSource),false);
   assert.doesNotMatch(publicSource,/100% trace|always full trace|full trace on every part|fully traceable/i);
   assert.match(publicSource,/trace-to-source/i);
   assert.match(publicSource,/Documentation varies by part condition and source/);
