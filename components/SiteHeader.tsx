@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { navigation, siteConfig } from "@/lib/site-config";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
+import { TopbarTicker } from "./TopbarTicker";
 import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type SiteHeaderProps = {
@@ -69,12 +70,7 @@ export function SiteHeader({ marketplaceEnabled, priceCheckEnabled, searchHref }
           <span><i />24/7 AOG DESK</span>
           <a href={`tel:${siteConfig.aogTel}`}>{siteConfig.aogPhone}</a>
         </div>
-        <div className="topbar-message" aria-hidden="true">
-          <span>24/7 monitored AOG phone &amp; WhatsApp</span>
-          <span>FAA 8130-3 / EASA Form 1 where applicable</span>
-          <span>Trace-to-source review</span>
-          <span>Expedited routing options subject to availability</span>
-        </div>
+        <TopbarTicker />
         <div className="topbar-office">
           <span className="topbar-place">Englewood Cliffs, New Jersey</span>
           <a className="topbar-mail" href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>

@@ -26,9 +26,11 @@ test("Round 2 process geometry and information note remain shared", () => {
 
 test("Round 2 utility bar prioritizes AOG and phone on mobile", () => {
   const header = read("components", "SiteHeader.tsx");
+  const ticker = read("components", "TopbarTicker.tsx");
   const css = read("app", "globals.css");
   assert.match(header, /className="topbar-aog"/);
-  assert.match(header, /className="topbar-message" aria-hidden="true"/);
+  assert.match(header, /<TopbarTicker \/>/);
+  assert.match(ticker, /className="topbar-message" aria-hidden="true"/);
   assert.match(header, /className="topbar-office"/);
   assert.match(css, /@keyframes topbar-message/);
   assert.match(css, /@media\(max-width:900px\)\{\.topbar-message\{display:none\}\}/);
