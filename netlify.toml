@@ -6,11 +6,6 @@
   CIVILON_NETLIFY_BUILD = "true"
 
 [[redirects]]
-  from = "/favicon.ico"
-  to = "/favicon.svg"
-  status = 200
-
-[[redirects]]
   from = "https://www.cvlon.com/*"
   to = "https://cvlon.com/:splat"
   status = 301

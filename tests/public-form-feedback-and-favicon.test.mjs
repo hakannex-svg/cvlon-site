@@ -22,6 +22,11 @@ test("Civilon favicon metadata points to the supplied icon set and valid manifes
     assert.ok(statSync(path).size > 0, `${asset} must not be empty`);
   }
   assert.equal(existsSync(join(root, "public", "favicon.svg")), false);
+  assert.doesNotMatch(
+    read("netlify.toml"),
+    /from\s*=\s*["']\/favicon\.ico["']/,
+    "Netlify must serve the ICO directly instead of rewriting to the removed placeholder",
+  );
   assert.deepEqual(manifest.icons.map(({ sizes }) => sizes), ["180x180", "512x512"]);
 });
 

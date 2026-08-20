@@ -17,6 +17,15 @@ No admin workflow, transaction contract, API route, schema, scheduled function, 
 - Request a Part, Offer Parts, and Price Check error summaries scroll to 16 px below the viewport edge and receive keyboard focus.
 - Favicon and manifest assets return HTTP 200; the ICO contains 16, 32, and 48 px images.
 
+## Deploy Preview verification
+
+- Preview: <https://deploy-preview-48--cvlon.netlify.app/>
+- Price Check TEST submission succeeded with reference `PC-V21EDR8HV0`; the `Price Check received` heading received keyboard focus and settled 16 px below the viewport edge.
+- Request a Part TEST submission `TEST-PR48-BUY` reached the preview API, which returned `Requests are temporarily unavailable`; the error summary received keyboard focus and settled about 16 px below the viewport edge.
+- Offer Parts TEST submission `TEST-PR48-SELL` reached the preview API, which returned `Submissions are temporarily unavailable`; the error summary received keyboard focus and settled about 16 px below the viewport edge.
+- The Buy and Sell preview failures are recorded as environment limitations rather than successful references; no fake backend record or success claim was created.
+- All favicon and manifest assets respond with HTTP 200 on the preview. Netlify's obsolete `/favicon.ico` rewrite to the removed placeholder was deleted and covered by a regression test.
+
 ## Screenshots
 
 ![Homepage desktop at 1440px](./home-desktop-1440.png)
