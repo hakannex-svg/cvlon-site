@@ -31,9 +31,14 @@ export default function BuyPartFromCivilonPage() {
               <h1>Buy a part from Civilon</h1>
               <p className="pc-proposition">Tell us what you need. We&apos;ll find it.</p>
               <p>
-                Send the request in a couple of minutes—no account, no sign-in.
-                Civilon reviews and sources the part, then comes back to you with
-                what is available and on what terms.
+                No account and no sign-in. Civilon is the seller: it reviews the
+                requirement, sources the part, and comes back to you with what
+                is available and on what terms.
+              </p>
+              <p className="section-qualifier section-qualifier-dark">
+                Your request is never published or listed. Availability, stated
+                condition, documentation, delivery and price remain subject to
+                confirmation.
               </p>
             </div>
             <aside aria-label="What happens after you send a request">

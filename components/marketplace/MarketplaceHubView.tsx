@@ -115,7 +115,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
             human-reviewed Price Check.
           </p>
           <ul>
-            <li>Informational and human-reviewed</li>
+            <li>Informational context, reviewed by our desk</li>
             <li>Not an appraisal, an instant result or a price guarantee</li>
             <li>The result stays private to you</li>
           </ul>

@@ -70,12 +70,12 @@ export default function SellPartsToCivilonPage() {
             <div className="pc-final-note" role="note">
               <strong>Before you start</strong>
               <p>
-                Civilon reviews each submission and is not obliged to buy.
-                Documentation varies by part and source, and interest,
-                availability, condition and price all remain subject to
-                confirmation. Civilon review and any evidence you upload are not
-                certification, regulatory approval, airworthiness approval, or a
-                guarantee of authenticity or fitness.
+                Every submission gets an internal review; offers are at
+                Civilon’s discretion. Documentation varies by part and source,
+                and interest, availability, condition and price all remain
+                subject to confirmation. Civilon review and any evidence you
+                upload are not certification, regulatory approval, airworthiness
+                approval, or a guarantee of authenticity or fitness.
               </p>
             </div>
           </div>

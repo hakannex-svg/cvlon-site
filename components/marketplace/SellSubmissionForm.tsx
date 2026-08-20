@@ -690,8 +690,9 @@ export function SellSubmissionForm() {
             <strong>I understand how this submission will be reviewed.</strong>
             <small>
               Civilon will use the submitted contact and offer information to
-              review what I am offering and to contact me about it. Civilon is not
-              obliged to buy, and nothing here is published or listed.
+              review what I am offering and to contact me about it. Every
+              submission gets an internal review; offers are at Civilon’s
+              discretion, and nothing here is published or listed.
             </small>
           </label>
         </div>
@@ -727,12 +728,12 @@ export function SellSubmissionForm() {
         <div className="pc-final-note" role="note">
           <strong>What happens next</strong>
           <p>
-            Civilon reviews each submission internally and is not obliged to buy.
-            Interest, availability, stated condition, documentation and price all
-            remain subject to confirmation, and documentation varies by part and
-            source. Civilon review and any evidence you upload are not
-            certification, regulatory approval, airworthiness approval, or a
-            guarantee of authenticity or fitness.
+            Every submission gets an internal review; offers are at Civilon’s
+            discretion. Interest, availability, stated condition, documentation
+            and price all remain subject to confirmation, and documentation
+            varies by part and source. Civilon review and any evidence you
+            upload are not certification, regulatory approval, airworthiness
+            approval, or a guarantee of authenticity or fitness.
           </p>
         </div>
 

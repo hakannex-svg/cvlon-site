@@ -28,10 +28,14 @@ export default function BuySellAircraftPartsPage() {
               <h1>Buy &amp; sell aircraft parts</h1>
               <p className="pc-proposition">One desk on both sides of the transaction.</p>
               <p>
-                Tell Civilon what you need and Civilon reviews and sources it. Or
-                offer Civilon parts you hold. Availability, stated condition,
-                documentation, delivery and price all remain subject to
-                confirmation, and documentation varies by part and source.
+                Tell Civilon what you need and Civilon sources it. Or offer
+                Civilon the parts you already hold. One desk carries either
+                direction from the first message through to delivery.
+              </p>
+              <p className="section-qualifier section-qualifier-dark">
+                Availability, stated condition, documentation, delivery and
+                price remain subject to confirmation on each request and each
+                offer, and documentation varies by part and source.
               </p>
             </div>
             <aside aria-label="How a Civilon request works">

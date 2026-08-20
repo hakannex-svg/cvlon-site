@@ -7,7 +7,7 @@ import { BUY_REQUEST_SOURCE_PAGE, SELL_SUBMISSION_PAGE } from "@/lib/marketplace
 import { pageMetadata } from "@/lib/metadata";
 import { PUBLIC_CTA } from "@/lib/public-cta";
 
-export const metadata = pageMetadata("Aircraft Part Price Check", "Submit aircraft-part transaction details for a confidential, human-reviewed Civilon market-context Price Check.", "/price-check");
+export const metadata = pageMetadata("Aircraft Part Price Check", "Send Civilon the aircraft-part transaction details and a Civilon analyst reviews them. Confidential market context—not an appraisal or a price guarantee.", "/price-check");
 
 const conditions = [["NE", "New"], ["NS", "New Surplus"], ["OH", "Overhauled"], ["SV", "Serviceable"], ["AR", "As Removed"]] as const;
 
@@ -26,7 +26,8 @@ export default function PriceCheckPage() {
               <span className="section-label light">MARKET CONTEXT / HUMAN REVIEW</span>
               <h1>Aircraft Part Price Check</h1>
               <p className="pc-proposition">Before you approve the PO, check the market.</p>
-              <p>Did you pay a fair price for your aircraft part? Submit the quoted or purchased transaction details Civilon should review. The service is confidential and human-reviewed—not an appraisal, an instant result, a price guarantee or a determination of supplier cost or margin.</p>
+              <p>Did you pay a fair price for your aircraft part? Send Civilon the quoted or purchased transaction details, and a Civilon analyst reviews them against the comparable evidence available. Your submission stays confidential, and nothing about it is published.</p>
+              <p className="section-qualifier section-qualifier-dark">A Price Check is informational and human-reviewed—not an appraisal, an instant result, a price guarantee or a determination of supplier cost or margin.</p>
             </div>
             <aside aria-label="How Price Check works">
               <span>REVIEW PATH</span>
@@ -35,7 +36,7 @@ export default function PriceCheckPage() {
                 <li>Optionally add supporting documents</li>
                 <li>Civilon reviews the information</li>
                 <li>Additional detail may be requested</li>
-                <li>A human-reviewed result is prepared when evidence supports it</li>
+                <li>A Civilon analyst prepares the result when evidence supports it</li>
               </ol>
             </aside>
           </div>
@@ -49,7 +50,7 @@ export default function PriceCheckPage() {
             <p>Price varies with condition, documentation, core exposure, warranty, timing, availability, freight and aircraft application. Keep those details attached to the request.</p>
             <ul>
               <li>Optional private supporting-document upload</li>
-              <li>Human-reviewed informational context</li>
+              <li>Informational context reviewed by our desk</li>
               <li>No transaction details sent to analytics</li>
             </ul>
           </div>
@@ -100,9 +101,10 @@ export default function PriceCheckPage() {
                 <article>
                   <h3>You need the part</h3>
                   <p>
-                    Ask Civilon to source and sell you the part. Availability,
-                    stated condition, documentation, delivery and price remain
-                    subject to confirmation, and your request is not published.
+                    Ask Civilon to source the part and sell it to you. Civilon
+                    is the seller, and your request is never published.
+                    Availability, stated condition, documentation, delivery and
+                    price remain subject to confirmation.
                   </p>
                   <a href={BUY_REQUEST_SOURCE_PAGE}>{PUBLIC_CTA.buy} <span aria-hidden="true">→</span></a>
                 </article>
@@ -114,7 +116,8 @@ export default function PriceCheckPage() {
                     A Price Check reviews a quoted or purchased transaction; it
                     does not value your stock or tell you what to ask for it. To
                     move parts you hold, offer them to Civilon directly—Civilon
-                    buys on its own account and reviews each offer internally.
+                    buys on its own account. Every submission gets an internal
+                    review; offers are at Civilon’s discretion.
                   </p>
                   <a href={SELL_SUBMISSION_PAGE}>{PUBLIC_CTA.sell} <span aria-hidden="true">→</span></a>
                 </article>
