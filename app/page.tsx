@@ -3,7 +3,6 @@ import { CallAogAction, WhatsAppAogAction } from "@/components/AogActions";
 import { RfqForm } from "@/components/RfqForm";
 import { HeroDecisionRouter } from "@/components/HeroDecisionRouter";
 import { PriceCheckPromotion } from "@/components/PriceCheckPromotion";
-import { PublicChoices } from "@/components/PublicChoices";
 import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import { LEGACY_PART_SEARCH_ANCHOR, partSearchHref } from "@/lib/part-search-cta";
 import { PUBLIC_CTA } from "@/lib/public-cta";
@@ -12,21 +11,21 @@ const services = [
   {
     number: "01",
     title: "Parts sourcing",
-    body: "Selected items may be in stock; other requirements are sourced on demand through approved and vetted channels. Availability is subject to confirmation.",
+    body: "Stock when we have it; targeted sourcing when we don’t, through approved and vetted suppliers.",
     href: "/parts",
     cta: "View categories",
   },
   {
     number: "02",
     title: "24/7 AOG coordination",
-    body: "Our AOG phone and WhatsApp are monitored by a live person 24/7/365 for urgent search, documentation and transportation coordination.",
+    body: "A live person coordinates the urgent search, documentation and transportation through one accountable desk.",
     href: "/aog-services",
     cta: "Review AOG support",
   },
   {
     number: "03",
     title: "Repair management",
-    body: "Evaluation, workscope, quotation, monitoring and return logistics coordinated with appropriately approved third-party repair facilities.",
+    body: "We manage the repair end to end—evaluation, workscope, quote, monitoring and return—through appropriately approved repair facilities where required.",
     href: "/repair-management",
     cta: "Review service",
   },
@@ -60,12 +59,13 @@ export default function Home() {
           <div className="hero-copy">
             <div className="eyebrow"><span>BUSINESS AIRCRAFT SOURCING</span><b>24/7 AOG</b></div>
             <h1>The right aircraft part.<br /><em>One accountable desk.</em></h1>
-            <p>Civilon combines selected in-stock availability with on-demand sourcing, coordinating stated condition, available documentation and delivery requirements from one point of contact.</p>
+            <p>Stock when we have it, sourcing when we don’t—condition, paperwork and delivery handled by one accountable desk.</p>
             <div className="hero-actions">
               <a className="button button-primary" href={searchHref}>{PUBLIC_CTA.buy} <span>→</span></a>
               <CallAogAction className="button button-ghost" source_page="homepage">{PUBLIC_CTA.callAog}</CallAogAction>
-              <WhatsAppAogAction className="button button-whatsapp" source_page="homepage">{PUBLIC_CTA.whatsAppAog}</WhatsAppAogAction>
+              <WhatsAppAogAction className="button button-tertiary" source_page="homepage">{PUBLIC_CTA.whatsAppAog} <span aria-hidden="true">→</span></WhatsAppAogAction>
             </div>
+            <p className="hero-aog-assurance">The AOG line is answered by a live person, 24/7/365.</p>
             <div className="hero-proof">
               <div><strong>NE · NS</strong><span>New and new surplus</span></div>
               <div><strong>OH · SV</strong><span>Overhauled and serviceable</span></div>
@@ -81,19 +81,16 @@ export default function Home() {
           <div className="shell ticker-inner">
             <span>FAA 8130-3 / EASA Form 1 where applicable</span><i />
             <span>TRACE-TO-SOURCE REVIEW</span><i />
-            <span>CONDITIONAL AVAILABILITY</span><i />
             <span>APPROVED & VETTED SUPPLIERS</span>
           </div>
         </div>
       </section>
 
-      <PublicChoices />
-
       <section className="section services" id="services">
         <div className="shell">
           <div className="section-heading split-heading">
             <div><span className="section-label">CAPABILITY / 01</span><h2>One desk. Every step<br />from search to delivery.</h2></div>
-            <p>We are a sourcing partner, not a webshop. Send the part number, quantity, aircraft context, acceptable condition and documentation requirement.</p>
+            <p>Civilon is the seller and accountable point of contact. Buyer and supplier remain separated while our desk coordinates the requirement from RFQ through delivery.</p>
           </div>
           <div className="service-feature">
             <div className="service-photo">
@@ -103,7 +100,7 @@ export default function Home() {
             </div>
             <div className="service-note">
               <span className="section-label">ACCOUNTABLE FROM RFQ TO RECEIVING</span>
-              <p>Each quotation identifies confirmed availability, stated condition, warranty terms and the release or supporting documentation available where applicable.</p>
+              <p>Each quotation brings condition, warranty terms, supporting records and delivery requirements into one accountable path.</p>
               <a href={searchHref}>{PUBLIC_CTA.buy} <b>→</b></a>
             </div>
           </div>
@@ -118,6 +115,7 @@ export default function Home() {
               </a>
             ))}
           </div>
+          <p className="section-qualifier">Each sourcing option is confirmed for availability and the documentation supplied with it.</p>
         </div>
       </section>
 
@@ -137,13 +135,14 @@ export default function Home() {
           <div className="quality-copy">
             <span className="section-label light">QUALITY / 02</span>
             <h2>The paperwork<br />is part of the part.</h2>
-            <p>Condition terms and supporting-document expectations are not interchangeable. Civilon reviews the stated condition, trace-to-source and available records for each quoted option.</p>
+            <p>Condition terms and supporting records are not interchangeable. Civilon reviews the stated condition, trace-to-source and records behind each quoted option.</p>
             <ul>
-              <li><span>01</span> FAA 8130-3 or EASA Form 1 where applicable</li>
+              <li><span>01</span> Release documents identified with the quotation</li>
               <li><span>02</span> Clear NE, NS, OH, SV and AR condition codes</li>
-              <li><span>03</span> Material certification and trace-to-source where available</li>
-              <li><span>04</span> Shipping and export-document coordination subject to requirements</li>
+              <li><span>03</span> Material records and trace-to-source review</li>
+              <li><span>04</span> Shipping and export-document coordination</li>
             </ul>
+            <p className="section-qualifier section-qualifier-dark">FAA 8130-3, EASA Form 1 and other records are provided where applicable and available; export support depends on destination and requirements.</p>
           </div>
         </div>
       </section>
