@@ -3,13 +3,14 @@
 import type { ReactNode } from "react";
 import { AOG_PHONE_DISPLAY, AOG_TEL_URL, buildAogWhatsAppUrl, type AogMessageData } from "@/lib/aog";
 import { trackCivilonEvent, type AnalyticsContext } from "@/lib/analytics";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type AogActionProps = AnalyticsContext & {
   className?: string;
   children?: ReactNode;
 };
 
-export function CallAogAction({ className, children = "Call AOG desk", ...context }: AogActionProps) {
+export function CallAogAction({ className, children = PUBLIC_CTA.callAog, ...context }: AogActionProps) {
   return (
     <a className={className} href={AOG_TEL_URL} onClick={() => trackCivilonEvent("aog_call_click", context)}>
       {children}
@@ -17,7 +18,7 @@ export function CallAogAction({ className, children = "Call AOG desk", ...contex
   );
 }
 
-export function WhatsAppAogAction({ className, children = "WhatsApp AOG", messageData, ...context }: AogActionProps & { messageData?: AogMessageData }) {
+export function WhatsAppAogAction({ className, children = PUBLIC_CTA.whatsAppAog, messageData, ...context }: AogActionProps & { messageData?: AogMessageData }) {
   return (
     <a
       className={className}

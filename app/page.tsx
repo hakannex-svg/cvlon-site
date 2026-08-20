@@ -1,11 +1,12 @@
 /* eslint-disable @next/next/no-img-element -- vinext site uses pre-optimized responsive assets and picture sources. */
 import { CallAogAction, WhatsAppAogAction } from "@/components/AogActions";
 import { RfqForm } from "@/components/RfqForm";
-import { BuyRequestPanel } from "@/components/BuyRequestPanel";
+import { HeroDecisionRouter } from "@/components/HeroDecisionRouter";
 import { PriceCheckPromotion } from "@/components/PriceCheckPromotion";
 import { PublicChoices } from "@/components/PublicChoices";
 import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import { LEGACY_PART_SEARCH_ANCHOR, partSearchHref } from "@/lib/part-search-cta";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 const services = [
   {
@@ -61,9 +62,9 @@ export default function Home() {
             <h1>The right aircraft part.<br /><em>One accountable desk.</em></h1>
             <p>Civilon combines selected in-stock availability with on-demand sourcing, coordinating stated condition, available documentation and delivery requirements from one point of contact.</p>
             <div className="hero-actions">
-              <a className="button button-primary" href={searchHref}>Start a part search <span>→</span></a>
-              <CallAogAction className="button button-ghost" source_page="homepage">Call AOG desk</CallAogAction>
-              <WhatsAppAogAction className="button button-whatsapp" source_page="homepage">WhatsApp AOG</WhatsAppAogAction>
+              <a className="button button-primary" href={searchHref}>{PUBLIC_CTA.buy} <span>→</span></a>
+              <CallAogAction className="button button-ghost" source_page="homepage">{PUBLIC_CTA.callAog}</CallAogAction>
+              <WhatsAppAogAction className="button button-whatsapp" source_page="homepage">{PUBLIC_CTA.whatsAppAog}</WhatsAppAogAction>
             </div>
             <div className="hero-proof">
               <div><strong>NE · NS</strong><span>New and new surplus</span></div>
@@ -73,7 +74,7 @@ export default function Home() {
           </div>
 
           {buyRequestIntake
-            ? <BuyRequestPanel tone="dark" headingId="home-buy-request" />
+            ? <HeroDecisionRouter />
             : <RfqForm sourcePage="homepage" compactAog />}
         </div>
         <div className="hero-ticker">
@@ -103,7 +104,7 @@ export default function Home() {
             <div className="service-note">
               <span className="section-label">ACCOUNTABLE FROM RFQ TO RECEIVING</span>
               <p>Each quotation identifies confirmed availability, stated condition, warranty terms and the release or supporting documentation available where applicable.</p>
-              <a href={searchHref}>Start a part search <b>→</b></a>
+              <a href={searchHref}>{PUBLIC_CTA.buy} <b>→</b></a>
             </div>
           </div>
           <div className="service-grid">

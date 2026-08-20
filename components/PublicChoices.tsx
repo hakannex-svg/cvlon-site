@@ -1,6 +1,7 @@
 import { BUY_REQUEST_SOURCE_PAGE, MARKETPLACE_HUB_PAGE, SELL_SUBMISSION_PAGE } from "@/lib/marketplace/contract";
 import { isMarketplaceEnabled, isSellSubmissionEnabled } from "@/lib/marketplace/feature";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type PublicChoice = {
   key: string;
@@ -28,41 +29,41 @@ export function PublicChoices() {
 
   if (isPriceCheckEnabled()) choices.push({
     key: "price-check",
-    title: "Check a quoted or purchased price",
-    body: "Already have a supplier quote, or already bought the part? Civilon reviews the transaction against available comparable evidence and returns a confidential, human-reviewed Price Check.",
+    title: "Price Check",
+    body: "Review a quoted or purchased aircraft-part price against available comparable evidence with a confidential, human-reviewed result.",
     points: [
       "Informational and human-reviewed",
       "Not an appraisal, an instant result or a price guarantee",
       "The result stays private to you",
     ],
     href: "/price-check",
-    cta: "Check a part price",
+    cta: PUBLIC_CTA.priceCheck,
   });
 
   if (marketplaceEnabled) choices.push({
     key: "buy",
-    title: "Buy a part from Civilon",
-    body: "Send the part number—or describe the part if you do not have one—and Civilon reviews and sources it, then sells it to you. No account, no sign-in, and your request is not published or broadcast.",
+    title: "Request an aircraft part",
+    body: "Send Civilon the part number and requirements. Civilon sources and sells the part to you; your request is never publicly listed.",
     points: [
       "Civilon is the seller, not a broker of your request",
       "Availability, stated condition, documentation, delivery and price remain subject to confirmation",
-      "One reference to follow the request",
+      "No account or sign-in required",
     ],
     href: BUY_REQUEST_SOURCE_PAGE,
-    cta: "Buy a part from Civilon",
+    cta: PUBLIC_CTA.buy,
   });
 
   if (isSellSubmissionEnabled()) choices.push({
     key: "sell",
-    title: "Sell parts to Civilon",
-    body: "Civilon buys parts and inventory on its own account. Offer a single part or a whole list; the Civilon team reviews it internally and nothing you send is published, listed, or shown to a buyer.",
+    title: "Submit aircraft parts",
+    body: "Privately offer a single part or bulk inventory file for Civilon’s internal review; nothing you send is publicly listed.",
     points: [
       "Single parts or private bulk inventory",
       "Civilon is not obliged to buy",
       "Interest, condition, documentation and price remain subject to confirmation",
     ],
     href: SELL_SUBMISSION_PAGE,
-    cta: "Sell parts to Civilon",
+    cta: PUBLIC_CTA.sell,
   });
 
   if (choices.length === 0) return null;

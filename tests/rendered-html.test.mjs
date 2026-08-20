@@ -21,9 +21,9 @@ test("server-renders the Civilon production homepage", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>Business Aircraft Parts Sourcing &amp; AOG Coordination \| Civilon<\/title>/i);
-  assert.match(html, /Start a part search/);
+  assert.match(html, /Request a Part/);
   assert.match(html, /Request availability/);
-  assert.match(html, /Call AOG desk/);
+  assert.match(html, /Call AOG Desk/);
   assert.match(html, /https:\/\/wa\.me\/19093444444\?text=URGENT%20AOG%20REQUEST/);
   assert.match(html, /Urgent AOG contact options/);
   assert.match(html, /AOG\? Call or message the monitored desk\./);
