@@ -39,7 +39,7 @@ export function BuyRequestPanel({ tone = "light", headingLevel = "h2", headingId
         {PUBLIC_CTA.buy} <span aria-hidden="true">→</span>
       </a>
       <a className="buy-request-panel-link" href="/aog-services">
-        Aircraft on ground? Use the monitored AOG desk <span aria-hidden="true">→</span>
+        AOG situation? Use the monitored AOG desk <span aria-hidden="true">→</span>
       </a>
     </aside>
   );

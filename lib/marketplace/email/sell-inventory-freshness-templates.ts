@@ -23,7 +23,7 @@ import type { TransactionalEmail } from "../../price-check/email/provider.ts";
  *  - Answering is a statement by the seller about their own stock, at that
  *    moment. Availability remains subject to confirmation either way.
  *  - Nothing is published, listed, or shown to a buyer, and there is no account.
- *  - Civilon is not obliged to buy, and nothing in the message is an offer, an
+ *  - Offers are at Civilon's discretion, and nothing in the message is an offer, an
  *    acceptance, or an agreed price.
  *  - Documentation varies by part and source, and neither the question nor the
  *    answer certifies or authenticates anything, is airworthiness approval or
@@ -50,7 +50,7 @@ function formatDate(value: Date) {
 
 const BOUNDARIES = [
   "Your answer is your own statement about your stock right now. Nothing you answer is published, listed, or shown to a buyer, and it does not create an account.",
-  "Civilon reviews each submission internally and is not obliged to buy. Nothing in this email is an offer, an acceptance, or an agreed price, and availability stays subject to confirmation either way.",
+  "Every submission gets an internal review; offers are at Civilon's discretion. Nothing in this email is an offer, an acceptance, or an agreed price, and availability stays subject to confirmation either way.",
   "Documentation varies by part and source. Neither this question nor your answer certifies or authenticates anything, is airworthiness approval or any other regulatory approval, or is a guarantee of authenticity or fitness.",
 ] as const;
 

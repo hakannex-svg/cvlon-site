@@ -33,8 +33,8 @@ export default function SellInventoryFreshnessPage() {
             <span className="section-label">SUBJECT TO CONFIRMATION</span>
             <p>
               Your answer is your own statement about your stock at this moment.
-              Civilon already has your submission, reviews it internally, and is
-              not obliged to buy. Interest, availability, stated condition,
+              Civilon already has your submission. Every submission gets an
+              internal review; offers are at Civilon&apos;s discretion. Interest, availability, stated condition,
               documentation and price all remain subject to confirmation either
               way.
             </p>

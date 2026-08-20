@@ -650,7 +650,7 @@ test("the seller email is privacy-minimised and states its own boundaries", () =
   for (const claim of [
     /your own statement about your stock/i,
     /published, listed, or shown to a buyer/i,
-    /not obliged to buy/i,
+    /offers are at Civilon(?:'|&#39;|&rsquo;)s discretion/i,
     /subject to confirmation/i,
     /Documentation varies by part and source/i,
     /guarantee of authenticity or fitness/i,
@@ -981,7 +981,7 @@ test("the seller-facing copy states every required boundary", () => {
     /published, listed, or shown to a buyer/i,
     /your own statement about your stock/i,
     /subject to confirmation/i,
-    /not obliged to buy/i,
+    /offers are at Civilon(?:'|&#39;|&rsquo;)s discretion/i,
     /Documentation varies by part and source/i,
     /guarantee of authenticity or fitness/i,
     /airworthiness approval/i,

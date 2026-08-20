@@ -36,7 +36,7 @@ test("approved AOG response language and monitored availability are present",()=
   assert.match(aog,/The AOG line is answered by a live person, 24\/7\/365/);
   assert.doesNotMatch(aog,/immediate initial response|within one hour|response time/i);
   assert.doesNotMatch(aog,/within \d+ (?:minutes?|hours?|business days?|days?)/i);
-  assert.match(read("app","contact-us","page.tsx"),/monitored 24\/7/);
+  assert.match(read("app","contact-us","page.tsx"),/monitored by a live person, 24\/7\/365/);
   assert.match(publicSource,/live person 24\/7\/365/);
   assert.doesNotMatch(publicSource,/<\s*1\s*hr|guaranteed one-hour|immediate quote/i);
 });
@@ -62,7 +62,7 @@ test("approved commercial qualifications are explicit",()=>{
 test("Airbus and Boeing remain additional platforms by request only",()=>{
   const aircraftHub=read("app","aircraft","page.tsx");
   assert.match(aircraftHub,/Additional platforms by request/);
-  assert.match(aircraftHub,/Airbus and Boeing requirements can also be reviewed and sourced on request/);
+  assert.match(aircraftHub,/Airbus and Boeing requirements can also be reviewed and sourced by exact part number/);
   assert.ok(!fs.existsSync(path.join(root,"app","aircraft","airbus")));
   assert.ok(!fs.existsSync(path.join(root,"app","aircraft","boeing")));
 });

@@ -117,7 +117,7 @@ export function SellSubmissionVerification() {
         <div className="pc-final-note" role="note">
           <strong>What is still to be confirmed</strong>
           <p>
-            Civilon is not obliged to buy. Interest, availability, stated
+            Every submission gets an internal review; offers are at Civilon&rsquo;s discretion. Interest, availability, stated
             condition, documentation and price all remain subject to
             confirmation, and documentation varies by part and source. Confirming
             your email address, and any evidence you uploaded, are not
@@ -155,7 +155,7 @@ export function SellSubmissionVerification() {
       <h2>Confirm your email address.</h2>
       <p>
         Press confirm to finish your submission. Civilon reviews each submission
-        internally and is not obliged to buy; nothing you submitted is published
+        internally; offers are at Civilon&rsquo;s discretion, and nothing you submitted is published
         or listed.
       </p>
       {retryable && (

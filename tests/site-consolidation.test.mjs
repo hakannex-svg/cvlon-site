@@ -175,7 +175,10 @@ test("ordinary sourcing pages route to Buy Request; service pages keep their own
   ]) {
     const source = read(...page);
     const name = page.join("/");
-    if (name !== "app/page.tsx") assert.match(source, /<PartSearchSection\b/, name);
+    if (name === "app/about-us/page.tsx") {
+      assert.match(source, /href=\{partSearchHref\(\)\}/, name);
+      assert.match(source, /\{PUBLIC_CTA\.buy\}/, name);
+    } else if (name !== "app/page.tsx") assert.match(source, /<PartSearchSection\b/, name);
     assert.doesNotMatch(source, /<RfqSection\b/, `${name} must not keep the legacy section`);
   }
 
@@ -217,7 +220,7 @@ test("the homepage hero is a gated decision router with consistent public CTA la
   assert.match(heroRouter, /chip: "RFQ"/);
   assert.match(heroRouter, /chip: "SELL"/);
   assert.match(heroRouter, /title: "Check a part price"/);
-  assert.match(heroRouter, /title: "Buy a part"/);
+  assert.match(heroRouter, /title: "Request a Part"/);
   assert.match(heroRouter, /title: "Offer parts to Civilon"/);
   assert.match(heroRouter, /href: "\/price-check"/);
   assert.match(heroRouter, /href: BUY_REQUEST_SOURCE_PAGE/);
@@ -266,7 +269,7 @@ test("the private result adds a plain Sell link and leaks nothing into the URL",
   assert.match(resultPage, /function ResultSellPath\(\)/);
   assert.match(resultPage, /href=\{SELL_SUBMISSION_PAGE\}/);
   assert.match(resultPage, /\{isSellSubmissionEnabled\(\) && <ResultSellPath \/>\}/);
-  assert.match(text(resultPage), /Sell this part to Civilon/);
+  assert.match(text(resultPage), /Offer Parts/);
   // The existing Buy Request conversion is untouched.
   assert.match(resultPage, /<ResultSourcingAction/);
   assert.match(resultPage, /partNumber=\{priceCheck\.originalPartNumber\}/);

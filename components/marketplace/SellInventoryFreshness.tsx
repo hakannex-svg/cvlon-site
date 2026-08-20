@@ -237,7 +237,7 @@ export function SellInventoryFreshness() {
           <strong>What is still to be confirmed</strong>
           <p>
             Your answer is your own statement about your stock right now. Civilon
-            reviews each submission internally and is not obliged to buy.
+            gives every submission an internal review; offers are at Civilon&rsquo;s discretion.
             Interest, availability, stated condition, documentation and price all
             remain subject to confirmation, and documentation varies by part and
             source. Neither the question nor your answer is certification,
@@ -308,7 +308,7 @@ export function SellInventoryFreshness() {
         {chosen ? "Your answer is sent only when you press the button." : "Choose one answer, then send."}{" "}
         Answering does not create an account and does not sell anything. Your
         answer is your own statement about your stock right now, and availability
-        stays subject to confirmation. Civilon is not obliged to buy, and
+        stays subject to confirmation. Offers are at Civilon&rsquo;s discretion, and
         answering is not certification, authentication, regulatory or
         airworthiness approval, or a guarantee of authenticity or fitness.
         Documentation varies by part and source.

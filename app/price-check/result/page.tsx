@@ -21,15 +21,14 @@ import { SELL_SUBMISSION_PAGE } from "@/lib/marketplace/contract";
 function ResultSellPath() {
   return <section className="result-sell-path" data-result-region="sell-path">
     <p>Holding this part instead?</p>
-    <h2>Sell this part to Civilon</h2>
+    <h2>Offer Parts</h2>
     <span>
       Civilon buys parts and inventory on its own account. Nothing from this
       Price Check is carried over—you tell Civilon what you hold, and the team
-      reviews it internally. Nothing you send is published or listed, Civilon is
-      not obliged to buy, and interest, stated condition, documentation and
+      reviews it internally. Nothing you send is published or listed. Every submission gets an internal review; offers are at Civilon&apos;s discretion, and interest, stated condition, documentation and
       price remain subject to confirmation.
     </span>
-    <a className="result-sell-path-action" href={SELL_SUBMISSION_PAGE}>Sell this part to Civilon <span aria-hidden="true">→</span></a>
+    <a className="result-sell-path-action" href={SELL_SUBMISSION_PAGE}>Offer Parts <span aria-hidden="true">→</span></a>
   </section>;
 }
 

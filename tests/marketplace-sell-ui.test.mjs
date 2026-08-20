@@ -541,7 +541,7 @@ test("the required qualifications appear on every Sell surface a seller reads", 
   assert.match(flat(sellForm), /Every submission gets an internal review; offers are at Civilon’s discretion/);
   assert.doesNotMatch(flat(sellForm), /not obliged to buy/i);
   assert.match(flat(sellForm), /subject to confirmation/i);
-  assert.match(flat(sellVerifyPage), /not obliged to\s+buy/i);
+  assert.match(flat(sellVerifyPage), /offers are at Civilon(?:&apos;|&rsquo;|'|’)s discretion/i);
   assert.match(flat(sellVerifyPage), /documentation varies by part and source/i);
   assert.match(flat(sellUploads), /not certification, regulatory approval, airworthiness/i);
 });

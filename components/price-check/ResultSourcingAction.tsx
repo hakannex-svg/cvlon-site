@@ -23,7 +23,7 @@ const conditionLabels = {
 
 const urgencyLabels = {
   not_sure: "Not sure yet",
-  aog: "AOG — aircraft on ground",
+  aog: "AOG — grounded aircraft",
   critical: "Critical — grounding risk",
   standard: "Standard requirement",
   planned: "Planned maintenance",

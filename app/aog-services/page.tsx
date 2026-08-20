@@ -11,7 +11,7 @@ export default function Page() {
   return <main>
     <InteriorHero
       eyebrow="URGENT / AOG"
-      title="Aircraft-on-ground parts coordination"
+      title="AOG parts coordination"
       intro="The AOG line is answered by a live person, 24/7/365. One accountable desk carries the requirement through search, documentation and delivery."
       path="/aog-services"
       crumbs={[{label:"Home",href:"/"},{label:"AOG Support"}]}
