@@ -3,6 +3,7 @@ import { CallAogAction, WhatsAppAogAction } from "@/components/AogActions";
 import { RfqForm } from "@/components/RfqForm";
 import { HeroDecisionRouter } from "@/components/HeroDecisionRouter";
 import { PriceCheckPromotion } from "@/components/PriceCheckPromotion";
+import { AircraftSilhouetteIcon, ServiceIcon } from "@/components/PublicVisualIcons";
 import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import { LEGACY_PART_SEARCH_ANCHOR, partSearchHref } from "@/lib/part-search-cta";
 import { PUBLIC_CTA } from "@/lib/public-cta";
@@ -14,6 +15,7 @@ const services = [
     body: "Stock when we have it; targeted sourcing when we don’t, through approved and vetted suppliers.",
     href: "/parts",
     cta: "View categories",
+    icon: "sourcing" as const,
   },
   {
     number: "02",
@@ -21,6 +23,7 @@ const services = [
     body: "A live person coordinates the urgent search, documentation and transportation through one accountable desk.",
     href: "/aog-services",
     cta: "Review AOG support",
+    icon: "aog" as const,
   },
   {
     number: "03",
@@ -28,6 +31,7 @@ const services = [
     body: "We manage the repair end to end—evaluation, workscope, quote, monitoring and return—through appropriately approved repair facilities where required.",
     href: "/repair-management",
     cta: "Review service",
+    icon: "repair" as const,
   },
 ];
 
@@ -104,11 +108,11 @@ export default function Home() {
               <a href={searchHref}>{PUBLIC_CTA.buy} <b>→</b></a>
             </div>
           </div>
-          <div className="service-grid">
+          <div className="service-grid" id="service-cards">
             {services.map((service) => (
               <a className="service-card" href={service.href} key={service.number}>
                 <span className="card-number">{service.number}</span>
-                <div className="card-icon" aria-hidden="true">✦</div>
+                <div className="card-icon"><ServiceIcon kind={service.icon} /></div>
                 <h3>{service.title}</h3>
                 <p>{service.body}</p>
                 <strong className="service-card-action">{service.cta} <span aria-hidden="true">→</span></strong>
@@ -161,7 +165,14 @@ export default function Home() {
             <p>Primary support for established business-aircraft fleets, with additional platforms reviewed by exact requirement.</p>
           </div>
           <div className="platform-list">
-            {platforms.map(([platform, href], index) => <a href={href} key={platform}><span>0{index + 1}</span>{platform}<b>↗</b></a>)}
+            {platforms.map(([platform, href], index) => (
+              <a href={href} key={platform}>
+                <span>0{index + 1}</span>
+                <AircraftSilhouetteIcon />
+                <strong>{platform}</strong>
+                <b aria-hidden="true">↗</b>
+              </a>
+            ))}
           </div>
         </div>
       </section>
