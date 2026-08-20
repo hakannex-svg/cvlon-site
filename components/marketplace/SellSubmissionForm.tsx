@@ -63,7 +63,7 @@ const disclosureFields = new Set([
 ]);
 
 /**
- * Sell Parts to Civilon — public intake.
+ * Offer Parts — public intake.
  *
  * Progressive disclosure, not a wizard: everything required is on one page and
  * visible, and the optional detail sits behind two toggles the seller opens if
@@ -306,7 +306,7 @@ export function SellSubmissionForm() {
     <div className="price-check-form-shell" data-mobile-aog-suppress>
       <form className="price-check-form" noValidate onSubmit={submit}>
         <div className="price-check-form-heading">
-          <span>SELL PARTS TO CIVILON</span>
+          <span>OFFER PARTS</span>
           <h2 id="sell-submission-form-title">Tell Civilon what you have</h2>
           <p>
             No account and no sign-in. Civilon buys on its own account and
@@ -690,8 +690,9 @@ export function SellSubmissionForm() {
             <strong>I understand how this submission will be reviewed.</strong>
             <small>
               Civilon will use the submitted contact and offer information to
-              review what I am offering and to contact me about it. Civilon is not
-              obliged to buy, and nothing here is published or listed.
+              review what I am offering and to contact me about it. Civilon
+              decides whether to make an offer, and nothing here is published
+              or listed.
             </small>
           </label>
         </div>
@@ -727,12 +728,12 @@ export function SellSubmissionForm() {
         <div className="pc-final-note" role="note">
           <strong>What happens next</strong>
           <p>
-            Civilon reviews each submission internally and is not obliged to buy.
-            Interest, availability, stated condition, documentation and price all
-            remain subject to confirmation, and documentation varies by part and
-            source. Civilon review and any evidence you upload are not
-            certification, regulatory approval, airworthiness approval, or a
-            guarantee of authenticity or fitness.
+            Every submission gets an internal review; offers are at Civilon’s
+            discretion. Interest, availability, stated condition, documentation
+            and price all remain subject to confirmation, and documentation
+            varies by part and source. Civilon review and any evidence you
+            upload are not certification, regulatory approval, airworthiness
+            approval, or a guarantee of authenticity or fitness.
           </p>
         </div>
 

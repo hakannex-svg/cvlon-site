@@ -22,7 +22,7 @@ test("mobile AOG bar uses route exclusions and reversible intersection suppressi
 test("approved customer-facing quality and documentation copy is present",()=>{
  const quality=read("app","quality-assurance","page.tsx"),home=read("app","page.tsx");
  assert.doesNotMatch(quality,/Public content|not represented as an industry certification/i);
- assert.match(quality,/Discrepancies are documented and escalated for review\. Applicable quarantine, return, warranty, or remedy terms are stated in the quotation and governing terms\./);
+ assert.match(quality,/Civilon documents discrepancies and escalates them for review\. The quotation and governing terms state the applicable quarantine, return, warranty or remedy path\./);
  assert.match(home,/FAA 8130-3 \/ EASA Form 1 where applicable/);
 });
 

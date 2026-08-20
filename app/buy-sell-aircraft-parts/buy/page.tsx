@@ -5,7 +5,7 @@ import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata(
-  "Buy a Part from Civilon",
+  "Request a Part",
   "Send Civilon the aircraft part you need. No account required. Availability, stated condition, documentation, delivery and price remain subject to confirmation.",
   "/buy-sell-aircraft-parts/buy",
 );
@@ -20,20 +20,25 @@ export default function BuyPartFromCivilonPage() {
           <Breadcrumbs
             items={[
               { label: "Home", href: "/" },
-              { label: "Buy & Sell Aircraft Parts", href: "/buy-sell-aircraft-parts" },
-              { label: "Buy a Part from Civilon" },
+              { label: "Request or Offer Aircraft Parts", href: "/buy-sell-aircraft-parts" },
+              { label: "Request a Part" },
             ]}
             currentPath="/buy-sell-aircraft-parts/buy"
           />
           <div className="price-check-hero-grid">
             <div>
-              <span className="section-label light">PARTS / BUY FROM CIVILON</span>
-              <h1>Buy a part from Civilon</h1>
+              <span className="section-label light">PARTS / REQUEST FROM CIVILON</span>
+              <h1>Request a Part</h1>
               <p className="pc-proposition">Tell us what you need. We&apos;ll find it.</p>
               <p>
-                Send the request in a couple of minutes—no account, no sign-in.
-                Civilon reviews and sources the part, then comes back to you with
-                what is available and on what terms.
+                No account and no sign-in. Civilon is the seller: it reviews the
+                requirement, sources the part, and comes back to you with what
+                is available and on what terms.
+              </p>
+              <p className="section-qualifier section-qualifier-dark">
+                Your request is never published or listed. Availability, stated
+                condition, documentation, delivery and price are confirmed per
+                request; documentation varies by part and source.
               </p>
             </div>
             <aside aria-label="What happens after you send a request">

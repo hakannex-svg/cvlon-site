@@ -449,7 +449,7 @@ test("marketplace copy makes no prohibited certification, guarantee or availabil
 test("required qualifications are stated on the buy, hub and verification surfaces", () => {
   assert.match(text(buyForm), /subject to confirmation/i);
   assert.match(text(buyForm), /documentation varies by part and source/i);
-  assert.match(text(hubPage), /subject to confirmation/i);
+  assert.match(text(hubPage), /are confirmed for each request or offer/i);
   assert.match(text(hubPage), /appropriately approved repair facilities/i);
   assert.match(text(verifyComponent), /subject to confirmation/i);
   assert.match(text(verifyComponent), /documentation varies by part and source/i);

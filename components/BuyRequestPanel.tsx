@@ -31,9 +31,10 @@ export function BuyRequestPanel({ tone = "light", headingLevel = "h2", headingId
       </p>
       <ul>
         <li>Reviewed by the Civilon team; nothing is published or listed</li>
-        <li>Availability, stated condition, documentation, delivery and price remain subject to confirmation</li>
-        <li>Documentation varies by part and source</li>
+        <li>No account, no sign-in and one reference to follow the request</li>
+        <li>Civilon remains your accountable point of contact</li>
       </ul>
+      <p className="section-qualifier">Availability, stated condition, documentation, delivery and price are confirmed per request; documentation varies by part and source.</p>
       <a className="button button-primary" href={BUY_REQUEST_SOURCE_PAGE}>
         {PUBLIC_CTA.buy} <span aria-hidden="true">→</span>
       </a>

@@ -6,7 +6,7 @@ import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata(
-  "Buy & Sell Aircraft Parts",
+  "Request or Offer Aircraft Parts",
   "Ask Civilon to source a business-aircraft part, or offer parts to Civilon. Availability, condition, documentation and price are always confirmed before anything is agreed.",
   "/buy-sell-aircraft-parts",
 );
@@ -19,28 +19,32 @@ export default function BuySellAircraftPartsPage() {
       <section className="price-check-hero" data-mobile-aog-suppress>
         <div className="shell">
           <Breadcrumbs
-            items={[{ label: "Home", href: "/" }, { label: "Buy & Sell Aircraft Parts" }]}
+            items={[{ label: "Home", href: "/" }, { label: "Request or Offer Aircraft Parts" }]}
             currentPath="/buy-sell-aircraft-parts"
           />
           <div className="price-check-hero-grid">
             <div>
-              <span className="section-label light">PARTS / BUY &amp; SELL</span>
-              <h1>Buy &amp; sell aircraft parts</h1>
+              <span className="section-label light">PARTS / REQUEST &amp; OFFER</span>
+              <h1>Request or offer aircraft parts</h1>
               <p className="pc-proposition">One desk on both sides of the transaction.</p>
               <p>
-                Tell Civilon what you need and Civilon reviews and sources it. Or
-                offer Civilon parts you hold. Availability, stated condition,
-                documentation, delivery and price all remain subject to
-                confirmation, and documentation varies by part and source.
+                Tell Civilon what you need and Civilon sources it. Or offer
+                Civilon the parts you already hold. One desk carries either
+                direction from the first message through to delivery.
+              </p>
+              <p className="section-qualifier section-qualifier-dark">
+                Availability, stated condition, documentation, delivery and
+                price are confirmed for each request or offer; documentation
+                varies by part and source.
               </p>
             </div>
-            <aside aria-label="How a Civilon request works">
-              <span>REQUEST PATH</span>
+            <aside aria-label="How Civilon handles each path">
+              <span>ONE ACCOUNTABLE DESK</span>
               <ol>
-                <li>Tell Civilon what you need</li>
+                <li>Choose Request a Part or Offer Parts</li>
                 <li>Confirm your email address</li>
-                <li>Civilon reviews and sources the part</li>
-                <li>Civilon comes back with what is available and on what terms</li>
+                <li>Civilon reviews the requirement or inventory</li>
+                <li>Civilon follows up directly; buyer and supplier stay separated</li>
               </ol>
             </aside>
           </div>
@@ -51,8 +55,8 @@ export default function BuySellAircraftPartsPage() {
         <div className="shell">
           <SectionHeading
             label="CHOOSE / DIRECTION"
-            title="Which side of the transaction are you on?"
-            intro="Choose the side you are on. Civilon is the counterparty either way, and nothing on either side is published or listed."
+            title="Choose the path that fits."
+            intro="Civilon is the counterparty either way, and nothing on either side is published or listed."
           />
           <MarketplaceHubView sellEnabled={isSellSubmissionEnabled()} priceCheckEnabled={isPriceCheckEnabled()} />
         </div>
@@ -86,11 +90,10 @@ export default function BuySellAircraftPartsPage() {
             </article>
             <article>
               <span>03</span>
-              <h3>Documentation varies</h3>
+              <h3>Records identified with each option</h3>
               <p>
-                Release documentation varies by part and source. Civilon states
-                what is available for a specific part; it does not certify parts
-                or approve airworthiness.
+                Civilon reviews release and supporting documentation and states
+                what is available for each quoted option.
               </p>
             </article>
             <article>
@@ -102,6 +105,7 @@ export default function BuySellAircraftPartsPage() {
               </p>
             </article>
           </div>
+          <p className="section-qualifier">Documentation varies by part and source. Civilon identifies the available records for each option and does not certify parts or approve airworthiness.</p>
         </div>
       </section>
     </main>

@@ -29,8 +29,13 @@ test("public identity and contact details match the approved company information
 });
 
 test("approved AOG response language and monitored availability are present",()=>{
-  const required="Our AOG phone and WhatsApp are monitored 24/7. We target an immediate initial response and an availability or quotation update within one hour.";
-  assert.match(read("app","aog-services","page.tsx"),new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")));
+  // The AOG page states the one approved proof line and no response-time
+  // promise: a time an unattended sourcing desk cannot hold is a claim, not a
+  // service level.
+  const aog=read("app","aog-services","page.tsx");
+  assert.match(aog,/The AOG line is answered by a live person, 24\/7\/365/);
+  assert.doesNotMatch(aog,/immediate initial response|within one hour|response time/i);
+  assert.doesNotMatch(aog,/within \d+ (?:minutes?|hours?|business days?|days?)/i);
   assert.match(read("app","contact-us","page.tsx"),/monitored 24\/7/);
   assert.match(publicSource,/live person 24\/7\/365/);
   assert.doesNotMatch(publicSource,/<\s*1\s*hr|guaranteed one-hour|immediate quote/i);
@@ -45,7 +50,7 @@ test("unsupported certification and blanket trace claims are absent",()=>{
   assert.equal(hasUnsupportedCivilonCertificationClaim(publicSource),false);
   assert.doesNotMatch(publicSource,/100% trace|always full trace|full trace on every part|fully traceable/i);
   assert.match(publicSource,/trace-to-source/i);
-  assert.match(publicSource,/Documentation varies by part condition and source/);
+  assert.match(publicSource,/Documentation varies by part(?:,)?(?: condition and| and)? source|Documentation varies by part and source/i);
 });
 
 test("approved commercial qualifications are explicit",()=>{

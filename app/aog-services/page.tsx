@@ -12,7 +12,7 @@ export default function Page() {
     <InteriorHero
       eyebrow="URGENT / AOG"
       title="Aircraft-on-ground parts coordination"
-      intro="Our AOG phone and WhatsApp are monitored 24/7. We target an immediate initial response and an availability or quotation update within one hour."
+      intro="The AOG line is answered by a live person, 24/7/365. One accountable desk carries the requirement through search, documentation and delivery."
       path="/aog-services"
       crumbs={[{label:"Home",href:"/"},{label:"AOG Support"}]}
       variant="aog"
@@ -22,7 +22,7 @@ export default function Page() {
       defaultAog
       compact
       heading="Start the urgent request."
-      description="Call or use WhatsApp when an aircraft is grounded. The form captures the operational details needed to continue the search."
+      description="Call or send a WhatsApp message first, then use the form to share the operational details Civilon needs to continue the search."
     />
     <section className="section section-tight aog-preparation">
       <div className="shell two-column">
@@ -67,7 +67,8 @@ export default function Page() {
           "Present availability, commercial terms and routing options",
           "Coordinate the customer-approved shipment path and updates",
         ]} />
-        <p>Depending on route, cutoff, flight availability, carrier acceptance and customer approval, Civilon may coordinate same-day dispatch, next-flight-out, counter-to-counter, dedicated courier or hand-carry options. No method or arrival time is guaranteed.</p>
+        <p>Civilon can coordinate same-day dispatch, next-flight-out, counter-to-counter, dedicated courier or hand-carry, depending on route, cutoff, flight availability, carrier acceptance and customer approval.</p>
+        <p className="section-qualifier">Civilon does not guarantee a shipping method or an arrival time.</p>
       </div>
     </section>
     <section className="section section-tight">

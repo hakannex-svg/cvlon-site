@@ -86,7 +86,8 @@ test("the secure route and UI never accept browser-selected identity or provenan
   assert.match(route, /PRICE_CHECK_BUY_REQUEST_MAX_BODY_BYTES/);
   assert.match(route, /LEGAL_DOCUMENT_VERSIONS/);
   assert.doesNotMatch(component, /businessEmail|companyName|sourceResultId|priceCheckId/);
-  assert.match(component, /Create a Buy Request/);
+  assert.match(component, /PUBLIC_CTA\.buy/);
+  assert.doesNotMatch(component, /Create a Buy Request/);
   assert.match(component, /Submitting does not place an order/);
   assert.match(component, /subject to confirmation/);
   assert.equal(

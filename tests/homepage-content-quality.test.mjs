@@ -46,7 +46,8 @@ test("homepage uses the approved action pair and one primary hero action", () =>
 
 test("homepage consolidates qualifiers and limits human-reviewed repetition", () => {
   assert.equal((router.match(/Availability and documentation are confirmed per request\./g) ?? []).length, 1);
-  assert.equal((home.match(/Each sourcing option is confirmed for availability and the documentation supplied with it\./g) ?? []).length, 1);
+  assert.equal((home.match(/Each option is confirmed for availability, together with the documentation supplied with it\./g) ?? []).length, 1);
+  assert.doesNotMatch(home, /Each sourcing option is confirmed for availability and the documentation supplied with it\./);
   assert.equal((promotion.match(/Price Check is informational—not an appraisal, instant result or price guarantee\./g) ?? []).length, 1);
   assert.equal((compact(home + router + promotion).match(/human-reviewed/gi) ?? []).length, 2);
   assert.doesNotMatch(home, /Availability is subject to confirmation/);

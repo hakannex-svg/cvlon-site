@@ -115,7 +115,7 @@ export default function Home() {
               </a>
             ))}
           </div>
-          <p className="section-qualifier">Each sourcing option is confirmed for availability and the documentation supplied with it.</p>
+          <p className="section-qualifier">Each option is confirmed for availability, together with the documentation supplied with it.</p>
         </div>
       </section>
 

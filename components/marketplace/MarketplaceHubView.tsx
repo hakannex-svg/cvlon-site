@@ -29,7 +29,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
     <div className={`marketplace-choice-grid${priceCheckEnabled ? " choice-grid-three" : ""}`}>
       <article className="marketplace-choice is-open">
         <span className="marketplace-choice-index">01</span>
-        <h3>Buy a Part from Civilon</h3>
+        <h3>Request a Part</h3>
         <p>
           Send the part number—or describe the part if you do not have one—and
           Civilon reviews and sources it. No account, no sign-in.
@@ -54,7 +54,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
       {sellEnabled ? (
         <article className="marketplace-choice is-open">
           <span className="marketplace-choice-index">02</span>
-          <h3>Sell Parts to Civilon</h3>
+          <h3>Offer Parts</h3>
           <p>
             Civilon buys parts and inventory on its own account. Offer a single
             part or a whole list. No account, no sign-in, and nothing you send is
@@ -63,7 +63,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
           <ul>
             <li>Single parts or bulk inventory</li>
             <li>Pricing on request is normal; no listing is published</li>
-            <li>Reviewed internally by the Civilon team</li>
+            <li>Every submission gets an internal review; offers are at Civilon’s discretion</li>
           </ul>
           <a
             className="button button-primary"
@@ -80,7 +80,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
         <article className="marketplace-choice is-preview">
           <span className="marketplace-choice-index">02</span>
           <p className="marketplace-choice-status">Controlled preview — coming next</p>
-          <h3>Sell Parts to Civilon</h3>
+          <h3>Offer Parts</h3>
           <p>
             Civilon buys parts and inventory on its own account. Online submission
             is being introduced with a small group of suppliers first and is not
@@ -89,7 +89,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
           <ul>
             <li>Single parts or bulk inventory</li>
             <li>Pricing on request; no listing is published</li>
-            <li>Handled directly by the Civilon team today</li>
+            <li>Every submission gets an internal review; offers are at Civilon’s discretion</li>
           </ul>
           <a
             className="button button-ghost"
@@ -115,7 +115,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
             human-reviewed Price Check.
           </p>
           <ul>
-            <li>Informational and human-reviewed</li>
+            <li>Informational context, reviewed by our desk</li>
             <li>Not an appraisal, an instant result or a price guarantee</li>
             <li>The result stays private to you</li>
           </ul>

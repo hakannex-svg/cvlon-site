@@ -155,7 +155,7 @@ test("the compact sourcing panel links into the part request and adds no second 
   assert.match(buyRequestPanel, /href=\{BUY_REQUEST_SOURCE_PAGE\}/);
   assert.equal(buyRequestPanel.includes("<form"), false, "the panel is a link, never a second form");
   assert.doesNotMatch(buyRequestPanel, /trackCivilonEvent/);
-  assert.match(text(buyRequestPanel), /subject to confirmation/i);
+  assert.match(text(buyRequestPanel), /are confirmed per request/i);
   assert.match(text(buyRequestPanel), /Documentation varies by part and source/i);
   // Urgent work still routes to the monitored desk rather than into Buy Request.
   assert.match(buyRequestPanel, /href="\/aog-services"/);
