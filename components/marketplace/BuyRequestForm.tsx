@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CallAogAction, WhatsAppAogAction } from "../AogActions";
 import { FieldLabel } from "../FieldLabel";
 import { trackCivilonEvent } from "@/lib/analytics";
+import { usePublicFormFeedback } from "@/lib/use-public-form-feedback";
 import {
   BUY_REQUEST_SOURCE_PAGE,
   BUY_REQUEST_SUBMIT_PATH,
@@ -86,8 +87,11 @@ export function BuyRequestForm() {
   const [phoneShown, setPhoneShown] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reference, setReference] = useState("");
+  const [errorFeedbackRevision, setErrorFeedbackRevision] = useState(0);
   const idempotencyKey = useRef("");
   const started = useRef(false);
+  const confirmationHeadingRef = usePublicFormFeedback<HTMLHeadingElement>(reference);
+  const errorFeedbackRef = usePublicFormFeedback<HTMLDivElement>(errorFeedbackRevision);
 
   useEffect(() => {
     trackCivilonEvent("buy_request_view", { source_page: BUY_REQUEST_SOURCE_PAGE });
@@ -104,20 +108,11 @@ export function BuyRequestForm() {
     }
   }
 
-  function focusFirst(nextErrors: Record<string, string>) {
+  function presentErrors(nextErrors: Record<string, string>) {
     const first = Object.keys(nextErrors).find((key) => key !== "_form" && nextErrors[key]);
     if (first && disclosureFields.has(first)) setDetailsOpen(true);
-    window.setTimeout(() => {
-      const target = first
-        ? document.getElementById(`buy-request-${first}`)
-        : document.querySelector<HTMLElement>(".price-check-errors");
-      target?.focus();
-    }, 0);
-  }
-
-  function presentErrors(nextErrors: Record<string, string>) {
     setErrors(nextErrors);
-    focusFirst(nextErrors);
+    setErrorFeedbackRevision((current) => current + 1);
   }
 
   function validateAll() {
@@ -200,7 +195,7 @@ export function BuyRequestForm() {
         presentErrors({ ...(result.fieldErrors ?? {}), _form: result.error });
       }
     } catch {
-      setErrors({ _form: "Requests are temporarily unavailable. Please try again later." });
+      presentErrors({ _form: "Requests are temporarily unavailable. Please try again later." });
     } finally {
       setSubmitting(false);
     }
@@ -210,7 +205,7 @@ export function BuyRequestForm() {
     return (
       <section className="price-check-confirmation" aria-labelledby="buy-request-received" role="status">
         <span className="section-label">REQUEST / RECEIVED</span>
-        <h2 id="buy-request-received">Request received</h2>
+        <h2 id="buy-request-received" ref={confirmationHeadingRef} tabIndex={-1}>Request received</h2>
         <p className="price-check-reference"><span>Reference</span><strong>{reference}</strong></p>
         <p>
           Check your email. Civilon has sent a confirmation link to the business
@@ -258,7 +253,7 @@ export function BuyRequestForm() {
         </div>
 
         {errorSummary.length > 0 && (
-          <div className="price-check-errors" role="alert" aria-labelledby="buy-request-error-title" tabIndex={-1}>
+          <div className="price-check-errors" ref={errorFeedbackRef} role="alert" aria-labelledby="buy-request-error-title" tabIndex={-1}>
             <strong id="buy-request-error-title">Please review these details</strong>
             <ul>{[...new Set(errorSummary)].map((error) => <li key={error}>{error}</li>)}</ul>
           </div>

@@ -13,14 +13,15 @@ const footer = read("components", "SiteFooter.tsx");
 const ctas = read("lib", "public-cta.ts");
 const css = read("app", "globals.css");
 
-test("homepage removes the duplicated routes section and retains its unique proof points", () => {
+test("homepage removes the duplicated routes section and uses the approved compact route card", () => {
   assert.doesNotMatch(home, /PublicChoices|Which of these do you need/);
-  for (const proof of [
-    "Civilon is the seller",
-    "No account or sign-in required",
-    "The result stays private to you",
-    "Every submission gets an internal review; offers are at Civilon’s discretion",
-  ]) assert.match(router, new RegExp(proof.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+  assert.match(router, /<h2 id="hero-decision-title">Start here\.<\/h2>/);
+  for (const chip of ["PRICE CHECK", "RFQ", "SELL"]) assert.match(router, new RegExp(`chip: "${chip}"`));
+  assert.doesNotMatch(router, /points:|<ul>|<li>/);
+  assert.match(css, /\.hero-decision-route-body \{ display:grid; justify-items:start; gap:14px; \}/);
+  assert.doesNotMatch(css, /\.hero-decision-route-body \{[^}]*display:flex/);
+  assert.match(css, /\.hero-decision-chip \{[^}]*background:#e4eefc; color:#1765c1; font-size:10\.5px/);
+  assert.match(css, /\.hero-decision-route-head \{ align-items:flex-start; flex-direction:column; gap:7px; \}/);
 });
 
 test("homepage trust strip and proof claims stay inside the approved boundaries", () => {
@@ -36,8 +37,8 @@ test("homepage trust strip and proof claims stay inside the approved boundaries"
 test("homepage uses the approved action pair and one primary hero action", () => {
   assert.match(ctas, /buy: "Request a Part"/);
   assert.match(ctas, /sell: "Offer Parts"/);
-  assert.match(router, /title: "REQUEST A PART"/);
-  assert.match(router, /title: "OFFER PARTS"/);
+  assert.match(router, /title: "Buy a part"/);
+  assert.match(router, /title: "Offer parts to Civilon"/);
   assert.equal((home.match(/className="button button-primary"/g) ?? []).length, 1);
   assert.match(home, /className="button button-ghost"/);
   assert.match(home, /className="button button-tertiary"/);

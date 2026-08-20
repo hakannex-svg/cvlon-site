@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from "r
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 import { FieldLabel } from "./FieldLabel";
 import { trackCivilonEvent } from "@/lib/analytics";
+import { usePublicFormFeedback } from "@/lib/use-public-form-feedback";
 import {
   conditionCodes,
   coreDispositions,
@@ -115,9 +116,12 @@ export function PriceCheckForm() {
   const [submitting, setSubmitting] = useState(false);
   const [reference, setReference] = useState("");
   const [uploads, setUploads] = useState<UploadItem[]>([]);
+  const [errorFeedbackRevision, setErrorFeedbackRevision] = useState(0);
   const idempotencyKey = useRef("");
   const started = useRef(false);
   const activeUploads = useRef(new Map<string, XMLHttpRequest>());
+  const confirmationHeadingRef = usePublicFormFeedback<HTMLHeadingElement>(reference);
+  const errorFeedbackRef = usePublicFormFeedback<HTMLDivElement>(errorFeedbackRevision);
 
   useEffect(() => { trackCivilonEvent("price_check_view", { source_page: "/price-check" }); }, []);
 
@@ -220,20 +224,10 @@ export function PriceCheckForm() {
     }));
   }
 
-  function focusFirst(nextErrors: Record<string, string>) {
-    const first = Object.keys(nextErrors).find((key) => key !== "_form");
-    window.setTimeout(() => {
-      const target = first
-        ? document.getElementById(`price-check-${first}`)
-        : document.querySelector<HTMLElement>(".price-check-errors");
-      target?.focus();
-    }, 0);
-  }
-
   function presentServerErrors(nextErrors: Record<string, string>) {
     revealFields(Object.keys(nextErrors));
     setErrors(nextErrors);
-    focusFirst(nextErrors);
+    setErrorFeedbackRevision((current) => current + 1);
   }
 
   function validateAll() {
@@ -257,8 +251,8 @@ export function PriceCheckForm() {
     if (values.country && !/^[A-Za-z]{2}$/.test(values.country)) next.country = "Use a two-letter country code.";
     if (!values.serviceAcknowledged) next.serviceAcknowledged = "Acknowledge how Civilon will use the submitted information.";
     if (!values.legalAcknowledged) next.legalAcknowledged = "Acknowledge the Privacy Policy and Terms of Use.";
-    setErrors(next);
-    if (Object.keys(next).length) { revealFields(Object.keys(next)); focusFirst(next); return false; }
+    if (Object.keys(next).length) { presentServerErrors(next); return false; }
+    setErrors({});
     return true;
   }
 
@@ -304,7 +298,7 @@ export function PriceCheckForm() {
         presentServerErrors({ ...(result.fieldErrors ?? {}), _form: result.error });
       }
     } catch {
-      setErrors({ _form: "Price Check submission is temporarily unavailable. Please try again later." });
+      presentServerErrors({ _form: "Price Check submission is temporarily unavailable. Please try again later." });
     } finally {
       setSubmitting(false);
     }
@@ -313,7 +307,7 @@ export function PriceCheckForm() {
   if (reference) {
     return <section className="price-check-confirmation" aria-labelledby="price-check-received" role="status">
       <span className="section-label">SUBMISSION / RECEIVED</span>
-      <h2 id="price-check-received">Price Check received</h2>
+      <h2 id="price-check-received" ref={confirmationHeadingRef} tabIndex={-1}>Price Check received</h2>
       <p className="price-check-reference"><span>Reference</span><strong>{reference}</strong></p>
       <p>Civilon will review the transaction context. Some requests require additional information, and the current service uses human review before any result is prepared.</p>
       <p>Keep this reference for your records. If Civilon completes and approves a reviewed result, access instructions will be sent separately to the business email provided.</p>
@@ -346,7 +340,7 @@ export function PriceCheckForm() {
         <p>Share the quoted or purchased transaction as it was presented. Only the fields marked required are needed—everything else is optional context that helps the review. No market conclusion is calculated at submission.</p>
       </div>
 
-      {errorSummary.length > 0 && <div className="price-check-errors" role="alert" aria-labelledby="price-check-error-title" tabIndex={-1}>
+      {errorSummary.length > 0 && <div className="price-check-errors" ref={errorFeedbackRef} role="alert" aria-labelledby="price-check-error-title" tabIndex={-1}>
         <strong id="price-check-error-title">Please review these details</strong>
         <ul>{[...new Set(errorSummary)].map((error) => <li key={error}>{error}</li>)}</ul>
       </div>}
