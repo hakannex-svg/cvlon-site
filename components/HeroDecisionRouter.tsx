@@ -28,7 +28,7 @@ export function HeroDecisionRouter() {
   routes.push({
     key: "buy",
     chip: "RFQ",
-    title: "Buy a part",
+    title: "Request a Part",
     body: "Send the part number, condition and delivery requirements directly to Civilon.",
     href: BUY_REQUEST_SOURCE_PAGE,
     cta: PUBLIC_CTA.buy,

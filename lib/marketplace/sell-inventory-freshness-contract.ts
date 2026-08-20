@@ -18,7 +18,7 @@
  *   - An answer is the seller's own statement at a moment in time. It changes no
  *     workflow status, no business or evidence review, and no certification,
  *     authenticity, airworthiness or regulatory position. Availability remains
- *     subject to confirmation and Civilon is not obliged to buy.
+ *     subject to confirmation, and offers are at Civilon's discretion.
  */
 import {
   sellInventoryFreshnessResponseLabels,

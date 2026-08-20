@@ -33,8 +33,8 @@ export default function SellEvidenceRequestPage() {
             <span className="section-label">SUBJECT TO CONFIRMATION</span>
             <p>
               Files are optional evidence for Civilon&rsquo;s internal review.
-              Civilon already has your submission, reviews it internally, and is
-              not obliged to buy. Interest, availability, stated condition,
+              Civilon already has your submission. Every submission gets an
+              internal review; offers are at Civilon&apos;s discretion. Interest, availability, stated condition,
               documentation and price all remain subject to confirmation.
             </p>
             <p>

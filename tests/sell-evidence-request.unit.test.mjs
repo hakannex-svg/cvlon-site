@@ -351,7 +351,7 @@ test("the seller email is privacy-minimised and states its own boundaries", () =
   for (const claim of [
     /optional evidence/i,
     /nothing you send here is published, listed, or shown to a buyer/i,
-    /not obliged to buy/i,
+    /offers are at Civilon(?:'|&#39;|&rsquo;)s discretion/i,
     /Documentation varies by part and source/i,
     /not a guarantee of authenticity or fitness/i,
     /does not create an account/i,

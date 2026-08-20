@@ -39,7 +39,7 @@ export const aircraft = {
     name:"Bombardier", intro:"Component sourcing for Learjet, Challenger and Global fleets, including mature platforms and current long-range aircraft.",
     models:["Learjet 40 / 45","Learjet 60 / 70 / 75","Challenger 300 / 350","Challenger 601 / 604 / 605 / 650","Global Express / 5000 / 6000","Global 5500 / 6500 / 7500"],
     groups:[{title:"Learjet",body:"Mature-platform sourcing may require careful review of alternates, repairability, core terms and available records."},{title:"Challenger",body:"Exact model, serial, installation and effectivity help distinguish usable options across the family."},{title:"Global",body:"Configuration, documentation and repair-versus-exchange requirements should be stated at RFQ."}],
-    notes:"Include aircraft family, exact model, serial/effectivity context, acceptable condition and required documentation. Availability is confirmed for each request and does not imply stocked inventory."
+    notes:"Include aircraft family, exact model, serial/effectivity context, acceptable condition and required documentation."
   },
   "dassault-falcon":{
     name:"Dassault Falcon", intro:"Targeted sourcing for Falcon aircraft where exact variant, aircraft serial, installation and technical-document alignment are central to a usable option.",

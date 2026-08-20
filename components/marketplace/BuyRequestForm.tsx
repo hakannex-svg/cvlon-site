@@ -27,7 +27,7 @@ const conditionLabels = {
 
 const urgencyLabels = {
   not_sure: "Not sure yet",
-  aog: "AOG — aircraft on ground",
+  aog: "AOG — grounded aircraft",
   critical: "Critical — grounding risk",
   standard: "Standard requirement",
   planned: "Planned maintenance",
@@ -374,7 +374,7 @@ export function BuyRequestForm() {
               <strong>Urgent requirement</strong>
               <p>
                 Civilon&apos;s AOG desk is monitored by a live person 24/7/365. Submit
-                this request, and for an aircraft on ground call or message the
+                this request, and for an AOG situation call or message the
                 desk directly as well. A phone number is required below.
               </p>
               <div>

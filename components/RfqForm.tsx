@@ -206,7 +206,7 @@ export function RfqForm({
             if (!event.target.checked) setErrors((current) => ({ ...current, callbackNumber: undefined, aircraftLocation: undefined }));
           }}
         />
-        <span><strong>Aircraft on ground (AOG)</strong><small>Mark for the monitored urgent workflow.</small></span>
+        <span><strong>AOG situation</strong><small>Mark for the monitored urgent workflow.</small></span>
       </label>
 
       {isAog && compactAog && (

@@ -30,8 +30,8 @@ export default function SellSubmissionVerifyPage() {
           <aside className="marketplace-verify-aside" aria-label="What Civilon confirms next">
             <span className="section-label">SUBJECT TO CONFIRMATION</span>
             <p>
-              Civilon reviews each submission internally and is not obliged to
-              buy. Interest, availability, stated condition, documentation and
+              Every submission gets an internal review; offers are at Civilon&apos;s
+              discretion. Interest, availability, stated condition, documentation and
               price all remain subject to confirmation.
             </p>
             <p>

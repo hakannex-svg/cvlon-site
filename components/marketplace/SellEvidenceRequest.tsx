@@ -204,7 +204,7 @@ export function SellEvidenceRequest() {
         <div className="pc-final-note" role="note">
           <strong>What is still to be confirmed</strong>
           <p>
-            Civilon reviews each submission internally and is not obliged to buy.
+            Every submission gets an internal review; offers are at Civilon&rsquo;s discretion.
             Interest, availability, stated condition, documentation and price all
             remain subject to confirmation, and documentation varies by part and
             source. Sending files, and Civilon&rsquo;s review of them, are not
@@ -271,7 +271,7 @@ export function SellEvidenceRequest() {
             : "Add at least one file, then send."
           : `${finished.length} file${finished.length === 1 ? "" : "s"} ready to send.`}{" "}
         Sending does not create an account and does not sell anything. Civilon is
-        not obliged to buy, and uploading is not certification, authentication,
+        may make an offer at its discretion, and uploading is not certification, authentication,
         regulatory or airworthiness approval, or a guarantee of authenticity or
         fitness. Documentation varies by part and source.
       </small>

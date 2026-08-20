@@ -37,7 +37,7 @@ test("homepage trust strip and proof claims stay inside the approved boundaries"
 test("homepage uses the approved action pair and one primary hero action", () => {
   assert.match(ctas, /buy: "Request a Part"/);
   assert.match(ctas, /sell: "Offer Parts"/);
-  assert.match(router, /title: "Buy a part"/);
+  assert.match(router, /title: "Request a Part"/);
   assert.match(router, /title: "Offer parts to Civilon"/);
   assert.equal((home.match(/className="button button-primary"/g) ?? []).length, 1);
   assert.match(home, /className="button button-ghost"/);

@@ -21,7 +21,7 @@ import type { TransactionalEmail } from "../../price-check/email/provider.ts";
  *  - Files are optional evidence for Civilon's internal review. Civilon already
  *    has the offer; nothing was lost by not attaching anything the first time.
  *  - Nothing is published, listed, or shown to a buyer.
- *  - Civilon is not obliged to buy, and nothing in the message is an offer, an
+ *  - Offers are at Civilon's discretion, and nothing in the message is an offer, an
  *    acceptance, or an agreed price.
  *  - Documentation varies by part and source.
  *  - Uploading, and Civilon's review of what is uploaded, do not certify or
@@ -49,7 +49,7 @@ function formatDate(value: Date) {
 
 const BOUNDARIES = [
   "Files are optional evidence for Civilon's internal review. Civilon already has your submission and nothing you send here is published, listed, or shown to a buyer.",
-  "Civilon reviews each submission internally and is not obliged to buy. Nothing in this email is an offer, an acceptance, or an agreed price.",
+  "Every submission gets an internal review; offers are at Civilon's discretion. Nothing in this email is an offer, an acceptance, or an agreed price.",
   "Documentation varies by part and source. Uploading files, and Civilon's review of them, do not certify or authenticate anything, are not airworthiness approval or any other regulatory approval, and are not a guarantee of authenticity or fitness.",
 ] as const;
 

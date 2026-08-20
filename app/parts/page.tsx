@@ -84,7 +84,7 @@ export default function Page() {
     <PartSearchSection
       sourcePage="/parts"
       heading="Send the part number and condition."
-      description="Normal sourcing requests are reviewed Monday through Friday, 8:00 AM to 5:00 PM Eastern Time. For an urgent aircraft-on-ground requirement, call or WhatsApp the AOG desk."
+      description="Normal sourcing requests are reviewed Monday through Friday, 8:00 AM to 5:00 PM Eastern Time. For an urgent AOG requirement, call or WhatsApp the AOG desk."
       supportingPoints={["Include aircraft or engine application", "State acceptable condition and quantity", "List required documentation and destination"]}
     />
   </main>;

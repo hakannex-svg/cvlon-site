@@ -54,7 +54,7 @@ export default function SellPartsToCivilonPage() {
       <section className="section price-check-entry">
         <div className="shell price-check-layout">
           <div className="price-check-intro">
-            <span className="section-label">START / PARTS OFFER</span>
+            <span className="section-label">START / OFFER PARTS</span>
             <h2>What Civilon needs from you.</h2>
             <p>
               A way to reach you, where the parts are, and enough about the part

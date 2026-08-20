@@ -57,7 +57,7 @@ export default function BuyPartFromCivilonPage() {
       <section className="section price-check-entry">
         <div className="shell price-check-layout">
           <div className="price-check-intro">
-            <span className="section-label">START / PART REQUEST</span>
+            <span className="section-label">START / REQUEST A PART</span>
             <h2>What Civilon needs from you.</h2>
             <p>
               Only the part, a quantity and how to reach you are required. Every

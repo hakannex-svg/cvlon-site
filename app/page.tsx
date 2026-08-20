@@ -119,6 +119,13 @@ export default function Home() {
         </div>
       </section>
 
+      <section className="section section-muted section-tight home-about">
+        <div className="shell two-column">
+          <div className="section-heading"><span className="section-label">WHO WE ARE</span><h2>Built to be accountable.</h2></div>
+          <div><p className="large-copy">Civilon is an independent parts-sourcing desk in Englewood Cliffs, New Jersey, established in 2012 — a team drawn from aviation sourcing and freight logistics. When you buy through Civilon, Civilon is the seller: one desk accountable for the part, the paperwork and the delivery.</p><a className="button button-outline" href="/about-us">About Civilon</a></div>
+        </div>
+      </section>
+
       <PriceCheckPromotion />
 
       <section className="section quality" id="quality">
