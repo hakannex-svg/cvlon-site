@@ -5,11 +5,11 @@ import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type HeroRoute = {
   key: string;
+  chip: string;
   title: string;
   body: string;
   href: string;
   cta: string;
-  points: readonly string[];
 };
 
 /** A compact route selector; each destination keeps its own dedicated intake. */
@@ -18,44 +18,46 @@ export function HeroDecisionRouter() {
 
   if (isPriceCheckEnabled()) routes.push({
     key: "price-check",
-    title: "CHECK A PART PRICE",
+    chip: "PRICE CHECK",
+    title: "Check a part price",
     body: "Review a quoted or purchased aircraft-part price against comparable evidence.",
     href: "/price-check",
     cta: PUBLIC_CTA.priceCheck,
-    points: ["Reviewed by our desk", "The result stays private to you"],
   });
 
   routes.push({
     key: "buy",
-    title: "REQUEST A PART",
+    chip: "RFQ",
+    title: "Buy a part",
     body: "Send the part number, condition and delivery requirements directly to Civilon.",
     href: BUY_REQUEST_SOURCE_PAGE,
     cta: PUBLIC_CTA.buy,
-    points: ["Civilon is the seller", "No account or sign-in required"],
   });
 
   if (isSellSubmissionEnabled()) routes.push({
     key: "sell",
-    title: "OFFER PARTS",
+    chip: "SELL",
+    title: "Offer parts to Civilon",
     body: "Privately offer one aircraft part or a bulk inventory file to Civilon.",
     href: SELL_SUBMISSION_PAGE,
     cta: PUBLIC_CTA.sell,
-    points: ["Single parts or private bulk inventory", "Every submission gets an internal review; offers are at Civilon’s discretion"],
   });
 
   return (
     <aside className="hero-decision-card" aria-labelledby="hero-decision-title">
       <span className="hero-decision-kicker">QUICK ROUTES</span>
-      <h2 id="hero-decision-title">What do you need?</h2>
+      <h2 id="hero-decision-title">Start here.</h2>
       <div className="hero-decision-routes">
         {routes.map((route) => (
           <section className="hero-decision-route" key={route.key}>
-            <div>
+            <div className="hero-decision-route-head">
+              <span className="hero-decision-chip" aria-hidden="true">{route.chip}</span>
               <h3>{route.title}</h3>
-              <p>{route.body}</p>
-              <ul>{route.points.map((point) => <li key={point}>{point}</li>)}</ul>
             </div>
-            <a href={route.href}>{route.cta} <span aria-hidden="true">→</span></a>
+            <div className="hero-decision-route-body">
+              <p>{route.body}</p>
+              <a href={route.href}>{route.cta} <span aria-hidden="true">→</span></a>
+            </div>
           </section>
         ))}
       </div>

@@ -35,5 +35,5 @@ test("Round 2 utility bar prioritizes AOG and phone on mobile", () => {
   assert.match(css, /@keyframes topbar-message/);
   assert.match(css, /@media\(max-width:900px\)\{\.topbar-message\{display:none\}\}/);
   assert.match(css, /@media\(max-width:700px\)[\s\S]*\.topbar-office\{display:none\}/);
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{\.topbar-message span\{animation:none;opacity:0\}\.topbar-message span:first-child\{opacity:1\}\}/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{html\{scroll-behavior:auto\}\.topbar-message span\{animation:none;opacity:0\}\.topbar-message span:first-child\{opacity:1\}\}/);
 });

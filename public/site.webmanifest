@@ -1,0 +1,20 @@
+{
+  "name": "Civilon",
+  "short_name": "Civilon",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1826",
+  "theme_color": "#0d1826",
+  "icons": [
+    {
+      "src": "/civilon-favicon-final-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/civilon-favicon-final-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

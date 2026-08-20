@@ -89,7 +89,7 @@ test("optional context is progressively disclosed rather than removed", async ()
   assert.match(source, /documentationCodes\.map/);
   // A collapsed disclosure must be expanded before an error inside it receives focus.
   assert.match(source, /revealFields\(Object\.keys\(nextErrors\)\)/);
-  assert.match(source, /revealFields\(Object\.keys\(next\)\)/);
+  assert.match(source, /if \(Object\.keys\(next\)\.length\) \{ presentServerErrors\(next\); return false; \}/);
 });
 
 test("internal defaults stay complete without assuming transaction type or condition", async () => {

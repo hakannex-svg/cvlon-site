@@ -19,7 +19,7 @@ test("ticker timing includes a fully hidden handoff between adjacent slots", () 
   assert.match(css, /span:nth-child\(2\) \{ animation-delay:4\.84s; \}/);
   assert.match(css, /span:nth-child\(3\) \{ animation-delay:10\.34s; \}/);
   assert.match(css, /span:nth-child\(4\) \{ animation-delay:15\.84s; \}/);
-  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{\.topbar-message span\{animation:none;opacity:0\}\.topbar-message span:first-child\{opacity:1\}\}/);
+  assert.match(css, /@media\(prefers-reduced-motion:reduce\)\{html\{scroll-behavior:auto\}\.topbar-message span\{animation:none;opacity:0\}\.topbar-message span:first-child\{opacity:1\}\}/);
 });
 
 test("Geist is self-hosted with intentional swap behavior and preloaded", () => {

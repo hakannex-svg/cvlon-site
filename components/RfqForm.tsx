@@ -7,6 +7,7 @@ import { isApprovedSubmissionHost } from "@/lib/submission-host";
 import type { AogMessageData } from "@/lib/aog";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 import { FieldLabel } from "./FieldLabel";
+import { usePublicFormFeedback } from "@/lib/use-public-form-feedback";
 
 type RfqFormProps = {
   defaultAog?: boolean;
@@ -52,6 +53,9 @@ export function RfqForm({
   const [errors, setErrors] = useState<RfqValidationErrors>({});
   const [status, setStatus] = useState<SubmissionState>("idle");
   const [whatsAppData, setWhatsAppData] = useState<AogMessageData>({});
+  const submissionFeedbackRef = usePublicFormFeedback<HTMLDivElement>(
+    status === "success" || status === "preview" || status === "error" ? status : "",
+  );
   const fieldId = (name: string) => idPrefix ? `${idPrefix}-${name}` : name;
   const analyticsContext = { source_page: sourcePage, cta_location: idPrefix || "primary_form" };
   const requiredBy = composeRequiredBy(neededByMode, neededByDate, neededByHour, neededByMinute, neededByPeriod);
@@ -286,20 +290,20 @@ export function RfqForm({
       <small className="privacy">Your request goes directly to the Civilon sourcing desk.</small>
 
       {status === "success" && (
-        <div className="submission-status submission-success" role="status">
+        <div className="submission-status submission-success" ref={submissionFeedbackRef} role="status" tabIndex={-1}>
           <strong>{isAog ? "Your urgent AOG request has been received." : "Your availability request has been received."}</strong>
           <p>{isAog ? "Call or WhatsApp the monitored AOG desk now." : "Our sourcing desk will review it and follow up directly."}</p>
           {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG Desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
         </div>
       )}
       {status === "preview" && (
-        <div className="submission-status submission-preview" role="status">
+        <div className="submission-status submission-preview" ref={submissionFeedbackRef} role="status" tabIndex={-1}>
           <strong>This preview cannot confirm form delivery.</strong>
           <p>{isAog ? "Call or WhatsApp the monitored AOG desk now." : "Please use the published Netlify form when it is approved, or contact the sourcing desk directly."}</p>
           {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG Desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
         </div>
       )}
-      {status === "error" && <div className="submission-status submission-error" role="alert"><strong>We could not confirm delivery.</strong><p>Please retry, call, or WhatsApp the AOG desk.</p></div>}
+      {status === "error" && <div className="submission-status submission-error" ref={submissionFeedbackRef} role="alert" tabIndex={-1}><strong>We could not confirm delivery.</strong><p>Please retry, call, or WhatsApp the AOG desk.</p></div>}
     </form>
   );
 }

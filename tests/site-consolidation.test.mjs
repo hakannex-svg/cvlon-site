@@ -206,18 +206,19 @@ test("the routing section falls back to the legacy section and keeps the shared 
 test("the duplicate public-choice section is folded into the gated hero router", () => {
   assert.doesNotMatch(home, /PublicChoices|Which of these do you need/);
   assert.equal(fs.existsSync(path.join(root, "components", "PublicChoices.tsx")), false);
-  assert.match(heroRouter, /Civilon is the seller/);
-  assert.match(heroRouter, /No account or sign-in required/);
-  assert.match(heroRouter, /The result stays private to you/);
-  assert.match(heroRouter, /Every submission gets an internal review; offers are at Civilon’s discretion/);
+  assert.match(heroRouter, /<h2 id="hero-decision-title">Start here\.<\/h2>/);
+  assert.doesNotMatch(heroRouter, /points:|<ul>|<li>/);
 });
 
 test("the homepage hero is a gated decision router with consistent public CTA labels", () => {
   assert.match(home, /<HeroDecisionRouter \/>/);
   assert.doesNotMatch(home, /<BuyRequestPanel/);
-  assert.match(heroRouter, /title: "CHECK A PART PRICE"/);
-  assert.match(heroRouter, /title: "REQUEST A PART"/);
-  assert.match(heroRouter, /title: "OFFER PARTS"/);
+  assert.match(heroRouter, /chip: "PRICE CHECK"/);
+  assert.match(heroRouter, /chip: "RFQ"/);
+  assert.match(heroRouter, /chip: "SELL"/);
+  assert.match(heroRouter, /title: "Check a part price"/);
+  assert.match(heroRouter, /title: "Buy a part"/);
+  assert.match(heroRouter, /title: "Offer parts to Civilon"/);
   assert.match(heroRouter, /href: "\/price-check"/);
   assert.match(heroRouter, /href: BUY_REQUEST_SOURCE_PAGE/);
   assert.match(heroRouter, /href: SELL_SUBMISSION_PAGE/);
