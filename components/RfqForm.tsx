@@ -135,7 +135,7 @@ export function RfqForm({
       <input type="hidden" name="sourcePage" value={sourcePage} />
       <input type="hidden" name="aircraftBrand" value={aircraftBrand} />
       <input type="hidden" name="partCategory" value={partCategory} />
-      <div className="form-kicker"><span>RFQ</span> {actionLabel ?? (({"/aog-services":"Start an AOG request","/repair-management":"Start a repair request","/quality-assurance":"Start a documentation request","/contact-us":"Send an RFQ"} as Record<string,string>)[sourcePage] || "Start a part search")}</div>
+      <div className="form-kicker"><span>RFQ</span> {actionLabel ?? (({"/aog-services":"Start an AOG request","/repair-management":"Start a repair request","/quality-assurance":"Start a documentation request","/contact-us":"Send an RFQ"} as Record<string,string>)[sourcePage] || "Request a Part")}</div>
       <h2>What do you need?</h2>
       <p>Send the basics. Our sourcing desk will follow up directly.</p>
 
@@ -289,14 +289,14 @@ export function RfqForm({
         <div className="submission-status submission-success" role="status">
           <strong>{isAog ? "Your urgent AOG request has been received." : "Your availability request has been received."}</strong>
           <p>{isAog ? "Call or WhatsApp the monitored AOG desk now." : "Our sourcing desk will review it and follow up directly."}</p>
-          {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
+          {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG Desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
         </div>
       )}
       {status === "preview" && (
         <div className="submission-status submission-preview" role="status">
           <strong>This preview cannot confirm form delivery.</strong>
           <p>{isAog ? "Call or WhatsApp the monitored AOG desk now." : "Please use the published Netlify form when it is approved, or contact the sourcing desk directly."}</p>
-          {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
+          {isAog && <div className="submission-actions"><CallAogAction source_page={sourcePage}>Call AOG Desk</CallAogAction><WhatsAppAogAction source_page={sourcePage} messageData={whatsAppData}>WhatsApp AOG</WhatsAppAogAction></div>}
         </div>
       )}
       {status === "error" && <div className="submission-status submission-error" role="alert"><strong>We could not confirm delivery.</strong><p>Please retry, call, or WhatsApp the AOG desk.</p></div>}

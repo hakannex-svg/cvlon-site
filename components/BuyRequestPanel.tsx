@@ -1,4 +1,5 @@
 import { BUY_REQUEST_SOURCE_PAGE } from "@/lib/marketplace/contract";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type BuyRequestPanelProps = {
   /** Dark for the homepage hero, light for a section on an interior page. */
@@ -21,7 +22,7 @@ export function BuyRequestPanel({ tone = "light", headingLevel = "h2", headingId
   const Heading = headingLevel;
   return (
     <aside className={`buy-request-panel tone-${tone}`} aria-labelledby={headingId}>
-      <span className="buy-request-panel-kicker">BUY REQUEST</span>
+      <span className="buy-request-panel-kicker">PART SOURCING</span>
       <Heading id={headingId}>Ask Civilon to source the part</Heading>
       <p>
         Send the part number—or describe the part if you do not have one—and
@@ -34,7 +35,7 @@ export function BuyRequestPanel({ tone = "light", headingLevel = "h2", headingId
         <li>Documentation varies by part and source</li>
       </ul>
       <a className="button button-primary" href={BUY_REQUEST_SOURCE_PAGE}>
-        Start a Buy Request <span aria-hidden="true">→</span>
+        {PUBLIC_CTA.buy} <span aria-hidden="true">→</span>
       </a>
       <a className="buy-request-panel-link" href="/aog-services">
         Aircraft on ground? Use the monitored AOG desk <span aria-hidden="true">→</span>

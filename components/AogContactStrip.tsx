@@ -10,7 +10,7 @@ export function AogContactStrip({ sourcePage = "homepage" }: { sourcePage?: stri
           <h2>AOG? Call or message the monitored desk.</h2>
         </div>
         <div className="aog-strip-actions">
-          <CallAogAction className="aog-strip-call" source_page={sourcePage}>Call +1 909 344 4444</CallAogAction>
+          <CallAogAction className="aog-strip-call" source_page={sourcePage}>Call AOG Desk</CallAogAction>
           <WhatsAppAogAction className="aog-strip-whatsapp" source_page={sourcePage}>WhatsApp AOG</WhatsAppAogAction>
         </div>
       </div>

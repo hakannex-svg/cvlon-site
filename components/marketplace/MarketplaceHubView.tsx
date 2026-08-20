@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { trackCivilonEvent } from "@/lib/analytics";
 import { MARKETPLACE_HUB_PAGE } from "@/lib/marketplace/contract";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 /**
  * The hub cards.
@@ -46,7 +47,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
             cta_location: "hub_buy_card",
           })}
         >
-          Request a part <span aria-hidden="true">→</span>
+          {PUBLIC_CTA.buy} <span aria-hidden="true">→</span>
         </a>
       </article>
 
@@ -72,7 +73,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
               cta_location: "hub_sell_card",
             })}
           >
-            Offer parts to Civilon <span aria-hidden="true">→</span>
+            {PUBLIC_CTA.sell} <span aria-hidden="true">→</span>
           </a>
         </article>
       ) : (
@@ -119,7 +120,7 @@ export function MarketplaceHubView({ sellEnabled = false, priceCheckEnabled = fa
             <li>The result stays private to you</li>
           </ul>
           <a className="button button-ghost" href="/price-check">
-            Check a part price <span aria-hidden="true">→</span>
+            {PUBLIC_CTA.priceCheck} <span aria-hidden="true">→</span>
           </a>
         </article>
       )}

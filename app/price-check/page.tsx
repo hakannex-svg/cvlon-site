@@ -5,6 +5,7 @@ import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { isMarketplaceEnabled, isSellSubmissionEnabled } from "@/lib/marketplace/feature";
 import { BUY_REQUEST_SOURCE_PAGE, SELL_SUBMISSION_PAGE } from "@/lib/marketplace/contract";
 import { pageMetadata } from "@/lib/metadata";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 export const metadata = pageMetadata("Aircraft Part Price Check", "Submit aircraft-part transaction details for a confidential, human-reviewed Civilon market-context Price Check.", "/price-check");
 
@@ -103,7 +104,7 @@ export default function PriceCheckPage() {
                     stated condition, documentation, delivery and price remain
                     subject to confirmation, and your request is not published.
                   </p>
-                  <a href={BUY_REQUEST_SOURCE_PAGE}>Buy a part from Civilon <span aria-hidden="true">→</span></a>
+                  <a href={BUY_REQUEST_SOURCE_PAGE}>{PUBLIC_CTA.buy} <span aria-hidden="true">→</span></a>
                 </article>
               )}
               {sellEnabled && (
@@ -115,7 +116,7 @@ export default function PriceCheckPage() {
                     move parts you hold, offer them to Civilon directly—Civilon
                     buys on its own account and reviews each offer internally.
                   </p>
-                  <a href={SELL_SUBMISSION_PAGE}>Sell parts to Civilon <span aria-hidden="true">→</span></a>
+                  <a href={SELL_SUBMISSION_PAGE}>{PUBLIC_CTA.sell} <span aria-hidden="true">→</span></a>
                 </article>
               )}
             </div>

@@ -29,6 +29,6 @@ test("approved customer-facing quality and documentation copy is present",()=>{
 test("the shared RFQ form resolves the approved contextual presentation labels",()=>{
  const form=read("components","RfqForm.tsx");
  assert.match(form,/actionLabel\?: string/);
- for(const label of ["Start a part search","Start an AOG request","Start a repair request","Start a documentation request","Send an RFQ"])assert.match(form,new RegExp(label));
+ for(const label of ["Request a Part","Start an AOG request","Start a repair request","Start a documentation request","Send an RFQ"])assert.match(form,new RegExp(label));
  assert.equal((form.match(/export function RfqForm/g)||[]).length,1);
 });

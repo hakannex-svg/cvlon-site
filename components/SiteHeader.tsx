@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { navigation, siteConfig } from "@/lib/site-config";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type SiteHeaderProps = {
   marketplaceEnabled: boolean;
@@ -89,11 +90,11 @@ export function SiteHeader({ marketplaceEnabled, priceCheckEnabled, searchHref }
             <div className={`nav-menu ${open === group.label ? "is-open" : ""}`}>{group.items.map((item) => <a href={item.href} key={item.href} onClick={() => closeMobile(false)}>{item.label}</a>)}</div>
           </div>)}
           <div className="mobile-menu-actions">
-            <a className="button button-primary" href={searchHref} onClick={() => closeMobile(false)}>Start a part search</a>
-            <div><CallAogAction source_page="navigation">Call AOG desk</CallAogAction><WhatsAppAogAction source_page="navigation">WhatsApp AOG</WhatsAppAogAction></div>
+            <a className="button button-primary" href={searchHref} onClick={() => closeMobile(false)}>{PUBLIC_CTA.buy}</a>
+            <div><CallAogAction source_page="navigation">{PUBLIC_CTA.callAog}</CallAogAction><WhatsAppAogAction source_page="navigation">{PUBLIC_CTA.whatsAppAog}</WhatsAppAogAction></div>
           </div>
         </div>
-        <a className="nav-cta" href={searchHref}>Start a part search <span>→</span></a>
+        <a className="nav-cta" href={searchHref}>{PUBLIC_CTA.buy} <span>→</span></a>
         <button ref={toggleRef} className={`menu-toggle ${mobile ? "is-open" : ""}`} type="button" aria-expanded={mobile} aria-controls="mobile-navigation" aria-label={mobile ? "Close navigation" : "Open navigation"} onClick={() => mobile ? closeMobile() : setMobile(true)}><span /><span /><span /></button>
       </div>
     </nav>

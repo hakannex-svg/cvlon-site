@@ -383,7 +383,7 @@ export function BuyRequestForm() {
                 desk directly as well. A phone number is required below.
               </p>
               <div>
-                <CallAogAction className="button button-primary" source_page={BUY_REQUEST_SOURCE_PAGE}>Call +1 909 344 4444</CallAogAction>
+                <CallAogAction className="button button-primary" source_page={BUY_REQUEST_SOURCE_PAGE}>Call AOG Desk</CallAogAction>
                 <WhatsAppAogAction className="button button-whatsapp" source_page={BUY_REQUEST_SOURCE_PAGE}>WhatsApp AOG</WhatsAppAogAction>
               </div>
             </div>

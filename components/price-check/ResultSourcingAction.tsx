@@ -9,6 +9,7 @@ import {
   type PriceCheckBuyRequestResponse,
 } from "@/lib/marketplace/price-check-conversion-contract";
 import { isPhoneRequiredUrgency } from "@/lib/marketplace/contract";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 const conditionLabels = {
   NOT_SURE: "Not sure",
@@ -132,7 +133,7 @@ export function ResultSourcingAction({
       }
       setReference(result.reference);
     } catch {
-      setErrors({ _form: "The Buy Request could not be created. Please try again." });
+      setErrors({ _form: "The part request could not be sent. Please try again." });
     } finally {
       setBusy(false);
     }
@@ -141,7 +142,7 @@ export function ResultSourcingAction({
   if (reference) {
     return <section className="result-sourcing result-buy-request-complete" aria-live="polite" data-result-region="sourcing-cta">
       <div>
-        <p>Buy Request received</p>
+        <p>Part request received</p>
         <h2>Reference {reference}</h2>
         <span data-result-region="sourcing-confirmation">Civilon will review the requirement and contact you. Availability, documentation, condition, delivery and price remain subject to confirmation.</span>
       </div>
@@ -151,7 +152,7 @@ export function ResultSourcingAction({
   return <section className="result-sourcing result-buy-request" aria-labelledby="result-buy-request-title" data-result-region="sourcing-cta">
     <header>
       <p>{legacySourcingRequested ? "Complete your earlier sourcing request" : "Need Civilon to source this part?"}</p>
-      <h2 id="result-buy-request-title">Create a Buy Request</h2>
+      <h2 id="result-buy-request-title">Request the part from Civilon</h2>
       <span>Your company and part details come from this secure Price Check. Confirm only what Civilon needs to start.</span>
     </header>
     <form onSubmit={submit} noValidate>
@@ -215,7 +216,7 @@ export function ResultSourcingAction({
       </div>
       <div className="pc-honeypot" aria-hidden="true"><label>Website<input tabIndex={-1} autoComplete="off" value={values.website} onChange={(event) => update("website", event.target.value)} /></label></div>
       <div className="result-buy-request-submit">
-        <button type="submit" disabled={busy}>{busy ? "Creating…" : "Create Buy Request"}</button>
+        <button type="submit" disabled={busy}>{busy ? "Sending…" : PUBLIC_CTA.buy}</button>
         <span>Submitting does not place an order. Civilon will review the request and contact you with an offer if a suitable option is confirmed.</span>
       </div>
     </form>

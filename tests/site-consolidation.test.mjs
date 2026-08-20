@@ -37,6 +37,8 @@ const interior = read("components", "Interior.tsx");
 const partSearchSection = read("components", "PartSearchSection.tsx");
 const buyRequestPanel = read("components", "BuyRequestPanel.tsx");
 const publicChoices = read("components", "PublicChoices.tsx");
+const heroRouter = read("components", "HeroDecisionRouter.tsx");
+const publicCta = read("lib", "public-cta.ts");
 const hubPage = read("app", "buy-sell-aircraft-parts", "page.tsx");
 const hubView = read("components", "marketplace", "MarketplaceHubView.tsx");
 const priceCheckPage = read("app", "price-check", "page.tsx");
@@ -140,17 +142,17 @@ test("global header, footer and 404 route their part-search CTA through the help
   assert.equal((header.match(/href=\{searchHref\}/g) ?? []).length, 2);
 });
 
-test("the homepage hero and sourcing CTAs point at the Buy Request flow", () => {
+test("the homepage hero and sourcing CTAs point at the part-request flow", () => {
   assert.match(home, /const searchHref = partSearchHref\(LEGACY_PART_SEARCH_ANCHOR\);/);
   assert.equal((home.match(/href=\{searchHref\}/g) ?? []).length, 2);
   assert.doesNotMatch(home, /href="#rfq"/);
   // The legacy Netlify form is no longer the primary intake; it survives only
   // as the fallback for a build with the marketplace flag off.
   assert.match(home, /const buyRequestIntake = isMarketplaceEnabled\(\);/);
-  assert.match(home, /buyRequestIntake\s*\n?\s*\? <BuyRequestPanel tone="dark" headingId="home-buy-request" \/>\s*\n?\s*: <RfqForm sourcePage="homepage" compactAog \/>/);
+  assert.match(home, /buyRequestIntake\s*\n?\s*\? <HeroDecisionRouter \/>\s*\n?\s*: <RfqForm sourcePage="homepage" compactAog \/>/);
 });
 
-test("the compact homepage panel links into Buy Request and adds no second intake", () => {
+test("the compact sourcing panel links into the part request and adds no second intake", () => {
   assert.match(buyRequestPanel, /href=\{BUY_REQUEST_SOURCE_PAGE\}/);
   assert.equal(buyRequestPanel.includes("<form"), false, "the panel is a link, never a second form");
   assert.doesNotMatch(buyRequestPanel, /trackCivilonEvent/);
@@ -216,6 +218,24 @@ test("the homepage offers Price Check, Buy and Sell as three gated choices", () 
   // Each card is a heading plus one unambiguous link; no client analytics.
   assert.match(publicChoices, /<h3>\{choice\.title\}<\/h3>/);
   assert.doesNotMatch(publicChoices, /trackCivilonEvent|"use client"/);
+});
+
+test("the homepage hero is a gated decision router with consistent public CTA labels", () => {
+  assert.match(home, /<HeroDecisionRouter \/>/);
+  assert.doesNotMatch(home, /<BuyRequestPanel/);
+  assert.match(heroRouter, /title: "CHECK A PART PRICE"/);
+  assert.match(heroRouter, /title: "BUY AN AIRCRAFT PART"/);
+  assert.match(heroRouter, /title: "SELL AIRCRAFT PARTS"/);
+  assert.match(heroRouter, /href: "\/price-check"/);
+  assert.match(heroRouter, /href: BUY_REQUEST_SOURCE_PAGE/);
+  assert.match(heroRouter, /href: SELL_SUBMISSION_PAGE/);
+  assert.doesNotMatch(heroRouter, /<form/);
+  for (const label of ["Start a Price Check", "Request a Part", "Submit Parts", "Call AOG Desk", "WhatsApp AOG"]) {
+    assert.match(publicCta, new RegExp(label));
+  }
+  for (const source of [home, header, footer, publicChoices, hubView, priceCheckPage]) {
+    assert.doesNotMatch(source, /Start a part search|Start a Buy Request|Create Buy Request/);
+  }
 });
 
 test("the hub adds Price Check as a third card under its own flag", () => {

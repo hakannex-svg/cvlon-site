@@ -1,4 +1,5 @@
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
+import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type PriceCheckPromotionProps = { context?: "homepage" | "parts" | "category" };
 
@@ -9,7 +10,7 @@ export function PriceCheckPromotion({ context = "homepage" }: PriceCheckPromotio
   const description = contextual
     ? "Check the observed market before you approve the PO. Civilon reviews available comparable evidence and returns a confidential, human-reviewed informational Price Check."
     : "Submit the aircraft part, condition and quoted or purchased price. Civilon reviews available comparable evidence and returns an informational Price Check.";
-  const cta = contextual ? "Run a Price Check" : "Check a Part Price";
+  const cta = PUBLIC_CTA.priceCheck;
 
   if (!contextual) {
     return (
