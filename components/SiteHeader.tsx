@@ -8,11 +8,12 @@ import { PUBLIC_CTA } from "@/lib/public-cta";
 
 type SiteHeaderProps = {
   marketplaceEnabled: boolean;
+  sellSubmissionEnabled: boolean;
   priceCheckEnabled: boolean;
   searchHref: string;
 };
 
-export function SiteHeader({ marketplaceEnabled, priceCheckEnabled, searchHref }: SiteHeaderProps) {
+export function SiteHeader({ marketplaceEnabled, sellSubmissionEnabled, priceCheckEnabled, searchHref }: SiteHeaderProps) {
   const [open, setOpen] = useState<string | null>(null);
   const [mobile, setMobile] = useState(false);
   const ref = useRef<HTMLElement>(null);
@@ -57,7 +58,8 @@ export function SiteHeader({ marketplaceEnabled, priceCheckEnabled, searchHref }
       ...group,
       items: [
         ...group.items,
-        ...(marketplaceEnabled ? [{ label: "Buy & Sell Aircraft Parts", href: "/buy-sell-aircraft-parts" }] : []),
+        ...(marketplaceEnabled ? [{ label: PUBLIC_CTA.buy, href: "/buy-sell-aircraft-parts/buy" }] : []),
+        ...(sellSubmissionEnabled ? [{ label: PUBLIC_CTA.sell, href: "/buy-sell-aircraft-parts/sell" }] : []),
         ...(priceCheckEnabled ? [{ label: "Aircraft Part Price Check", href: "/price-check" }] : []),
       ],
     }

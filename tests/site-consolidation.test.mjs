@@ -36,7 +36,6 @@ const notFound = read("app", "not-found.tsx");
 const interior = read("components", "Interior.tsx");
 const partSearchSection = read("components", "PartSearchSection.tsx");
 const buyRequestPanel = read("components", "BuyRequestPanel.tsx");
-const publicChoices = read("components", "PublicChoices.tsx");
 const heroRouter = read("components", "HeroDecisionRouter.tsx");
 const publicCta = read("lib", "public-cta.ts");
 const hubPage = read("app", "buy-sell-aircraft-parts", "page.tsx");
@@ -136,7 +135,7 @@ test("global header, footer and 404 route their part-search CTA through the help
   // unavailable. The server layout resolves and passes the flags and href so
   // hydration cannot revert the header to its disabled-state navigation.
   assert.match(layout, /const searchHref = partSearchHref\(\);/);
-  assert.match(layout, /<SiteHeader marketplaceEnabled=\{marketplaceEnabled\} priceCheckEnabled=\{priceCheckEnabled\} searchHref=\{searchHref\} \/>/);
+  assert.match(layout, /<SiteHeader marketplaceEnabled=\{marketplaceEnabled\} sellSubmissionEnabled=\{sellSubmissionEnabled\} priceCheckEnabled=\{priceCheckEnabled\} searchHref=\{searchHref\} \/>/);
   assert.doesNotMatch(header, /process\.env|isMarketplaceEnabled|isPriceCheckEnabled|partSearchHref/);
   // Both header CTAs — desktop bar and mobile menu — use the same resolution.
   assert.equal((header.match(/href=\{searchHref\}/g) ?? []).length, 2);
@@ -202,38 +201,31 @@ test("the routing section falls back to the legacy section and keeps the shared 
   assert.match(read("app", "aircraft", "page.tsx"), /href="#rfq"/);
 });
 
-/* ---------------------------------------------------- three public choices */
+/* ----------------------------------------------- one homepage route selector */
 
-test("the homepage offers Price Check, Buy and Sell as three gated choices", () => {
-  assert.match(home, /<PublicChoices \/>/);
-  assert.match(publicChoices, /if \(isPriceCheckEnabled\(\)\) choices\.push\(/);
-  assert.match(publicChoices, /if \(marketplaceEnabled\) choices\.push\(/);
-  assert.match(publicChoices, /if \(isSellSubmissionEnabled\(\)\) choices\.push\(/);
-  assert.match(publicChoices, /href: "\/price-check"/);
-  assert.match(publicChoices, /href: BUY_REQUEST_SOURCE_PAGE/);
-  assert.match(publicChoices, /href: SELL_SUBMISSION_PAGE/);
-  // A card may never point at a route its own flag has not opened, and with
-  // every flag off the section leaves no empty heading behind.
-  assert.match(publicChoices, /if \(choices\.length === 0\) return null;/);
-  // Each card is a heading plus one unambiguous link; no client analytics.
-  assert.match(publicChoices, /<h3>\{choice\.title\}<\/h3>/);
-  assert.doesNotMatch(publicChoices, /trackCivilonEvent|"use client"/);
+test("the duplicate public-choice section is folded into the gated hero router", () => {
+  assert.doesNotMatch(home, /PublicChoices|Which of these do you need/);
+  assert.equal(fs.existsSync(path.join(root, "components", "PublicChoices.tsx")), false);
+  assert.match(heroRouter, /Civilon is the seller/);
+  assert.match(heroRouter, /No account or sign-in required/);
+  assert.match(heroRouter, /The result stays private to you/);
+  assert.match(heroRouter, /Every submission gets an internal review; offers are at Civilon’s discretion/);
 });
 
 test("the homepage hero is a gated decision router with consistent public CTA labels", () => {
   assert.match(home, /<HeroDecisionRouter \/>/);
   assert.doesNotMatch(home, /<BuyRequestPanel/);
   assert.match(heroRouter, /title: "CHECK A PART PRICE"/);
-  assert.match(heroRouter, /title: "BUY AN AIRCRAFT PART"/);
-  assert.match(heroRouter, /title: "SELL AIRCRAFT PARTS"/);
+  assert.match(heroRouter, /title: "REQUEST A PART"/);
+  assert.match(heroRouter, /title: "OFFER PARTS"/);
   assert.match(heroRouter, /href: "\/price-check"/);
   assert.match(heroRouter, /href: BUY_REQUEST_SOURCE_PAGE/);
   assert.match(heroRouter, /href: SELL_SUBMISSION_PAGE/);
   assert.doesNotMatch(heroRouter, /<form/);
-  for (const label of ["Start a Price Check", "Request a Part", "Submit Parts", "Call AOG Desk", "WhatsApp AOG"]) {
+  for (const label of ["Start a Price Check", "Request a Part", "Offer Parts", "Call AOG Desk", "WhatsApp AOG"]) {
     assert.match(publicCta, new RegExp(label));
   }
-  for (const source of [home, header, footer, publicChoices, hubView, priceCheckPage]) {
+  for (const source of [home, header, footer, hubView, priceCheckPage]) {
     assert.doesNotMatch(source, /Start a part search|Start a Buy Request|Create Buy Request/);
   }
 });

@@ -358,9 +358,11 @@ test("navigation, footer and sitemap expose the marketplace only when it is enab
   const footer = read("components", "SiteFooter.tsx");
   const sitemap = read("app", "sitemap.ts");
 
-  assert.match(header, /marketplaceEnabled \? \[\{ label: "Buy & Sell Aircraft Parts", href: "\/buy-sell-aircraft-parts" \}\] : \[\]/);
+  assert.match(header, /marketplaceEnabled \? \[\{ label: PUBLIC_CTA\.buy, href: "\/buy-sell-aircraft-parts\/buy" \}\] : \[\]/);
+  assert.match(header, /sellSubmissionEnabled \? \[\{ label: PUBLIC_CTA\.sell, href: "\/buy-sell-aircraft-parts\/sell" \}\] : \[\]/);
   assert.match(header, /priceCheckEnabled \? \[\{ label: "Aircraft Part Price Check"/);
-  assert.match(footer, /\{marketplaceEnabled && <a href="\/buy-sell-aircraft-parts">/);
+  assert.match(footer, /\{marketplaceEnabled && <a href="\/buy-sell-aircraft-parts\/buy">\{PUBLIC_CTA\.buy\}<\/a>\}/);
+  assert.match(footer, /\{sellSubmissionEnabled && <a href="\/buy-sell-aircraft-parts\/sell">\{PUBLIC_CTA\.sell\}<\/a>\}/);
   assert.match(footer, /\{priceCheckEnabled && <a href="\/price-check">/);
   assert.match(sitemap, /isMarketplaceEnabled\(\) \? \["\/buy-sell-aircraft-parts", "\/buy-sell-aircraft-parts\/buy"\] : \[\]/);
 

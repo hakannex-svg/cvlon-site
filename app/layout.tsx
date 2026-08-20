@@ -5,7 +5,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { GlobalAogChrome } from "@/components/GlobalAogChrome";
 import { AnalyticsBootstrap } from "@/components/AnalyticsBootstrap";
 import { ConsentPreferences } from "@/components/ConsentPreferences";
-import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
+import { isMarketplaceEnabled, isSellSubmissionEnabled } from "@/lib/marketplace/feature";
 import { partSearchHref } from "@/lib/part-search-cta";
 import { isPriceCheckEnabled } from "@/lib/price-check/feature";
 import { siteConfig } from "@/lib/site-config";
@@ -31,8 +31,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   // not available; passing the resolved values prevents hydration from
   // reverting navigation and the Buy Request CTA to their disabled state.
   const marketplaceEnabled = isMarketplaceEnabled();
+  const sellSubmissionEnabled = isSellSubmissionEnabled();
   const priceCheckEnabled = isPriceCheckEnabled();
   const searchHref = partSearchHref();
   const schema = { "@context":"https://schema.org", "@type":["Organization","LocalBusiness"], name:siteConfig.name, legalName:siteConfig.legalName, url:siteConfig.url, telephone:siteConfig.officePhone, email:siteConfig.email, address:{"@type":"PostalAddress",streetAddress:"375 Sylvan Ave, Suite 23",addressLocality:"Englewood Cliffs",addressRegion:"NJ",postalCode:"07632",addressCountry:"US"}, openingHoursSpecification:{"@type":"OpeningHoursSpecification",dayOfWeek:["Monday","Tuesday","Wednesday","Thursday","Friday"],opens:"08:00",closes:"17:00"}, contactPoint:[{"@type":"ContactPoint",telephone:siteConfig.officePhone,contactType:"sales and office"},{"@type":"ContactPoint",telephone:siteConfig.aogPhone,contactType:"AOG support",hoursAvailable:{"@type":"OpeningHoursSpecification",dayOfWeek:["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],opens:"00:00",closes:"23:59"}}] };
-  return <html lang="en"><head><link rel="preload" href="/fonts/geist-latin-variable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" /><link rel="preload" href="/fonts/geist-mono-latin-variable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" /></head><body><SiteHeader marketplaceEnabled={marketplaceEnabled} priceCheckEnabled={priceCheckEnabled} searchHref={searchHref} />{children}<GlobalAogChrome /><SiteFooter /><AnalyticsBootstrap /><ConsentPreferences /><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}} /></body></html>;
+  return <html lang="en"><head><link rel="preload" href="/fonts/geist-latin-variable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" /><link rel="preload" href="/fonts/geist-mono-latin-variable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" /></head><body><SiteHeader marketplaceEnabled={marketplaceEnabled} sellSubmissionEnabled={sellSubmissionEnabled} priceCheckEnabled={priceCheckEnabled} searchHref={searchHref} />{children}<GlobalAogChrome /><SiteFooter /><AnalyticsBootstrap /><ConsentPreferences /><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema)}} /></body></html>;
 }
