@@ -93,25 +93,23 @@ export default function PriceCheckPage() {
           <div className="shell">
             <SectionHeading
               label="ADJACENT / OTHER PATHS"
-              title="Came here to buy or to sell instead?"
-              intro="A Price Check reviews one transaction you already have in front of you. Buying and selling are separate requests with their own intake."
+              title="Need to request or offer parts instead?"
+              intro="A Price Check reviews one transaction already in front of you. Requesting a part and offering parts use separate private intakes."
             />
             <div className="adjacent-path-list">
               {buyEnabled && (
                 <article>
-                  <h3>You need the part</h3>
+                  <h3>Request a Part</h3>
                   <p>
                     Ask Civilon to source the part and sell it to you. Civilon
                     is the seller, and your request is never published.
-                    Availability, stated condition, documentation, delivery and
-                    price remain subject to confirmation.
                   </p>
                   <a href={BUY_REQUEST_SOURCE_PAGE}>{PUBLIC_CTA.buy} <span aria-hidden="true">→</span></a>
                 </article>
               )}
               {sellEnabled && (
                 <article>
-                  <h3>You are holding the part</h3>
+                  <h3>Offer Parts</h3>
                   <p>
                     A Price Check reviews a quoted or purchased transaction; it
                     does not value your stock or tell you what to ask for it. To
@@ -123,6 +121,7 @@ export default function PriceCheckPage() {
                 </article>
               )}
             </div>
+            <p className="section-qualifier">Availability, stated condition, documentation, delivery and price are confirmed per request or offer; documentation varies by part and source.</p>
           </div>
         </section>
       )}

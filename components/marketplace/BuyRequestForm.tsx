@@ -248,7 +248,7 @@ export function BuyRequestForm() {
     <div className="price-check-form-shell" data-mobile-aog-suppress>
       <form className="price-check-form" noValidate onSubmit={submit}>
         <div className="price-check-form-heading">
-          <span>BUY A PART FROM CIVILON</span>
+          <span>REQUEST A PART</span>
           <h2 id="buy-request-form-title">Tell Civilon what you need</h2>
           <p>
             No account and no sign-in. Share what you know—Civilon reviews and

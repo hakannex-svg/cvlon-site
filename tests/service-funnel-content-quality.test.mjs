@@ -71,6 +71,7 @@ test("one buyer action and one seller action are used across the funnel", () => 
   }
   for (const [name, source] of SCOPED) {
     for (const drift of [
+      /Buy a Part from Civilon/i, /Sell Parts to Civilon/i, /Buy & Sell Aircraft Parts/i,
       /Start a part search/i, /Start a Buy Request/i, /Create Buy Request/i,
       /Send an RFQ/i, /Submit a request for quote/i,
       /Sell to Civilon <?span|Sell Now/i, /Buy Now/i,
@@ -117,18 +118,23 @@ test("each scoped section carries its qualifier once, not in every element", () 
   // Price Check: the lead sentence sells, one qualifier line disclaims.
   assert.equal(count(body(priceCheckPage), /not an appraisal, an instant result, a price guarantee/g), 1);
   assert.match(priceCheckPage, /className="section-qualifier section-qualifier-dark">A Price Check is informational/);
-  // Hub and Buy: one confirmation qualifier per page body.
-  assert.equal(count(body(hubPage), /subject to confirmation/g), 1);
-  assert.equal(count(body(buyPage), /subject to confirmation/g), 1);
-  // Sell: one discretion statement, in the note next to the form.
-  assert.equal(count(body(sellPage), new RegExp(SELLER_DISCRETION, "g")), 1);
-  assert.equal(count(body(sellPage), /subject to confirmation/g), 1);
+  // Hub and Buy: one compact confirmation qualifier in each hero.
+  assert.equal(count(body(hubPage), /className="section-qualifier section-qualifier-dark"/g), 1);
+  assert.equal(count(body(buyPage), /className="section-qualifier section-qualifier-dark"/g), 1);
+  // Sell: the form owns the single public discretion/confirmation note.
+  const renderedSell = flat(`${body(sellPage)} ${sellForm}`);
+  assert.equal(count(renderedSell, new RegExp(SELLER_DISCRETION, "g")), 1);
+  const intakeMarker = sellForm.indexOf('<div className="price-check-form-shell"');
+  const sellSuccess = sellForm.slice(sellForm.indexOf("if (reference) {"), intakeMarker);
+  const sellIntake = sellForm.slice(intakeMarker);
+  assert.equal(count(flat(sellSuccess), /subject to confirmation/g), 1);
+  assert.equal(count(flat(sellIntake), /subject to confirmation/g), 1);
 });
 
 /* -------------------------------------------------------- seller wording */
 
 test("the seller qualifier uses the approved discretion wording", () => {
-  for (const [name, source] of [["sell page", sellPage], ["sell form", sellForm], ["price-check", priceCheckPage]]) {
+  for (const [name, source] of [["sell form", sellForm], ["price-check", priceCheckPage]]) {
     assert.match(flat(source), new RegExp(SELLER_DISCRETION), `${name} must state the discretion qualifier`);
   }
   for (const [name, source] of [["sell page", sellPage], ["sell form", sellForm], ["hub view", hubView], ["price-check", priceCheckPage]]) {
@@ -197,24 +203,25 @@ test("the positioning spine is stated where it is contextually useful", () => {
   assert.match(flat(hubPage), /nothing on either side is published or listed/i);
   assert.match(flat(buyPage), /never published or listed/i);
   assert.match(flat(sellPage), /nothing you send is published, listed, or shown to a buyer/i);
-  assert.match(flat(partsPage), /Nothing here is a public listing\./);
+  assert.match(flat(partsPage), /Nothing here is publicly listed\./);
 });
 
 test("documentation statements stay aviation-specific and conditional", () => {
-  assert.match(flat(qualityPage), /FAA 8130-3 where applicable/);
-  assert.match(flat(qualityPage), /EASA Form 1 or dual release where applicable/);
-  assert.match(flat(qualityPage), /Civilon identifies what is available with each quotation\./);
-  assert.match(flat(partsPage), /Documentation varies by part condition and source\./);
+  assert.match(flat(qualityPage), /FAA 8130-3/);
+  assert.match(flat(qualityPage), /EASA Form 1 or dual release/);
+  assert.match(flat(qualityPage), /documentation is provided only where applicable and available/i);
+  assert.match(flat(qualityPage), /identifies what is available for the quoted option/i);
+  assert.match(flat(partsPage), /Documentation varies by part and source/);
   assert.match(flat(hubPage), /documentation varies by part and source/i);
-  assert.match(flat(sellPage), /Documentation varies by part and source/);
+  assert.match(flat(`${sellPage} ${sellForm}`), /Documentation varies by part and source/i);
 });
 
 /* -------------------------------------------------------- active voice */
 
 test("the rewritten service copy reads in active voice", () => {
-  assert.match(flat(partsPage), /Civilon works a requirement through selected stock/);
+  assert.match(flat(partsPage), /Civilon works each requirement through selected stock/);
   assert.match(flat(partsPage), /Civilon reviews trace-to-source and the available supporting records/);
-  assert.match(flat(repairPage), /The selected third-party facility performs the physical work/);
+  assert.match(flat(repairPage), /The selected third-party facility performs the physical inspection, test, repair or overhaul/);
   assert.match(flat(repairPage), /Civilon reviews release-document and return requirements before shipment/);
   for (const [name, source] of [["parts", partsPage], ["repair", repairPage], ["quality", qualityPage]]) {
     assert.doesNotMatch(flat(source), /Requirements may be reviewed through/, name);

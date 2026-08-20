@@ -3,15 +3,89 @@ import { pageMetadata } from "@/lib/metadata";
 import { PartSearchSection } from "@/components/PartSearchSection";
 import { PriceCheckPromotion } from "@/components/PriceCheckPromotion";
 
-export const metadata = pageMetadata("Business Aircraft Parts Sourcing", "Request rotables, expendables, avionics, accessories and approved hardware by part number, condition, application and document requirement.", "/parts");
+export const metadata = pageMetadata(
+  "Business Aircraft Parts Sourcing",
+  "Request rotables, expendables, avionics, accessories and standard hardware by part number, condition, application and document requirement.",
+  "/parts",
+);
 
 export default function Page() {
   return <main>
-    <InteriorHero eyebrow="PARTS / SOURCING" title="Business-aircraft parts sourcing" intro="Civilon is a sourcing partner, not a webshop. Selected items may be in stock, and Civilon sources the rest on demand. Nothing here is a public listing. All availability is subject to confirmation." path="/parts" crumbs={[{label:"Home",href:"/"},{label:"Parts"}]} variant="sourcing" panelItems={["Exact part and dash number", "Quantity and aircraft application", "Acceptable condition", "Required documentation", "Required-by time and destination"]} />
-    <section className="section section-tight"><div className="shell"><SectionHeading label="CATEGORIES / 01" title="Search by component family" intro="Civilon reviews rotables, expendables, avionics, accessories and approved hardware requirements for business-aircraft operations." /><LinkCards items={[{ title: "Avionics & instruments", meta: "Displays · NAV/COM · TCAS · FMS", body: "Flight-deck, navigation, communication, sensing and instrument units.", href: "/parts/avionics-instruments" }, { title: "Wheels, brakes & landing gear", meta: "Assemblies · anti-skid · actuators", body: "High-wear assemblies and landing-system components.", href: "/parts/wheels-brakes-landing-gear" }, { title: "Engine & airframe accessories", meta: "Generators · pumps · valves · hardware", body: "Engine accessories, aircraft systems and airframe equipment.", href: "/parts/engine-airframe-accessories" }]} /></div></section>
-    <section className="section section-muted section-tight"><div className="shell two-column"><div><SectionHeading label="CONDITION / 02" title="State what receiving can accept" /><ul className="technical-list"><li>NE — New</li><li>NS — New Surplus</li><li>OH — Overhauled</li><li>SV — Serviceable</li><li>AR — As Removed</li></ul><p>Condition terms and supporting-document expectations are not interchangeable.</p></div><div><SectionHeading label="SOURCING / 03" title="A hybrid sourcing model" /><p className="large-copy">Civilon works a requirement through selected stock, approved and vetted suppliers, OEM and authorized distribution channels where available, appropriately approved repair facilities where required, operators, MRO organizations and vetted surplus or teardown sources.</p><p>Civilon reviews trace-to-source and the available supporting records, then identifies them with each quoted option. Documentation varies by part condition and source.</p></div></div></section>
-    <section className="section section-tight"><div className="shell"><SectionHeading label="WORKFLOW / 04" title="From requirement to receiving" /><ProcessSteps steps={["Receive the exact requirement", "Define condition and documentation", "Review stock and applicable sourcing channels", "Present confirmed availability and commercial options", "Coordinate the customer-approved shipment path"]} /><InformationNote label="WARRANTY">Warranty terms vary by part condition and source and are stated with each quotation.</InformationNote><LinkCards items={[{ title: "Supported business aircraft", body: "Review primary platform coverage and additional platforms by request.", href: "/aircraft" }, { title: "Aircraft component repair management", body: "Compare repair, exchange and replacement paths.", href: "/repair-management" }, { title: "Urgent AOG coordination", body: "Use the monitored phone or WhatsApp path for a grounded aircraft.", href: "/aog-services" }]} /></div></section>
+    <InteriorHero
+      eyebrow="PARTS / SOURCING"
+      title="Business-aircraft parts sourcing"
+      intro="Stock when we have it, sourcing when we don’t—condition, paperwork and delivery handled by one accountable desk."
+      qualifier="Nothing here is publicly listed. Availability and documentation are confirmed per request."
+      path="/parts"
+      crumbs={[{label:"Home",href:"/"},{label:"Parts"}]}
+      variant="sourcing"
+      panelItems={["Exact part and dash number", "Quantity and aircraft application", "Acceptable condition", "Required documentation", "Required-by time and destination"]}
+    />
+
+    <section className="section section-tight">
+      <div className="shell">
+        <SectionHeading
+          label="CATEGORIES / 01"
+          title="Search by component family"
+          intro="Civilon reviews rotables, expendables, avionics, accessories and standard-hardware requirements for business-aircraft operations."
+        />
+        <LinkCards items={[
+          { title: "Avionics & instruments", meta: "Displays · NAV/COM · TCAS · FMS", body: "Flight-deck, navigation, communication, sensing and instrument units.", href: "/parts/avionics-instruments" },
+          { title: "Wheels, brakes & landing gear", meta: "Assemblies · anti-skid · actuators", body: "High-wear assemblies and landing-system components.", href: "/parts/wheels-brakes-landing-gear" },
+          { title: "Engine & airframe accessories", meta: "Generators · pumps · valves · hardware", body: "Engine accessories, aircraft systems and airframe equipment.", href: "/parts/engine-airframe-accessories" },
+        ]} />
+      </div>
+    </section>
+
+    <section className="section section-muted section-tight">
+      <div className="shell">
+        <div className="two-column">
+          <div>
+            <SectionHeading label="CONDITION / 02" title="State what receiving can accept" />
+            <ul className="technical-list">
+              <li>NE — New</li>
+              <li>NS — New Surplus</li>
+              <li>OH — Overhauled</li>
+              <li>SV — Serviceable</li>
+              <li>AR — As Removed</li>
+            </ul>
+            <p>Condition terms and supporting-document expectations are not interchangeable.</p>
+          </div>
+          <div>
+            <SectionHeading label="SOURCING / 03" title="A hybrid sourcing model" />
+            <p className="large-copy">Civilon works each requirement through selected stock, approved and vetted suppliers, OEM and authorized distribution channels, appropriately approved repair facilities where required, operators, MRO organizations and vetted surplus or teardown sources.</p>
+            <p>Civilon reviews trace-to-source and the available supporting records, then identifies them with each quoted option.</p>
+          </div>
+        </div>
+        <p className="section-qualifier">Documentation varies by part and source; Civilon confirms source, condition and available records with each quotation.</p>
+      </div>
+    </section>
+
+    <section className="section section-tight">
+      <div className="shell">
+        <SectionHeading label="WORKFLOW / 04" title="From requirement to receiving" />
+        <ProcessSteps steps={[
+          "Receive the exact requirement",
+          "Define condition and documentation",
+          "Review stock and applicable sourcing channels",
+          "Present confirmed availability and commercial options",
+          "Coordinate the customer-approved shipment path",
+        ]} />
+        <InformationNote label="WARRANTY">Warranty terms vary by part condition and source and are stated with each quotation.</InformationNote>
+        <LinkCards items={[
+          { title: "Supported business aircraft", body: "Review primary platform coverage and additional platforms by request.", href: "/aircraft" },
+          { title: "Aircraft component repair management", body: "Compare repair, exchange and replacement paths.", href: "/repair-management" },
+          { title: "Urgent AOG coordination", body: "Use the monitored phone or WhatsApp path for a grounded aircraft.", href: "/aog-services" },
+        ]} />
+      </div>
+    </section>
+
     <PriceCheckPromotion context="parts" />
-    <PartSearchSection sourcePage="/parts" heading="Send the part number and condition." description="Normal sourcing requests are reviewed Monday through Friday, 8:00 AM to 5:00 PM Eastern Time. For an urgent aircraft-on-ground requirement, call or WhatsApp the AOG desk." supportingPoints={["Include aircraft or engine application", "State acceptable condition and quantity", "List required documentation and destination"]} />
+    <PartSearchSection
+      sourcePage="/parts"
+      heading="Send the part number and condition."
+      description="Normal sourcing requests are reviewed Monday through Friday, 8:00 AM to 5:00 PM Eastern Time. For an urgent aircraft-on-ground requirement, call or WhatsApp the AOG desk."
+      supportingPoints={["Include aircraft or engine application", "State acceptable condition and quantity", "List required documentation and destination"]}
+    />
   </main>;
 }

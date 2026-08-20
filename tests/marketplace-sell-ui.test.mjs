@@ -524,13 +524,17 @@ test("no Sell surface promises a purchase, price, timing, listing or approval", 
 });
 
 test("the required qualifications appear on every Sell surface a seller reads", () => {
-  assert.match(flat(sellPage), /documentation varies by part and source/i);
+  const publicSellSurface = flat(`${sellPage} ${sellForm}`);
+  assert.match(publicSellSurface, /documentation varies by part and source/i);
   // The discretion qualifier carries the same substance as the older "not
   // obliged to buy" sentence, in the wording approved for public pages.
-  assert.match(flat(sellPage), /Every submission gets an internal review; offers are at Civilon’s discretion/);
+  assert.equal(
+    (publicSellSurface.match(/Every submission gets an internal review; offers are at Civilon’s discretion/g) ?? []).length,
+    1,
+  );
   assert.doesNotMatch(flat(sellPage), /not obliged to buy/i);
   assert.match(
-    flat(sellPage),
+    publicSellSurface,
     /not certification, regulatory approval, airworthiness\s+approval, or a\s+guarantee of authenticity or fitness/i,
   );
   assert.match(flat(sellForm), /documentation varies by part and\s+source/i);

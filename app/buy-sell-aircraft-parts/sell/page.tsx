@@ -5,7 +5,7 @@ import { isSellSubmissionEnabled } from "@/lib/marketplace/feature";
 import { pageMetadata } from "@/lib/metadata";
 
 export const metadata = pageMetadata(
-  "Sell Parts to Civilon",
+  "Offer Parts",
   "Offer aircraft parts or inventory to Civilon. No account required. Nothing is published or listed, and interest, condition, documentation and price remain subject to confirmation.",
   "/buy-sell-aircraft-parts/sell",
 );
@@ -22,15 +22,15 @@ export default function SellPartsToCivilonPage() {
           <Breadcrumbs
             items={[
               { label: "Home", href: "/" },
-              { label: "Buy & Sell Aircraft Parts", href: "/buy-sell-aircraft-parts" },
-              { label: "Sell Parts to Civilon" },
+              { label: "Request or Offer Aircraft Parts", href: "/buy-sell-aircraft-parts" },
+              { label: "Offer Parts" },
             ]}
             currentPath="/buy-sell-aircraft-parts/sell"
           />
           <div className="price-check-hero-grid">
             <div>
-              <span className="section-label light">PARTS / SELL TO CIVILON</span>
-              <h1>Sell parts to Civilon</h1>
+              <span className="section-label light">PARTS / OFFER TO CIVILON</span>
+              <h1>Offer Parts</h1>
               <p className="pc-proposition">One part or a whole inventory. One counterparty.</p>
               <p>
                 Civilon buys on its own account. Tell us what you hold and the
@@ -67,17 +67,6 @@ export default function SellPartsToCivilonPage() {
               <li>Files are optional—send without them if you prefer</li>
               <li>No submission details sent to analytics</li>
             </ul>
-            <div className="pc-final-note" role="note">
-              <strong>Before you start</strong>
-              <p>
-                Every submission gets an internal review; offers are at
-                Civilon’s discretion. Documentation varies by part and source,
-                and interest, availability, condition and price all remain
-                subject to confirmation. Civilon review and any evidence you
-                upload are not certification, regulatory approval, airworthiness
-                approval, or a guarantee of authenticity or fitness.
-              </p>
-            </div>
           </div>
           <SellSubmissionForm />
         </div>

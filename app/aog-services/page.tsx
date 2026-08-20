@@ -12,7 +12,7 @@ export default function Page() {
     <InteriorHero
       eyebrow="URGENT / AOG"
       title="Aircraft-on-ground parts coordination"
-      intro="Call or message the desk when an aircraft is grounded. The AOG line is answered by a live person, 24/7/365, and one accountable desk carries the requirement through search, documentation and delivery."
+      intro="The AOG line is answered by a live person, 24/7/365. One accountable desk carries the requirement through search, documentation and delivery."
       path="/aog-services"
       crumbs={[{label:"Home",href:"/"},{label:"AOG Support"}]}
       variant="aog"
@@ -22,7 +22,7 @@ export default function Page() {
       defaultAog
       compact
       heading="Start the urgent request."
-      description="Call or message WhatsApp first, then send the form. The form captures the operational details Civilon needs to continue the search."
+      description="Call or send a WhatsApp message first, then use the form to share the operational details Civilon needs to continue the search."
     />
     <section className="section section-tight aog-preparation">
       <div className="shell two-column">

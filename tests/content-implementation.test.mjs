@@ -50,7 +50,7 @@ test("unsupported certification and blanket trace claims are absent",()=>{
   assert.equal(hasUnsupportedCivilonCertificationClaim(publicSource),false);
   assert.doesNotMatch(publicSource,/100% trace|always full trace|full trace on every part|fully traceable/i);
   assert.match(publicSource,/trace-to-source/i);
-  assert.match(publicSource,/Documentation varies by part condition and source/);
+  assert.match(publicSource,/Documentation varies by part(?:,)?(?: condition and| and)? source|Documentation varies by part and source/i);
 });
 
 test("approved commercial qualifications are explicit",()=>{
