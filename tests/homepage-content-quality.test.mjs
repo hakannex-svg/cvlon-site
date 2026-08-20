@@ -18,6 +18,8 @@ test("homepage removes the duplicated routes section and uses the approved compa
   assert.match(router, /<h2 id="hero-decision-title">Start here\.<\/h2>/);
   for (const chip of ["PRICE CHECK", "RFQ", "SELL"]) assert.match(router, new RegExp(`chip: "${chip}"`));
   assert.doesNotMatch(router, /points:|<ul>|<li>/);
+  assert.match(css, /\.hero-decision-route-body \{ display:grid; justify-items:start; gap:14px; \}/);
+  assert.doesNotMatch(css, /\.hero-decision-route-body \{[^}]*display:flex/);
 });
 
 test("homepage trust strip and proof claims stay inside the approved boundaries", () => {

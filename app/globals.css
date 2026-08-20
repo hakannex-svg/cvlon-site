@@ -72,9 +72,9 @@ button,input,select { font:inherit; }
 .hero-decision-route-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
 .hero-decision-chip { flex:none; padding:4px 9px; border-radius:3px; background:var(--blue); color:#fff; font-size:11px; font-weight:700; letter-spacing:.12em; }
 .hero-decision-route h3 { margin:0; color:var(--navy); font:700 13px var(--font-geist-sans),Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
-.hero-decision-route-body { display:flex; gap:18px; align-items:flex-start; }
-.hero-decision-route p { flex:1; margin:0; color:#3d4f63; font-size:15px; line-height:1.5; }
-.hero-decision-route a { flex:none; align-self:center; display:inline-flex; align-items:center; gap:10px; padding:12px 20px; border-radius:4px; background:var(--blue); box-shadow:0 2px 6px rgba(35,116,225,.35); color:#fff; font-size:14px; font-weight:600; white-space:nowrap; transition:background .15s; }
+.hero-decision-route-body { display:grid; justify-items:start; gap:14px; }
+.hero-decision-route p { width:100%; margin:0; color:#3d4f63; font-size:15px; line-height:1.5; }
+.hero-decision-route a { display:inline-flex; align-items:center; gap:10px; padding:12px 20px; border-radius:4px; background:var(--blue); box-shadow:0 2px 6px rgba(35,116,225,.35); color:#fff; font-size:14px; font-weight:600; white-space:nowrap; transition:background .15s; }
 .hero-decision-route a:hover { background:#1b5fc0; }
 .hero-decision-route a span { font-size:15px; line-height:1; }
 .hero-decision-qualifier { margin:20px 0 0; padding-top:4px; color:#7b8a9b; font-size:12.5px; line-height:1.5; }
@@ -342,8 +342,7 @@ footer { background:#041221; color:#92a6b7; padding:72px 0 24px; }
   .hero-decision-card { padding:24px 20px 20px; }
   .hero-decision-card>h2 { font-size:30px; }
   .hero-decision-route { padding:18px; }
-  .hero-decision-route-body { flex-direction:column; }
-  .hero-decision-route a { width:100%; min-height:44px; justify-content:center; }
+  .hero-decision-route a { min-height:44px; justify-content:center; }
   .hero-proof { gap:0; justify-content:space-between; }
   .hero-proof div { padding-left:9px; text-align:left; }
   .hero-proof strong { font-size:13px; }

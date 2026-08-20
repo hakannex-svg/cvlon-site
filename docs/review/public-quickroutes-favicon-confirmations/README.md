@@ -12,7 +12,8 @@ No admin workflow, transaction contract, API route, schema, scheduled function, 
 ## Local browser verification
 
 - Desktop: 1440 px wide, no horizontal overflow, three bordered routes, matching chips and filled buttons.
-- Mobile: 390 px wide, no horizontal overflow, route buttons stack at full width.
+- Mobile: 390 px wide, no horizontal overflow, route buttons remain below the descriptions and align left.
+- Quick Routes now always stack the chip/title, full-width description, and left-aligned button. At 1440 px the descriptions use two lines across about 296 px; at 390 px they use two or three lines across 264 px.
 - Civilon Geist reports loaded.
 - Request a Part, Offer Parts, and Price Check error summaries scroll to 16 px below the viewport edge and receive keyboard focus.
 - Favicon and manifest assets return HTTP 200; the ICO contains 16, 32, and 48 px images.
@@ -24,6 +25,7 @@ No admin workflow, transaction contract, API route, schema, scheduled function, 
 - Request a Part TEST submission `TEST-PR48-BUY` reached the preview API, which returned `Requests are temporarily unavailable`; the error summary received keyboard focus and settled about 16 px below the viewport edge.
 - Offer Parts TEST submission `TEST-PR48-SELL` reached the preview API, which returned `Submissions are temporarily unavailable`; the error summary received keyboard focus and settled about 16 px below the viewport edge.
 - The Buy and Sell preview failures are recorded as environment limitations rather than successful references; no fake backend record or success claim was created.
+- Price Check, Buy, and Sell share the same focus/scroll helper but render separate success-confirmation components. One production TEST Buy and one production TEST Sell are therefore required immediately after deployment.
 - All favicon and manifest assets respond with HTTP 200 on the preview. Netlify's obsolete `/favicon.ico` rewrite to the removed placeholder was deleted and covered by a regression test.
 
 ## Screenshots
