@@ -20,6 +20,8 @@ test("homepage removes the duplicated routes section and uses the approved compa
   assert.doesNotMatch(router, /points:|<ul>|<li>/);
   assert.match(css, /\.hero-decision-route-body \{ display:grid; justify-items:start; gap:14px; \}/);
   assert.doesNotMatch(css, /\.hero-decision-route-body \{[^}]*display:flex/);
+  assert.match(css, /\.hero-decision-chip \{[^}]*background:#e4eefc; color:#1765c1; font-size:10\.5px/);
+  assert.match(css, /\.hero-decision-route-head \{ align-items:flex-start; flex-direction:column; gap:7px; \}/);
 });
 
 test("homepage trust strip and proof claims stay inside the approved boundaries", () => {

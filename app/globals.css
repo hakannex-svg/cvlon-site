@@ -70,7 +70,7 @@ button,input,select { font:inherit; }
 .hero-decision-routes { display:grid; gap:16px; margin-top:26px; }
 .hero-decision-route { padding:20px 22px; border:1px solid #d5dde7; border-radius:8px; background:#fff; }
 .hero-decision-route-head { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-.hero-decision-chip { flex:none; padding:4px 9px; border-radius:3px; background:var(--blue); color:#fff; font-size:11px; font-weight:700; letter-spacing:.12em; }
+.hero-decision-chip { flex:none; padding:3px 8px; border-radius:3px; background:#e4eefc; color:#1765c1; font-size:10.5px; font-weight:700; letter-spacing:.12em; }
 .hero-decision-route h3 { margin:0; color:var(--navy); font:700 13px var(--font-geist-sans),Arial,sans-serif; letter-spacing:.08em; text-transform:uppercase; }
 .hero-decision-route-body { display:grid; justify-items:start; gap:14px; }
 .hero-decision-route p { width:100%; margin:0; color:#3d4f63; font-size:15px; line-height:1.5; }
@@ -342,6 +342,7 @@ footer { background:#041221; color:#92a6b7; padding:72px 0 24px; }
   .hero-decision-card { padding:24px 20px 20px; }
   .hero-decision-card>h2 { font-size:30px; }
   .hero-decision-route { padding:18px; }
+  .hero-decision-route-head { align-items:flex-start; flex-direction:column; gap:7px; }
   .hero-decision-route a { min-height:44px; justify-content:center; }
   .hero-proof { gap:0; justify-content:space-between; }
   .hero-proof div { padding-left:9px; text-align:left; }

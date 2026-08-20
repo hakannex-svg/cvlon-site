@@ -14,6 +14,7 @@ No admin workflow, transaction contract, API route, schema, scheduled function, 
 - Desktop: 1440 px wide, no horizontal overflow, three bordered routes, matching chips and filled buttons.
 - Mobile: 390 px wide, no horizontal overflow, route buttons remain below the descriptions and align left.
 - Quick Routes now always stack the chip/title, full-width description, and left-aligned button. At 1440 px the descriptions use two lines across about 296 px; at 390 px they use two or three lines across 264 px.
+- Route chips use the non-interactive tinted-label treatment (`#e4eefc` background, `#1765c1` text, 10.5 px type). Chip and title remain inline at 1440 px and stack vertically at 390 px.
 - Civilon Geist reports loaded.
 - Request a Part, Offer Parts, and Price Check error summaries scroll to 16 px below the viewport edge and receive keyboard focus.
 - Favicon and manifest assets return HTTP 200; the ICO contains 16, 32, and 48 px images.
