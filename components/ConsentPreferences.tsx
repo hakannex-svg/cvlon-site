@@ -36,7 +36,7 @@ export function ConsentPreferences() {
   return <section className="consent-banner" role="dialog" aria-modal="false" aria-labelledby="privacy-choices-title">
     <div>
       <h2 id="privacy-choices-title">Privacy choices</h2>
-      <p>Civilon uses optional analytics to understand website usage and improve our services. Analytics are disabled unless you choose to allow them. See our <a href="/privacy-policy">Privacy Policy</a> for details.</p>
+      <p>Civilon uses limited cookieless measurement by default. Optional analytics storage remains off unless you choose to allow it. See our <a href="/privacy-policy">Privacy Policy</a> for details.</p>
     </div>
     <div className="consent-actions">
       <button type="button" onClick={() => choose("granted")}>Allow analytics</button>
