@@ -27,10 +27,10 @@ Approved event vocabulary:
 
 - `price_check_view`, `price_check_start`, `price_check_submit`
 - `price_check_upload_started`, `price_check_upload_completed`
-- `price_check_result_view`, `price_check_quote_request`
 - `rfq_submit`, `contact_submit`, `aog_call_click`, `whatsapp_click`
+- Public Buy/Sell funnel events defined in `lib/analytics.ts`
 
-`AnalyticsBootstrap` loads no tag by default. It needs all of the following before it can load a configured GTM or GA4 script: a public identifier, `NEXT_PUBLIC_ANALYTICS_MODE=consent-required`, and an explicit `civilon:analytics-consent` event with `{ granted: true }` from an approved consent manager. Consent copy, regional scope, retention and opt-out behavior remain owner/counsel decisions.
+When the approved analytics mode and GTM identifier are configured, `AnalyticsBootstrap` sends Google's default denied consent command before loading GTM on public routes. Configured tags may send limited cookieless pings while storage is denied. Only an explicit `{ granted: true }` consent event enables analytics storage; advertising storage, advertising user data and advertising personalization remain denied. Private routes are excluded by the shared list in `lib/analytics-private-routes.ts`. Consent copy, regional scope, retention and opt-out behavior remain owner/counsel decisions.
 
 ## Non-production isolation
 

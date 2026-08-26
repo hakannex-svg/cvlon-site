@@ -54,12 +54,15 @@ export function trackCivilonEvent(name: AnalyticsEventName, context: AnalyticsCo
     ...(context.cta_location ? { cta_location: context.cta_location } : {}),
   };
 
-  if (window.civilonAnalyticsConsentGranted === false) return;
-  if (window.civilonAnalyticsConsentGranted !== true) {
+  // Advanced consent mode keeps storage denied until the visitor opts in, but
+  // approved, non-sensitive events can still reach configured Google tags as
+  // cookieless pings. Queue only until the public-route bootstrap is ready;
+  // replaying events after a later consent change would double count them.
+  if (!window.dataLayer) {
     window.civilonPendingAnalyticsEvents = [...(window.civilonPendingAnalyticsEvents ?? []), detail];
     return;
   }
 
-  window.dataLayer?.push(detail);
+  window.dataLayer.push(detail);
   window.dispatchEvent(new CustomEvent("civilon:analytics", { detail }));
 }

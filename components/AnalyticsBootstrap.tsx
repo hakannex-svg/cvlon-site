@@ -9,7 +9,6 @@ declare global {
     civilonAnalyticsConsentGranted?: boolean;
     civilonPendingAnalyticsEvents?: Array<Record<string, unknown>>;
     dataLayer?: Array<Record<string, unknown>>;
-    [key: `ga-disable-${string}`]: boolean | undefined;
   }
 }
 
@@ -22,7 +21,13 @@ function loadScript(src: string, id: string) {
   document.head.append(script);
 }
 
-/** Analytics remains inert until a consent manager explicitly grants consent. */
+/**
+ * Load GTM with Google's advanced consent mode on public routes only.
+ *
+ * Consent is denied before the container loads. That lets configured Google
+ * tags send cookieless measurement pings while preventing analytics or
+ * advertising storage until the visitor explicitly allows analytics.
+ */
 export function AnalyticsBootstrap() {
   useEffect(() => {
     const mode = process.env.NEXT_PUBLIC_ANALYTICS_MODE;
@@ -31,36 +36,40 @@ export function AnalyticsBootstrap() {
     // consent UI can never disagree about which pages are private.
     if (mode !== "consent-required" || !gtmId || isPrivateAnalyticsRoute(window.location.pathname)) return;
 
-    const setGoogleConsent = (granted: boolean) => {
-      window.dataLayer = window.dataLayer ?? [];
-      const dataLayer = window.dataLayer;
-      function gtag(...args: unknown[]) {
-        dataLayer.push(args as unknown as Record<string, unknown>);
-      }
-      gtag("consent", window.civilonAnalyticsLoaded ? "update" : "default", {
+    window.dataLayer = window.dataLayer ?? [];
+    const dataLayer = window.dataLayer;
+    function gtag(...args: unknown[]) {
+      dataLayer.push(args as unknown as Record<string, unknown>);
+    }
+
+    // This command must precede the GTM bootstrap event. Advertising storage,
+    // advertising user data and personalization remain denied even when the
+    // visitor later allows optional analytics storage.
+    gtag("consent", "default", {
+      analytics_storage: "denied",
+      ad_storage: "denied",
+      ad_user_data: "denied",
+      ad_personalization: "denied",
+      wait_for_update: 500,
+    });
+    window.civilonAnalyticsConsentGranted = false;
+
+    window.civilonAnalyticsLoaded = true;
+    dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
+    dataLayer.push(...(window.civilonPendingAnalyticsEvents ?? []));
+    window.civilonPendingAnalyticsEvents = [];
+    loadScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`, "civilon-gtm");
+
+    const activate = (event: Event) => {
+      const detail = (event as CustomEvent<{ granted?: boolean }>).detail;
+      const granted = detail?.granted === true;
+      window.civilonAnalyticsConsentGranted = granted;
+      gtag("consent", "update", {
         analytics_storage: granted ? "granted" : "denied",
         ad_storage: "denied",
         ad_user_data: "denied",
         ad_personalization: "denied",
       });
-    };
-
-    const activate = (event: Event) => {
-      const detail = (event as CustomEvent<{ granted?: boolean }>).detail;
-      window.civilonAnalyticsConsentGranted = detail?.granted === true;
-      window["ga-disable-G-73R0FEVSN2"] = detail?.granted !== true;
-      if (!detail?.granted) {
-        window.civilonPendingAnalyticsEvents = [];
-        if (window.civilonAnalyticsLoaded) setGoogleConsent(false);
-        return;
-      }
-      setGoogleConsent(true);
-      if (window.civilonAnalyticsLoaded) return;
-      window.civilonAnalyticsLoaded = true;
-      window.dataLayer.push({ "gtm.start": Date.now(), event: "gtm.js" });
-      window.dataLayer.push(...(window.civilonPendingAnalyticsEvents ?? []));
-      window.civilonPendingAnalyticsEvents = [];
-      loadScript(`https://www.googletagmanager.com/gtm.js?id=${encodeURIComponent(gtmId)}`, "civilon-gtm");
     };
 
     window.addEventListener("civilon:analytics-consent", activate);

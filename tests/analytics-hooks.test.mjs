@@ -13,16 +13,21 @@ test("analytics bridge exposes approved non-sensitive events and context only", 
     assert.match(source, new RegExp(context));
   }
   assert.match(source, /civilonPendingAnalyticsEvents/);
-  assert.match(source, /civilonAnalyticsConsentGranted === false/);
+  assert.match(source, /if \(!window\.dataLayer\)/);
+  assert.match(source, /window\.dataLayer\.push\(detail\)/);
+  assert.doesNotMatch(source, /civilonAnalyticsConsentGranted === false/);
   assert.doesNotMatch(source, /price_check_result_view|price_check_quote_request/);
   assert.doesNotMatch(source, /part_number|email|telephone|tail_number|message_content|aircraft_brand|part_category/);
 });
 
-test("GTM is the sole consent-gated loader and private routes fail closed", async () => {
+test("GTM is the sole denied-by-default consent-mode loader and private routes fail closed", async () => {
   const source = await readFile(new URL("../components/AnalyticsBootstrap.tsx", import.meta.url), "utf8");
   assert.match(source, /NEXT_PUBLIC_GTM_CONTAINER_ID/);
   assert.match(source, /consent-required/);
   assert.match(source, /gtm\.start/);
+  assert.match(source, /gtag\("consent", "default"/);
+  assert.match(source, /wait_for_update: 500/);
+  assert.ok(source.indexOf('gtag("consent", "default"') < source.indexOf('event: "gtm.js"'));
   // The route list moved into the shared helper both this loader and the
   // consent UI read, so the exclusion is asserted through that helper.
   assert.match(source, /isPrivateAnalyticsRoute\(window\.location\.pathname\)/);
