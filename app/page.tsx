@@ -7,6 +7,7 @@ import { AircraftSilhouetteIcon, ServiceIcon } from "@/components/PublicVisualIc
 import { isMarketplaceEnabled } from "@/lib/marketplace/feature";
 import { LEGACY_PART_SEARCH_ANCHOR, partSearchHref } from "@/lib/part-search-cta";
 import { PUBLIC_CTA } from "@/lib/public-cta";
+import { MroEuropeFeature } from "@/components/MroEuropePromotion";
 
 const services = [
   {
@@ -122,6 +123,8 @@ export default function Home() {
           <p className="section-qualifier">Each option is confirmed for availability, together with the documentation supplied with it.</p>
         </div>
       </section>
+
+      <MroEuropeFeature />
 
       <section className="section section-muted section-tight home-about">
         <div className="shell two-column">

@@ -820,3 +820,54 @@ main:not(.private-result-page):not(.admin-app)>section:is(.quality,.aog-band,.ab
   .platform-list a:hover{padding-left:10px}
   .platform-aircraft-icon{width:27px;height:15px}
 }
+
+/* Temporary MRO Europe 2026 promotion. Client-side date gates keep a static
+   deploy accurate through the one-week post-show follow-up window. */
+.mro-announcement{position:relative;z-index:9;background:var(--navy);color:#fff;border-bottom:1px solid rgba(101,184,255,.28)}
+.mro-announcement-inner{min-height:54px;display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:22px}
+.mro-announcement-tag{padding:5px 8px;border:1px solid rgba(101,184,255,.55);border-radius:3px;color:var(--sky);font:750 9px var(--font-geist-mono),monospace;letter-spacing:.12em;white-space:nowrap}
+.mro-announcement p{display:flex;align-items:baseline;gap:13px;min-width:0;margin:0}
+.mro-announcement p strong{font-size:13px;white-space:nowrap}
+.mro-announcement p span{color:#b9ccdc;font-size:11px;line-height:1.45}
+.mro-announcement a{display:inline-flex;align-items:center;gap:10px;color:#fff;font-size:12px;font-weight:800;white-space:nowrap}
+.mro-announcement a span{color:var(--sky);font-size:15px;transition:transform .18s}
+.mro-announcement a:hover{color:var(--sky)}
+.mro-announcement a:hover span{transform:translateX(3px)}
+.mro-announcement a:focus-visible,.mro-event-cta:focus-visible{outline:3px solid var(--sky);outline-offset:4px}
+.mro-event-section{scroll-margin-top:24px;background:linear-gradient(125deg,var(--navy),var(--navy-2));color:#fff}
+.mro-event-layout{display:grid;grid-template-columns:minmax(380px,.9fr) minmax(0,1fr);align-items:center;gap:72px}
+.mro-event-art{display:grid;place-items:center;min-width:0;padding:18px;border:1px solid rgba(101,184,255,.25);background:rgba(7,26,46,.72)}
+.mro-event-art img{display:block;width:100%;max-width:520px;height:auto;filter:var(--image-grade)}
+.mro-event-copy .section-label{color:var(--sky)}
+.mro-event-copy h2{max-width:700px;margin:14px 0 16px;font-size:clamp(34px,4.3vw,58px);line-height:1.04;letter-spacing:-.045em}
+.mro-event-copy>p{max-width:650px;margin:0;color:#c3d6e4;font-size:16px;line-height:1.7}
+.mro-event-facts{display:grid;grid-template-columns:1.1fr 1.3fr .6fr;margin:28px 0 30px;border-top:1px solid rgba(255,255,255,.18);border-bottom:1px solid rgba(255,255,255,.18)}
+.mro-event-facts>div{min-width:0;padding:17px 18px;border-right:1px solid rgba(255,255,255,.18)}
+.mro-event-facts>div:first-child{padding-left:0}
+.mro-event-facts>div:last-child{border-right:0}
+.mro-event-facts dt{color:var(--sky);font:750 9px var(--font-geist-mono),monospace;letter-spacing:.11em;text-transform:uppercase}
+.mro-event-facts dd{margin:7px 0 0;color:#fff;font-size:13px;font-weight:700;line-height:1.45}
+.mro-event-cta span{margin-left:18px}
+body:has(.admin-app) .mro-announcement{display:none!important}
+
+@media(max-width:900px){
+  .mro-announcement-inner{grid-template-columns:auto minmax(0,1fr);gap:8px 14px;padding-block:10px}
+  .mro-announcement p{display:grid;gap:2px}
+  .mro-announcement a{grid-column:2}
+  .mro-event-layout{grid-template-columns:1fr;gap:38px}
+  .mro-event-art{justify-self:center;width:min(100%,560px)}
+}
+
+@media(max-width:600px){
+  .mro-announcement-inner{grid-template-columns:1fr;gap:6px;padding-block:12px}
+  .mro-announcement-tag{justify-self:start}
+  .mro-announcement p strong{white-space:normal}
+  .mro-announcement a{grid-column:1;margin-top:2px}
+  .mro-event-art{padding:8px}
+  .mro-event-copy h2{font-size:36px}
+  .mro-event-copy>p{font-size:15px}
+  .mro-event-facts{grid-template-columns:1fr;margin:24px 0}
+  .mro-event-facts>div,.mro-event-facts>div:first-child{padding:13px 0;border-right:0;border-bottom:1px solid rgba(255,255,255,.18)}
+  .mro-event-facts>div:last-child{border-bottom:0}
+  .mro-event-cta{width:100%}
+}
