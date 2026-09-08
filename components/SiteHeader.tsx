@@ -5,6 +5,7 @@ import { navigation, siteConfig } from "@/lib/site-config";
 import { CallAogAction, WhatsAppAogAction } from "./AogActions";
 import { TopbarTicker } from "./TopbarTicker";
 import { PUBLIC_CTA } from "@/lib/public-cta";
+import { MroEuropeAnnouncement } from "./MroEuropePromotion";
 
 type SiteHeaderProps = {
   marketplaceEnabled: boolean;
@@ -96,5 +97,6 @@ export function SiteHeader({ marketplaceEnabled, sellSubmissionEnabled, priceChe
         <button ref={toggleRef} className={`menu-toggle ${mobile ? "is-open" : ""}`} type="button" aria-expanded={mobile} aria-controls="mobile-navigation" aria-label={mobile ? "Close navigation" : "Open navigation"} onClick={() => mobile ? closeMobile() : setMobile(true)}><span /><span /><span /></button>
       </div>
     </nav>
+    <MroEuropeAnnouncement />
   </header>;
 }

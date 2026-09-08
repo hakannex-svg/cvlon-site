@@ -31,7 +31,9 @@ export type AnalyticsEventName =
   // about their stock, and a per-answer event name would put it into an
   // analytics stream Civilon does not control.
   | "sell_inventory_freshness_opened"
-  | "sell_inventory_freshness_answered";
+  | "sell_inventory_freshness_answered"
+  | "event_banner_click"
+  | "mro_meeting_click";
 
 export type AnalyticsContext = {
   source_page?: string;
